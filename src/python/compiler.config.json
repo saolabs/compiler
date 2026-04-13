@@ -1,0 +1,36 @@
+{
+  "paths": {
+    "views_input": "resources/views",
+    "js_input": "resources/js/sao",
+    "build_output": "resources/js/build",
+    "build_scopes": "resources/js/build/scopes",
+    "public_static": "public/static",
+    "app_output": "public/static/app",
+    "scopes_output": "public/static/app/scopes"
+  },
+  "files": {
+    "view_templates": "view.templates.js",
+    "wrapper": "wraper.js",
+    "main": "main.js"
+  },
+  "patterns": {
+    "blade": "**/*.blade.php",
+    "js": "**/*.js"
+  },
+  "settings": {
+    "default_scope": "web",
+    "auto_create_dirs": true,
+    "verbose": false
+  },
+  "build_directories": [
+    "components",
+    "web",
+    "admin", 
+    "layouts",
+    "partials",
+    "custom",
+    "base",
+    "test",
+    "templates"
+  ]
+}

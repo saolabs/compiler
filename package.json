@@ -1,0 +1,31 @@
+{
+  "name": "@saola/compiler",
+  "version": "1.0.0",
+  "description": "Saola template compiler - Transforms .sao files to Blade and JavaScript",
+  "main": "src/index.js",
+  "files": ["src/"],
+  "type": "commonjs",
+  "scripts": {
+    "test": "node src/test.js",
+    "publish-dry-run": "npm publish --dry-run",
+    "prepublishOnly": "echo 'Ready to publish @saola/compiler'"
+  },
+  "keywords": [
+    "saola",
+    "compiler",
+    "blade",
+    "javascript",
+    "template"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/saola-compiler.git"
+  },
+  "author": "Your Name",
+  "bugs": {
+    "url": "https://github.com/your-org/saola-compiler/issues"
+  },
+  "homepage": "https://github.com/your-org/saola-compiler#readme"
+}
+

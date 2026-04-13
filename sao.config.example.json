@@ -1,0 +1,82 @@
+{
+  "packages": {
+    "saola": "1.0.0"
+  },
+  "root": "resources/sao/app",
+  "output": {
+    "base": "public/static/one",
+    "default": "public/static/one/app",
+    "contexts": {
+      "admin": "public/static/one/admin",
+      "web": "public/static/one/web",
+      "mobile": "public/static/one/mobile",
+      "default": "public/static/one/app"
+    }
+  },
+  "contexts": {
+    "web": {
+      "name": "Web",
+      "app": ["resources/sao/app/web/app"],
+      "views": {
+        "web": "resources/sao/app/web/views"
+      },
+      "blade": {
+        "web": "resources/views/web"
+      },
+      "temp": {
+        "views": "resources/sao/js/temp/web/views",
+        "registry": "resources/sao/js/temp/web/registry.js"
+      }
+    },
+    "admin": {
+      "name": "Admin Panel",
+      "app": ["resources/sao/app/admin/app"],
+      "views": {
+        "admin": "resources/sao/app/admin/views"
+      },
+      "blade": {
+        "admin": "resources/views/admin"
+      },
+      "temp": {
+        "views": "resources/sao/js/temp/admin/views",
+        "registry": "resources/sao/js/temp/admin/registry.js"
+      }
+    },
+    "mobile": {
+      "name": "Mobile",
+      "app": ["resources/sao/app/mobile/app"],
+      "views": {
+        "mobile": "resources/sao/app/mobile/views"
+      },
+      "blade": {
+        "mobile": "resources/views/mobile"
+      },
+      "temp": {
+        "views": "resources/sao/js/temp/mobile/views",
+        "registry": "resources/sao/js/temp/mobile/registry.js"
+      }
+    },
+    "default": {
+      "name": "All Contexts",
+      "app": [
+        "resources/sao/app/admin/app",
+        "resources/sao/app/web/app",
+        "resources/sao/app/mobile/app"
+      ],
+      "views": {
+        "web": "resources/sao/app/web/views",
+        "admin": "resources/sao/app/admin/views",
+        "mobile": "resources/sao/app/mobile/views"
+      },
+      "blade": {
+        "web": "resources/views/web",
+        "admin": "resources/views/admin",
+        "mobile": "resources/views/mobile"
+      },
+      "temp": {
+        "views": "resources/sao/js/temp/default/views",
+        "registry": "resources/sao/js/temp/default/registry.js"
+      }
+    }
+  }
+}
