@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'fetch';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.fetch';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -35,7 +35,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class FetchViewController extends ViewController {
+class FetchViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -46,13 +46,14 @@ class FetchViewController extends ViewController {
     }
 }
 
-class FetchView extends View {
+class FetchView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, FetchViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -66,6 +67,7 @@ class FetchView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         const set$users = __STATE__.__.register('users');
@@ -131,7 +133,7 @@ class FetchView extends View {
         });
 
         this.__ctrl__.setup({
-            superView: `${__layout__+'base'}`,
+            superView: __layout__ + 'base',
             subscribe: true,
             fetch: null,
             data: __data__,
@@ -225,17 +227,17 @@ class FetchView extends View {
                                     { classes: [{ type: 'static', value: "user-card" }, { type: 'static', value: "mb-3" }, { type: 'static', value: "p-3" }, { type: 'static', value: "border" }, { type: 'static', value: "rounded" }] },
                                     (parentElement) => [
                                     this.html(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-h6-1`, "h6", parentElement, {}, (parentElement) => [
-                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-h6-1-output-1`, parentElement, true, [], (parentElement) => user['name'])
+                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-h6-1-output-1`, parentElement, true, [], (parentElement) => user.name)
                                     ]),
                                     this.html(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-p-2`, "p", parentElement,
                                         { classes: [{ type: 'static', value: "mb-1" }] },
                                         (parentElement) => [
-                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-p-2-output-1`, parentElement, true, [], (parentElement) => user['email'])
+                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-p-2-output-1`, parentElement, true, [], (parentElement) => user.email)
                                         ]),
                                     this.html(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-small-3`, "small", parentElement,
                                         { classes: [{ type: 'static', value: "text-muted" }] },
                                         (parentElement) => [
-                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-small-3-output-1`, parentElement, true, [], (parentElement) => user['company']['name'])
+                                        this.output(`block-content-div-1-rc-if-1-case_4-foreach-1-${__loopIndex + 1}-div-1-small-3-output-1`, parentElement, true, [], (parentElement) => user.company.name)
                                         ])
                                     ])
                             ])
@@ -246,7 +248,7 @@ class FetchView extends View {
                 })
                 ])
             ]);
-            this.superViewPath = `${__layout__+'base'}`;
+            this.superViewPath = __layout__ + 'base';
             return this.extendView(this.superViewPath, {});
             }
         });
@@ -255,7 +257,6 @@ class FetchView extends View {
 }
 
 // Export factory function
-export function Fetch(__data__ = {}, systemData = {}) {
+export default function Fetch(__data__ = {}, systemData = {}) {
     return new FetchView(__data__, systemData);
 }
-export default Fetch;

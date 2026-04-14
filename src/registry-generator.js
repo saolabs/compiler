@@ -49,7 +49,7 @@ class RegistryGenerator {
                 .replace(/\\/g, '/')
                 .replace(/\.(ts|js)$/, '.js'); // Always import .js for runtime
 
-            imports.push(`import { ${factoryName} } from './${relativePath}';`);
+            imports.push(`import ${factoryName} from './${relativePath}';`);
             exports.push(`    '${dotPath}': ${factoryName}`);
         });
 

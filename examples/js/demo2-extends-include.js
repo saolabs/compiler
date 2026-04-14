@@ -1,18 +1,18 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'demo2_extends_include';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.demo2-extends-include';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
     viewType: 'view',
     sections: {
-        "content": {
-            "type": "long",
-            "preloader": false,
-            "useVars": true,
-            "script": {}
+        "content":{
+            "type":"long",
+            "preloader":false,
+            "useVars":true,
+            "script":{}
         }
     },
     wrapperConfig: { enable: false, tag: null, subscribe: true, attributes: {} },
@@ -29,7 +29,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class Demo2ExtendsIncludeViewController extends ViewController {
+class Demo2ExtendsIncludeViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -40,13 +40,14 @@ class Demo2ExtendsIncludeViewController extends ViewController {
     }
 }
 
-class Demo2ExtendsIncludeView extends View {
+class Demo2ExtendsIncludeView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ExtendsIncludeViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
-        const { __base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {} } = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -61,8 +62,9 @@ class Demo2ExtendsIncludeView extends View {
             __STATE__.__.updateStateByKey(key, state);
         };
 
+
         const __UPDATE_DATA_TRAIT__ = {};
-        let { demoList = [] } = __data__;
+        let {demoList = []} = __data__;
         const set$status = __STATE__.__.register('status');
         let status = null;
         const setStatus = (state) => {
@@ -72,7 +74,7 @@ class Demo2ExtendsIncludeView extends View {
         __STATE__.__.setters.setStatus = setStatus;
         __STATE__.__.setters.status = setStatus;
         const update$status = (value) => {
-            if (__STATE__.__.canUpdateStateByKey) {
+            if(__STATE__.__.canUpdateStateByKey){
                 updateStateByKey('status', value);
                 status = value;
             }
@@ -86,7 +88,7 @@ class Demo2ExtendsIncludeView extends View {
         __STATE__.__.setters.setUser = setUser;
         __STATE__.__.setters.user = setUser;
         const update$user = (value) => {
-            if (__STATE__.__.canUpdateStateByKey) {
+            if(__STATE__.__.canUpdateStateByKey){
                 updateStateByKey('user', value);
                 user = value;
             }
@@ -100,7 +102,7 @@ class Demo2ExtendsIncludeView extends View {
         __STATE__.__.setters.setPosts = setPosts;
         __STATE__.__.setters.posts = setPosts;
         const update$posts = (value) => {
-            if (__STATE__.__.canUpdateStateByKey) {
+            if(__STATE__.__.canUpdateStateByKey){
                 updateStateByKey('posts', value);
                 posts = value;
             }
@@ -116,7 +118,7 @@ class Demo2ExtendsIncludeView extends View {
         });
 
         this.__ctrl__.setup({
-            superView: `${__layout__ + 'base'}`,
+            superView: __layout__ + 'base',
             subscribe: true,
             fetch: null,
             data: __data__,
@@ -125,15 +127,15 @@ class Demo2ExtendsIncludeView extends View {
             scripts: [],
             styles: [],
             resources: [],
-            commitConstructorData: function () {
+            commitConstructorData: function() {
                 // Then update states from data
                 update$status(false);
-                update$user({ "name": "Jone", "email": "jon@test.com" });
-                update$posts([{ "title": "...", "content": "..." }, { "title": "...", "content": "..." }, { "title": "...", "content": "..." }, { "title": "...", "content": "..." }]);
+                update$user({"name": "Jone", "email": "jon@test.com"});
+                update$posts([{"title": "...", "content": "..."}, {"title": "...", "content": "..."}, {"title": "...", "content": "..."}, {"title": "...", "content": "..."}]);
                 // Finally lock state updates
                 lockUpdateRealState();
             },
-            updateVariableData: function (data) {
+            updateVariableData: function(data) {
                 // Update all variables first
                 for (const key in data) {
                     if (data.hasOwnProperty(key)) {
@@ -145,107 +147,107 @@ class Demo2ExtendsIncludeView extends View {
                 }
                 // Then update states from data
                 update$status(false);
-                update$user({ "name": "Jone", "email": "jon@test.com" });
-                update$posts([{ "title": "...", "content": "..." }, { "title": "...", "content": "..." }, { "title": "...", "content": "..." }, { "title": "...", "content": "..." }]);
+                update$user({"name": "Jone", "email": "jon@test.com"});
+                update$posts([{"title": "...", "content": "..."}, {"title": "...", "content": "..."}, {"title": "...", "content": "..."}, {"title": "...", "content": "..."}]);
                 // Finally lock state updates
                 lockUpdateRealState();
             },
-            updateVariableItemData: function (key, value) {
+            updateVariableItemData: function(key, value) {
                 this.data[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
             },
-            prerender: function () {
-                return null;
+            prerender: function() {
+            return null;
             },
             render: function () {
-                let parentElement = this.parentElement;
-                let parentReactive = null;
-                this.block('block-content', 'content', (parentElement) => [
-                    this.include("block-content-component-1", __template__ + 'header', parentElement, [], (parentElement) => ({})),
-                    this.html(`block-content-div-1`, "div", parentElement,
-                        { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "data-count": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "data-user-name": { type: 'binding', value: user['name'], factory: () => user['name'], stateKeys: ["user"] } } },
-                        (parentElement) => [
-                            this.html(`block-content-div-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
-                                this.text('Hello, '),
-                                this.output(`block-content-div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user['name']),
-                                this.text('!')
-                            ]),
-                            this.html(`block-content-div-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                this.text('Your email is '),
-                                this.html(`block-content-div-1-p-2-span-1`, "span", parentElement, {}, (parentElement) => [
-                                    this.output(`block-content-div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user['email'])
-                                ]),
-                                this.text('.')
-                            ]),
-                            this.html(`block-content-div-1-button-3`, "button", parentElement,
-                                { events: { click: [(event) => setStatus(!status)] } },
-                                (parentElement) => [
-                                    this.text('Toggle Status: '),
-                                    this.output(`block-content-div-1-button-3-output-1`, parentElement, true, ["status"], (parentElement) => status ? 'On' : 'Off')
-                                ]),
-                            this.html(`block-content-div-1-h2-4`, "h2", parentElement, {}, (parentElement) => [
-                                this.text('Posts:')
-                            ]),
-                            this.html(`block-content-div-1-ul-5`, "ul", parentElement, {}, (parentElement) => [
-                                this.reactive(`block-content-div-1-ul-5-rc-if-1`, "if", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
-                                    const reactiveContents = [];
-                                    if (App.Helper.count(posts) === 0) {
-                                        reactiveContents.push(
-                                            this.html(`block-content-div-1-ul-5-rc-if-1-case_1-li-1`, "li", parentElement, {}, (parentElement) => [
-                                                this.text('No posts available.')
-                                            ])
-                                        );
-                                    }
-                                    else {
-                                        reactiveContents.push(
-                                            this.reactive(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
-                                                return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
-                                                    this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement) => [
-                                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post['title'])
-                                                        ]),
-                                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post['content'])
-                                                        ])
-                                                    ])
-                                                ])
-                                            })
-                                        );
-                                    }
-                                    return reactiveContents;
-                                })
-                            ]),
-                            this.html(`block-content-div-1-div-6`, "div", parentElement,
-                                { classes: [{ type: 'static', value: "while-loop-demo" }] },
-                                (parentElement) => [
-                                    this.__while((loopCtx) => {
-                                        loopCtx.setCount(5);
-                                        let __whileOutput = [];
-                                        while (i < 5) {
-                                            loopCtx.setCurrentTimes(i);
-                                            __whileOutput.push(
-                                                this.html(`block-content-div-1-div-6-while-1-${i + 1}-p-1`, "p", parentElement, {}, (parentElement) => [
-                                                    this.text('Counter: '),
-                                                    this.output(`block-content-div-1-div-6-while-1-${i + 1}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
-                                                ])
-                                            );
-                                            i++;
-                                        }
-                                        return __whileOutput;
-                                    }, 5)
+            let parentElement = this.parentElement;
+            let parentReactive = null;
+            this.block('block-content', 'content', (parentElement) => [
+            this.include("block-content-component-1", __template__ + 'header', parentElement, [], (parentElement) => ({})),
+            this.html(`block-content-div-1`, "div", parentElement,
+                { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "dataCount": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "dataUserName": { type: 'binding', value: user.name, factory: () => user.name, stateKeys: ["user"] } } },
+                (parentElement) => [
+                this.html(`block-content-div-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
+                    this.text('Hello, '),
+                    this.output(`block-content-div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user.name),
+                    this.text('!')
+                ]),
+                this.html(`block-content-div-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                    this.text('Your email is '),
+                    this.html(`block-content-div-1-p-2-span-1`, "span", parentElement, {}, (parentElement) => [
+                        this.output(`block-content-div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user.email)
+                    ]),
+                    this.text('.')
+                ]),
+                this.html(`block-content-div-1-button-3`, "button", parentElement,
+                    { events: { click: [(event) => setStatus(!status)] } },
+                    (parentElement) => [
+                    this.text('Toggle Status: '),
+                    this.output(`block-content-div-1-button-3-output-1`, parentElement, true, ["status"], (parentElement) => status ? 'On' : 'Off')
+                    ]),
+                this.html(`block-content-div-1-h2-4`, "h2", parentElement, {}, (parentElement) => [
+                    this.text('Posts:')
+                ]),
+                this.html(`block-content-div-1-ul-5`, "ul", parentElement, {}, (parentElement) => [
+                    this.reactive(`block-content-div-1-ul-5-rc-if-1`, "if", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
+                        const reactiveContents = [];
+                        if (App.Helper.count(posts) === 0) {
+                            reactiveContents.push(
+                            this.html(`block-content-div-1-ul-5-rc-if-1-case_1-li-1`, "li", parentElement, {}, (parentElement) => [
+                                this.text('No posts available.')
+                            ])
+                            );
+                        }
+                        else {
+                            reactiveContents.push(
+                            this.reactive(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
+                                return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
+                                    this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement) => [
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                        ]),
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
+                                        ])
+                                    ])
                                 ])
-                        ]),
-                    this.include("block-content-component-2", __template__ + 'post-list', parentElement, [], (parentElement) => ({ "posts": posts, "name": "test" })),
-                    this.include("block-content-component-3", __template__ + 'footer', parentElement, [], (parentElement) => ({
-                        __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                            this.include("block-content-component-3-component-1", __template__ + 'post-list', parentElement, [], (parentElement) => ({ "posts": posts, "name": "test" }))
-                        ]
-                    }))
-                ]);
-                this.superViewPath = `${__layout__ + 'base'}`;
-                return this.extendView(this.superViewPath, {});
+                            })
+                            );
+                        }
+                        return reactiveContents;
+                    })
+                ]),
+                this.html(`block-content-div-1-div-6`, "div", parentElement,
+                    { classes: [{ type: 'static', value: "while-loop-demo" }] },
+                    (parentElement) => [
+                    this.__while((loopCtx) => {
+                            loopCtx.setCount(5);
+                        let __whileOutput = [];
+                        while (i < 5) {
+                            loopCtx.setCurrentTimes(i);
+                            __whileOutput.push(
+                                this.html(`block-content-div-1-div-6-while-1-${i + 1}-p-1`, "p", parentElement, {}, (parentElement) => [
+                                    this.text('Counter: '),
+                                    this.output(`block-content-div-1-div-6-while-1-${i + 1}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
+                                ])
+                            );
+                                i++;
+                        }
+                        return __whileOutput;
+                    }, 5)
+                    ])
+                ]),
+            this.include("block-content-component-2", __template__ + 'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"})),
+            this.include("block-content-component-3", __template__ + 'footer', parentElement, [], (parentElement) => ({
+                    __ONE_CHILDREN_CONTENT__: (parentElement) => [
+                    this.include("block-content-component-3-component-1", __template__ + 'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"}))
+                ]
+                }))
+            ]);
+            this.superViewPath = __layout__ + 'base';
+            return this.extendView(this.superViewPath, {});
             }
         });
 
@@ -253,7 +255,6 @@ class Demo2ExtendsIncludeView extends View {
 }
 
 // Export factory function
-export function Demo2ExtendsInclude(__data__ = {}, systemData = {}) {
+export default function Demo2ExtendsInclude(__data__ = {}, systemData = {}) {
     return new Demo2ExtendsIncludeView(__data__, systemData);
 }
-export default Demo2ExtendsInclude;

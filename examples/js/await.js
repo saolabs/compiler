@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'await';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.await';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -41,7 +41,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class AwaitViewController extends ViewController {
+class AwaitViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -52,13 +52,14 @@ class AwaitViewController extends ViewController {
     }
 }
 
-class AwaitView extends View {
+class AwaitView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, AwaitViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -72,6 +73,7 @@ class AwaitView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         let {user = null, counter = 0} = __data__;
@@ -139,7 +141,8 @@ class AwaitView extends View {
                     if (user) {
                         reactiveContents.push(
                         this.html(`block-content-div-1-rc-if-1-case_1-h1-1`, "h1", parentElement, {}, (parentElement) => [
-                            this.text('Welcome ${$user.name}')
+                            this.text('Welcome '),
+                            this.output(`block-content-div-1-rc-if-1-case_1-h1-1-output-1`, parentElement, true, [], (parentElement) => user.name)
                         ])
                         );
                     }
@@ -165,7 +168,8 @@ class AwaitView extends View {
                     this.text('Increment Counter')
                     ]),
                 this.html(`block-content-div-2-p-3`, "p", parentElement, {}, (parentElement) => [
-                    this.text('Counter: ${$counter}')
+                    this.text('Counter: '),
+                    this.output(`block-content-div-2-p-3-output-1`, parentElement, true, [], (parentElement) => counter)
                 ])
             ])
             ]);
@@ -178,7 +182,6 @@ class AwaitView extends View {
 }
 
 // Export factory function
-export function Await(__data__ = {}, systemData = {}) {
+export default function Await(__data__ = {}, systemData = {}) {
     return new AwaitView(__data__, systemData);
 }
-export default Await;

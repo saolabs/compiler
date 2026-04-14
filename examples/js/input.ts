@@ -1,11 +1,11 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 import { ref } from 'saola';
 
 
 
-const __VIEW_PATH__ = 'input';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'examples.input';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -25,8 +25,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class InputViewController extends ViewController {
-    constructor(view: View) {
+class InputViewController extends SaolaViewController {
+    constructor(view: SaolaView) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -36,13 +36,14 @@ class InputViewController extends ViewController {
     }
 }
 
-class InputView extends View {
+class InputView extends SaolaView {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, InputViewController);
-        const App: Application = app("App") as Application;
+        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value: any) => {
             return __STATE__.__useState(value);
         };
@@ -56,6 +57,7 @@ class InputView extends View {
         const updateStateByKey = (key: string, state: any) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__: any = {};
         let {users, posts} = __data__;
@@ -257,9 +259,9 @@ class InputView extends View {
                     this.html(`div-1-div-2-ul-2`, "ul", parentElement, {}, (parentElement: any) => [
                         this.__foreach(users, (user: any, __loopKey: any, __loopIndex: any, __loop: any) => [
                                 this.html(`div-1-div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
-                                    this.output(`div-1-div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => user['name']),
+                                    this.output(`div-1-div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => user.name),
                                     this.text(' ('),
-                                    this.output(`div-1-div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-2`, parentElement, true, [], (parentElement: any) => user['email']),
+                                    this.output(`div-1-div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-2`, parentElement, true, [], (parentElement: any) => user.email),
                                     this.text(')')
                                 ])
                         ])
@@ -275,10 +277,10 @@ class InputView extends View {
                         this.__foreach(posts, (post: any, __loopKey: any, __loopIndex: any, __loop: any) => [
                                 this.html(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
                                     this.html(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1-strong-1`, "strong", parentElement, {}, (parentElement: any) => [
-                                        this.output(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1-strong-1-output-1`, parentElement, true, [], (parentElement: any) => post['title'])
+                                        this.output(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1-strong-1-output-1`, parentElement, true, [], (parentElement: any) => post.title)
                                     ]),
                                     this.text(': '),
-                                    this.output(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => post['content'])
+                                    this.output(`div-1-div-3-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => post.content)
                                 ])
                         ])
                     ])
@@ -296,7 +298,7 @@ class InputView extends View {
                             this.html(`div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
                                 this.html(`div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-label-1`, "label", parentElement, {}, (parentElement: any) => [
                                     this.html(`div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-label-1-input-1`, "input", parentElement, {}),
-                                    this.output(`div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-label-1-output-1`, parentElement, true, [], (parentElement: any) => todo['task'])
+                                    this.output(`div-2-ul-2-foreach-1-${__loopIndex + 1}-li-1-label-1-output-1`, parentElement, true, [], (parentElement: any) => todo.task)
                                 ])
                             ])
                         ])
@@ -305,7 +307,7 @@ class InputView extends View {
                 this.html(`div-2-div-3`, "div", parentElement,
                     { classes: [{ type: 'static', value: "is-edit-mode" }] },
                     (parentElement: any) => [
-                    this.html(`div-2-div-3-input-1`, "input", parentElement, { events: { keydown: [{"handler":"handleNewTodoKeyDown","params":["@EVENT"]}] } }),
+                    this.html(`div-2-div-3-input-1`, "input", parentElement, { events: { keydown: [{"handler":"handleNewTodoKeyDown","params":[() => event]}] } }),
                     this.html(`div-2-div-3-button-2`, "button", parentElement,
                         { events: { click: [{"handler":"addTodo","params":[]}] } },
                         (parentElement: any) => [
@@ -335,17 +337,17 @@ class InputView extends View {
                             this.reactive(`div-3-rc-if-1-case_2-ul-1-foreach-1`, "foreach", parentReactive, parentElement, ["products"], (parentReactive: any, parentElement: any) => {
                                 return this.__foreach(products, (product: any, __loopKey: any, __loopIndex: any, __loop: any) => [
                                     this.html(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
-                                        this.output(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => product['name']),
+                                        this.output(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement: any) => product.name),
                                         this.text(' - $'),
-                                        this.output(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-output-2`, parentElement, true, [], (parentElement: any) => product['price']),
+                                        this.output(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-output-2`, parentElement, true, [], (parentElement: any) => product.price),
                                         this.reactive(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                             const reactiveContents = [];
-                                            if (product['tags'] && App.Helper.count(product['tags']) > 0) {
+                                            if (product.tags && App.Helper.count(product.tags) > 0) {
                                                 reactiveContents.push(
                                                 this.html(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-rc-if-1-case_1-div-1`, "div", parentElement,
                                                     { classes: [{ type: 'static', value: "tags" }] },
                                                     (parentElement: any) => [
-                                                    this.__foreach(product['tags'], (tag: any, __loopKey: any, __loopIndex: any, __loop: any) => [
+                                                    this.__foreach(product.tags, (tag: any, __loopKey: any, __loopIndex: any, __loop: any) => [
                                                             this.html(`div-3-rc-if-1-case_2-ul-1-foreach-1-${__loopIndex + 1}-li-1-rc-if-1-case_1-div-1-foreach-1-span-1`, "span", parentElement,
                                                                 { classes: [{ type: 'static', value: "tag" }] },
                                                                 (parentElement: any) => [
@@ -380,26 +382,26 @@ class InputView extends View {
                                 __loop.setCurrentTimes(i);
                                 __forOutput.push(
                                 this.html(`div-4-ul-2-for-1-${i + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
-                                    this.output(`div-4-ul-2-for-1-${i + 1}-li-1-output-1`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i]['name']),
+                                    this.output(`div-4-ul-2-for-1-${i + 1}-li-1-output-1`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i].name),
                                     this.text(' - $'),
-                                    this.output(`div-4-ul-2-for-1-${i + 1}-li-1-output-2`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i]['price']),
+                                    this.output(`div-4-ul-2-for-1-${i + 1}-li-1-output-2`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i].price),
                                     this.reactive(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1`, "if", parentReactive, parentElement, ["inventory"], (parentReactive: any, parentElement: any) => {
                                         const reactiveContents = [];
-                                        if (inventory[i]['tags'] && App.Helper.count(inventory[i]['tags']) > 0) {
+                                        if (inventory[i].tags && App.Helper.count(inventory[i].tags) > 0) {
                                             reactiveContents.push(
                                             this.html(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1`, "div", parentElement,
                                                 { classes: [{ type: 'static', value: "tags" }] },
                                                 (parentElement: any) => [
                                                 this.reactive(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1`, "for", parentReactive, parentElement, ["inventory"], (parentReactive: any, parentElement: any) => {
-                                                    return this.__for("increment", 0, App.Helper.count(inventory[i]['tags']), (__loop: any) => {
+                                                    return this.__for("increment", 0, App.Helper.count(inventory[i].tags), (__loop: any) => {
                                                         let __forOutput = [];
-                                                        for (let j = 0; j < App.Helper.count(inventory[i]['tags']); j++) {
+                                                        for (let j = 0; j < App.Helper.count(inventory[i].tags); j++) {
                                                             __loop.setCurrentTimes(j);
                                                             __forOutput.push(
                                                             this.html(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1`, "span", parentElement,
                                                                 { classes: [{ type: 'static', value: "tag" }] },
                                                                 (parentElement: any) => [
-                                                                this.output(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i]['tags'][j])
+                                                                this.output(`div-4-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1`, parentElement, true, ["inventory"], (parentElement: any) => inventory[i].tags[j])
                                                                 ])
                                                             );
                                                         }
@@ -442,26 +444,26 @@ class InputView extends View {
                                             return reactiveContents;
                                         }),
                                         this.html(`div-5-ul-2-for-1-${i + 1}-li-1`, "li", parentElement, {}, (parentElement: any) => [
-                                            this.output(`div-5-ul-2-for-1-${i + 1}-li-1-output-1`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i]['name']),
+                                            this.output(`div-5-ul-2-for-1-${i + 1}-li-1-output-1`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i].name),
                                             this.text(' - $'),
-                                            this.output(`div-5-ul-2-for-1-${i + 1}-li-1-output-2`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i]['price']),
+                                            this.output(`div-5-ul-2-for-1-${i + 1}-li-1-output-2`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i].price),
                                             this.reactive(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1`, "if", parentReactive, parentElement, ["catalog"], (parentReactive: any, parentElement: any) => {
                                                 const reactiveContents = [];
-                                                if (catalog[i]['tags'] && App.Helper.count(catalog[i]['tags']) > 0) {
+                                                if (catalog[i].tags && App.Helper.count(catalog[i].tags) > 0) {
                                                     reactiveContents.push(
                                                     this.html(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1`, "div", parentElement,
                                                         { classes: [{ type: 'static', value: "tags" }] },
                                                         (parentElement: any) => [
                                                         this.reactive(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1`, "for", parentReactive, parentElement, ["catalog"], (parentReactive: any, parentElement: any) => {
-                                                            return this.__for("increment", 0, App.Helper.count(catalog[i]['tags']), (__loop: any) => {
+                                                            return this.__for("increment", 0, App.Helper.count(catalog[i].tags), (__loop: any) => {
                                                                 let __forOutput = [];
-                                                                for (let j = 0; j < App.Helper.count(catalog[i]['tags']); j++) {
+                                                                for (let j = 0; j < App.Helper.count(catalog[i].tags); j++) {
                                                                     __loop.setCurrentTimes(j);
                                                                     __forOutput.push(
                                                                     this.html(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1`, "span", parentElement,
                                                                         { classes: [{ type: 'static', value: "tag" }] },
                                                                         (parentElement: any) => [
-                                                                        this.output(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i]['tags'][j])
+                                                                        this.output(`div-5-ul-2-for-1-${i + 1}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1`, parentElement, true, ["catalog"], (parentElement: any) => catalog[i].tags[j])
                                                                         ])
                                                                     );
                                                                 }
@@ -515,7 +517,6 @@ class InputView extends View {
 }
 
 // Export factory function
-export function Input(__data__ = {}, systemData = {}): InputView {
+export default function Input(__data__ = {}, systemData = {}): InputView {
     return new InputView(__data__, systemData);
 }
-export default Input;

@@ -54,8 +54,8 @@ class BladeCompiler:
         try:
             # Get path to view.js (relative to this Python file)
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            # Go up from sao2js/ to python/, then to compiler/, then to templates/
-            template_path = os.path.join(current_dir, '..', '..', 'templates', 'view.js')
+            # Go up from sao2js/ to src/, then to templates/
+            template_path = os.path.join(current_dir, '..', 'templates', 'view.js')
             template_path = os.path.normpath(template_path)
             
             with open(template_path, 'r', encoding='utf-8') as f:

@@ -1,9 +1,9 @@
-@useState($count, 0)
-@useState($name, 'World')
+@state(count = 0)
+@state(name = 'World')
 
-@extends($__layout__.'test-yield-layout')
+@extends(__layout__ + 'test-yield-layout')
 @block('title')
-    Page Title - {{ $name }}
+    Page Title - {{ name }}
 @endblock
 @block('nav')
     <a href="/">Home</a>
@@ -11,11 +11,11 @@
 @endblock
 @block('content')
     <div class="content-area">
-        <h2>Hello, {{ $name }}!</h2>
-        <p>Count: {{ $count }}</p>
-        <button @click($setCount($count + 1))>Increment</button>
+        <h2>Hello, {{ name }}!</h2>
+        <p>Count: {{ count }}</p>
+        <button @click(setCount(count + 1))>Increment</button>
     </div>
 @endblock
 @block('footer')
-    <p>Custom Footer for {{ $name }}</p>
+    <p>Custom Footer for {{ name }}</p>
 @endblock

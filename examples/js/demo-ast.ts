@@ -1,11 +1,11 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 import {_} from 'saola';
 
 
 
-const __VIEW_PATH__ = 'demo_ast';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'examples.demo-ast';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -25,8 +25,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class DemoAstViewController extends ViewController {
-    constructor(view: View) {
+class DemoAstViewController extends SaolaViewController {
+    constructor(view: SaolaView) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -36,13 +36,14 @@ class DemoAstViewController extends ViewController {
     }
 }
 
-class DemoAstView extends View {
+class DemoAstView extends SaolaView {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, DemoAstViewController);
-        const App: Application = app("App") as Application;
+        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value: any) => {
             return __STATE__.__useState(value);
         };
@@ -56,6 +57,7 @@ class DemoAstView extends View {
         const updateStateByKey = (key: string, state: any) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__: any = {};
         let name = 'John Doe';
@@ -172,129 +174,121 @@ class DemoAstView extends View {
                         })
                 );
                 __execArr.push(
-                    this.include("component-1", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
-                            __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                            this.include("component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users}))
-                        ]
-                        }))
+                    this.html(`tasks-3`, "tasks", parentElement, {}, (parentElement: any) => [
+                        this.html(`tasks-3-demo-1`, "demo", parentElement, {})
+                    ])
                 );
                 __execArr.push(
-                    this.include("component-2", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({"title": "Custom Task List"}))
+                    this.html(`tasks-4`, "tasks", parentElement, {})
                 );
                 __execArr.push(
-                    this.include("component-3", __template__+'sessions.projects', parentElement, [], (parentElement: any) => ({
-                            "projects": projects,
-                            __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                            this.html(`component-3-div-1`, "div", parentElement,
+                    this.html(`projects-5`, "projects", parentElement, {}, (parentElement: any) => [
+                        this.html(`projects-5-div-1`, "div", parentElement,
+                            { classes: [{ type: 'static', value: "header" }] },
+                            (parentElement: any) => [
+                            this.html(`projects-5-div-1-h2-1`, "h2", parentElement, {}, (parentElement: any) => [
+                                this.text('My Projects '),
+                                this.reactive(`projects-5-div-1-h2-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                    const reactiveContents = [];
+                                    let t: any;
+                                    if (!(t = App.Helper.count(projects))) {
+                                        reactiveContents.push(
+                                        this.text(' Rỗng ')
+                                        );
+                                    }
+                                    else {
+                                        reactiveContents.push(
+                                        this.text(' ('),
+                                        this.output(`projects-5-div-1-h2-1-rc-if-1-case_2-output-1`, parentElement, true, [], (parentElement: any) => t),
+                                        this.text(') ')
+                                        );
+                                    }
+                                    return reactiveContents;
+                                })
+                            ])
+                            ]),
+                        this.html(`projects-5-div-2`, "div", parentElement,
+                            { classes: [{ type: 'static', value: "footer" }] },
+                            (parentElement: any) => [
+                            this.html(`projects-5-div-2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                this.text('Total Projects: '),
+                                this.output(`projects-5-div-2-p-1-output-1`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
+                            ])
+                            ]),
+                        this.html(`projects-5-tasks-3`, "tasks", parentElement, {}, (parentElement: any) => [
+                            this.html(`projects-5-tasks-3-div-1`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "header" }] },
-                                (parentElement: any) => [
-                                this.html(`component-3-div-1-h2-1`, "h2", parentElement, {}, (parentElement: any) => [
-                                    this.text('My Projects '),
-                                    this.reactive(`component-3-div-1-h2-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
-                                        const reactiveContents = [];
-                                        let t: any;
-                                        if (!(t = App.Helper.count(projects))) {
-                                            reactiveContents.push(
-                                            this.text(' Rỗng ')
-                                            );
-                                        }
-                                        else {
-                                            reactiveContents.push(
-                                            this.text(' ('),
-                                            this.output(`component-3-div-1-h2-1-rc-if-1-case_2-output-1`, parentElement, true, [], (parentElement: any) => t),
-                                            this.text(') ')
-                                            );
-                                        }
-                                        return reactiveContents;
-                                    })
-                                ])
-                                ]),
-                            this.html(`component-3-div-2`, "div", parentElement,
-                                { classes: [{ type: 'static', value: "footer" }] },
-                                (parentElement: any) => [
-                                this.html(`component-3-div-2-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                    this.text('Total Projects: '),
-                                    this.output(`component-3-div-2-p-1-output-1`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
-                                ])
-                                ]),
-                            this.include("component-3-component-1", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
-                                    "owners": ["Alice", "Bob"],
-                                    __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                                    this.html(`component-3-component-1-div-1`, "div", parentElement,
-                                        { classes: [{ type: 'static', value: "header" }] },
-                                        (parentElement: any) => {
+                                (parentElement: any) => {
+                                    const __execArr = [];
+                                    __execArr.push(
+                                        this.html(`projects-5-tasks-3-div-1-h3-1`, "h3", parentElement, {}, (parentElement: any) => [
+                                            this.text('Task Owners')
+                                        ])
+                                    );
+                                    __execArr.push(
+                                        this.html(`projects-5-tasks-3-div-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                                            this.output(`projects-5-tasks-3-div-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                        ])
+                                    );
+                                    let test = 'Hello World';
+                                    __execArr.push(
+                                        this.__foreach(posts, (post: any, __loopKey: any, __loopIndex: any, __loop: any) => {
                                             const __execArr = [];
                                             __execArr.push(
-                                                this.html(`component-3-component-1-div-1-h3-1`, "h3", parentElement, {}, (parentElement: any) => [
-                                                    this.text('Task Owners')
+                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-1-output-1`, parentElement, true, [], (parentElement: any) => content)
                                                 ])
                                             );
+                                            let content = 'This is a test';
                                             __execArr.push(
-                                                this.html(`component-3-component-1-div-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                                    this.output(`component-3-component-1-div-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-1`, parentElement, true, [], (parentElement: any) => post.title),
+                                                    this.text(': '),
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-2`, parentElement, true, [], (parentElement: any) => post.content),
+                                                    this.text(' '),
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-3`, parentElement, true, [], (parentElement: any) => content)
                                                 ])
-                                            );
-                                            let test = 'Hello World';
-                                            __execArr.push(
-                                                this.__foreach(posts, (post: any, __loopKey: any, __loopIndex: any, __loop: any) => {
-                                                    const __execArr = [];
-                                                    __execArr.push(
-                                                        this.html(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-1-output-1`, parentElement, true, [], (parentElement: any) => content)
-                                                        ])
-                                                    );
-                                                    let content = 'This is a test';
-                                                    __execArr.push(
-                                                        this.html(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-1`, parentElement, true, [], (parentElement: any) => post['title']),
-                                                            this.text(': '),
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-2`, parentElement, true, [], (parentElement: any) => post['content']),
-                                                            this.text(' '),
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-3`, parentElement, true, [], (parentElement: any) => content)
-                                                        ])
-                                                    );
-                                                    return __execArr;
-                                                })
                                             );
                                             return __execArr;
-                                        }),
-                                    this.html(`component-3-component-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                        this.output(`component-3-component-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
-                                    ]),
-                                    this.include("component-3-component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users})),
-                                    this.reactive(`component-3-component-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
-                                        const reactiveContents = [];
-                                        let person: any;
-                                        if (!(person = App.Helper.getPerson())) {
-                                            reactiveContents.push(
-                                            this.html(`component-3-component-1-rc-if-1-case_1-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                                this.text('No person found.')
-                                            ])
-                                            );
-                                        }
-                                        else {
-                                            reactiveContents.push(
-                                            this.html(`component-3-component-1-rc-if-1-case_2-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                                this.text('Person found: '),
-                                                this.output(`component-3-component-1-rc-if-1-case_2-p-1-output-1`, parentElement, true, [], (parentElement: any) => person.name)
-                                            ])
-                                            );
-                                        }
-                                        return reactiveContents;
-                                    })
-                                ]
-                                }))
-                        ]
-                        }))
+                                        })
+                                    );
+                                    return __execArr;
+                                }),
+                            this.html(`projects-5-tasks-3-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                                this.output(`projects-5-tasks-3-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
+                            ]),
+                            this.html(`projects-5-tasks-3-demo-3`, "demo", parentElement, {}),
+                            this.reactive(`projects-5-tasks-3-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                const reactiveContents = [];
+                                let person: any;
+                                if (!(person = App.Helper.getPerson())) {
+                                    reactiveContents.push(
+                                    this.html(`projects-5-tasks-3-rc-if-1-case_1-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                        this.text('No person found.')
+                                    ])
+                                    );
+                                }
+                                else {
+                                    reactiveContents.push(
+                                    this.html(`projects-5-tasks-3-rc-if-1-case_2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                        this.text('Person found: '),
+                                        this.output(`projects-5-tasks-3-rc-if-1-case_2-p-1-output-1`, parentElement, true, [], (parentElement: any) => person.name)
+                                    ])
+                                    );
+                                }
+                                return reactiveContents;
+                            })
+                        ])
+                    ])
                 );
                 __execArr.push(
-                    this.include("component-4", 'sessions.tasks.count', parentElement, [], (parentElement: any) => ({}))
+                    this.html(`counter-6`, "counter", parentElement, {})
                 );
                 __execArr.push(
-                    this.include("component-5", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({}))
+                    this.html(`demo-7`, "demo", parentElement, {})
                 );
                 __execArr.push(
-                    this.include("component-6", __blade_custom_path__, parentElement, [], (parentElement: any) => ({"type": "success", "message": "This is a custom alert component!"}))
+                    this.html(`alert-8`, "alert", parentElement, {})
                 );
             return __execArr;
             });
@@ -305,7 +299,6 @@ class DemoAstView extends View {
 }
 
 // Export factory function
-export function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
+export default function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
     return new DemoAstView(__data__, systemData);
 }
-export default DemoAst;

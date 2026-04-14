@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'demo2';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.demo2';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class Demo2ViewController extends ViewController {
+class Demo2ViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class Demo2ViewController extends ViewController {
     }
 }
 
-class Demo2View extends View {
+class Demo2View extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class Demo2View extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         let {demoList = []} = __data__;
@@ -157,17 +159,17 @@ class Demo2View extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`div-1`, "div", parentElement,
-                { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "data-count": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "data-user-name": { type: 'binding', value: user['name'], factory: () => user['name'], stateKeys: ["user"] } } },
+                { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "dataCount": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "dataUserName": { type: 'binding', value: user.name, factory: () => user.name, stateKeys: ["user"] } } },
                 (parentElement) => [
                 this.html(`div-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
                     this.text('Hello, '),
-                    this.output(`div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user['name']),
+                    this.output(`div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user.name),
                     this.text('!')
                 ]),
                 this.html(`div-1-p-2`, "p", parentElement, {}, (parentElement) => [
                     this.text('Your email is '),
                     this.html(`div-1-p-2-span-1`, "span", parentElement, {}, (parentElement) => [
-                        this.output(`div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user['email'])
+                        this.output(`div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user.email)
                     ]),
                     this.text('.')
                 ]),
@@ -196,10 +198,10 @@ class Demo2View extends View {
                                 return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
                                     this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement) => [
                                         this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post['title'])
+                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                         ]),
                                         this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post['content'])
+                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
                                         ])
                                     ])
                                 ])
@@ -237,7 +239,6 @@ class Demo2View extends View {
 }
 
 // Export factory function
-export function Demo2(__data__ = {}, systemData = {}) {
+export default function Demo2(__data__ = {}, systemData = {}) {
     return new Demo2View(__data__, systemData);
 }
-export default Demo2;

@@ -9,7 +9,7 @@ Thư mục này chứa tất cả tài liệu kỹ thuật liên quan đến **S
 ## 📋 Danh Sách Tài Liệu
 
 ### 📄 .sao File Format
-- **[SAO_FILE_FORMAT.md](SAO_FILE_FORMAT.md)** - Định dạng file .sao chi tiết
+- **[ONE_FILE_FORMAT.md](ONE_FILE_FORMAT.md)** - Định dạng file .sao chi tiết
 - **[V2_COMPILE_GUIDE.md](V2_COMPILE_GUIDE.md)** - Hướng dẫn compile V2
 - **[V2_OUTPUT_FORMAT.md](V2_OUTPUT_FORMAT.md)** - Định dạng output V2
 
@@ -28,7 +28,7 @@ Thư mục này chứa tất cả tài liệu kỹ thuật liên quan đến **S
 
 ## 🚀 Bắt Đầu
 
-1. **Đọc SAO_FILE_FORMAT.md** để hiểu cú pháp .sao files
+1. **Đọc ONE_FILE_FORMAT.md** để hiểu cú pháp .sao files
 2. **Xem V2_COMPILE_GUIDE.md** để biết cách compile
 3. **Đọc ARCHITECTURE_PLAN.md** để hiểu thiết kế tổng thể
 
@@ -90,4 +90,4 @@ export default {
 
 ---
 
-*Tài liệu này được tách từ Saola V2 để phục vụ Saola Compiler ecosystem.*
+*Tài liệu này được tách từ OneView V2 để phục vụ Saola Compiler ecosystem.*

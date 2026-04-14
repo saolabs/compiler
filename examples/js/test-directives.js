@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'test_directives';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.test-directives';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TestDirectivesViewController extends ViewController {
+class TestDirectivesViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class TestDirectivesViewController extends ViewController {
     }
 }
 
-class TestDirectivesView extends View {
+class TestDirectivesView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, TestDirectivesViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class TestDirectivesView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         const set$count = __STATE__.__.register('count');
@@ -178,7 +180,6 @@ class TestDirectivesView extends View {
 }
 
 // Export factory function
-export function TestDirectives(__data__ = {}, systemData = {}) {
+export default function TestDirectives(__data__ = {}, systemData = {}) {
     return new TestDirectivesView(__data__, systemData);
 }
-export default TestDirectives;

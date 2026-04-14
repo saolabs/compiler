@@ -1,9 +1,8 @@
-@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
-
 @useState($count, 0)
 @let($message = 'Hello')
 @const($MAX = 100)
 @vars($temp)
+
 @wrapper
 <div @hydrate('div-1') @class(['test-component'])>
     <h3 @hydrate('div-1-h3-1')>State: @startMarker('output', 'div-1-h3-1-output-1'){{ $count }}@endMarker('output', 'div-1-h3-1-output-1')</h3>

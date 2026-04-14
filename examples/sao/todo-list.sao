@@ -1,9 +1,9 @@
-@vars($users = [])
-@const([$todos, $setTodos] = useState([]))
-@const([$newTodo, $setNewTodo] = useState(''))
-@const([$todoIndex, $setTodoIndex] = useState(0))
+@vars(users = [])
+@const([todos, setTodos] = useState([]))
+@const([newTodo, setNewTodo] = useState(''))
+@const([todoIndex, setTodoIndex] = useState(0))
 @await
-<blade>
+<template>
     <div class="col-lg-6 mb-4" data-category="basic forms">
         <div class="example-card">
             <div class="example-header">
@@ -23,15 +23,15 @@
                 <div class="demo-container" id="todo-demo">
                     <div class="todo-app">
                         <div class="input-group mb-3">
-                            <input type="text" id="todo-input" class="form-control" placeholder="Add new todo..." @bind($newTodo) @keydown(addTodoByEnter(@event))>
+                            <input type="text" id="todo-input" class="form-control" placeholder="Add new todo..." @bind(newTodo) @keydown(addTodoByEnter(event))>
                             <button class="btn btn-primary" @click(addTodo())>Add</button>
                         </div>
                         <ul id="todo-list" class="list-unstyled">
-                            @foreach ($todos as $todo)
-                                <li class="todo-item {{ $todo['completed'] ? 'completed' : '' }}">
-                                    <input type="checkbox" @change(toggleTodo($todo['id'])) @checked($todo['completed'])>
-                                    {{ $todo['text'] }}
-                                    <button class="btn btn-sm btn-outline-danger" @click(deleteTodo($todo['id']))>×</button>
+                            @foreach (todos as todo)
+                                <li class="todo-item {{ todo.completed ? 'completed' : '' }}">
+                                    <input type="checkbox" @change(toggleTodo(todo.id)) @checked(todo.completed)>
+                                    {{ todo.text }}
+                                    <button class="btn btn-sm btn-outline-danger" @click(deleteTodo(todo.id))>×</button>
                                 </li>
                             @endforeach
 
@@ -41,7 +41,7 @@
             </div>
         </div>
     </div>
-</blade>
+</template>
 
 <script setup>
     export default {

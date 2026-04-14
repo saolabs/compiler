@@ -19,6 +19,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const ConfigManager = require('./config-manager');
 const { RegistryGenerator } = require('./registry-generator');
+const SaolaPreprocessor = require('./preprocessor');
 
 class Compiler {
     constructor() {
@@ -27,6 +28,7 @@ class Compiler {
         this.bladePythonPath = path.resolve(__dirname, 'sao2blade/blade_compiler.py');
         this.compiledViews = {}; // Track compiled views per context
         this.compiledContexts = []; // Track which contexts were compiled in this run
+        this.preprocessor = new SaolaPreprocessor();
     }
 
     /**
@@ -143,7 +145,7 @@ class Compiler {
                             projectRoot,
                             paths
                         ).catch(error => {
-                            const relativePath = path.relative(viewsDir, oneFilePath);
+                            const relativePath = path.relative(viewsDir, saoFilePath);
                             console.error(`  ✗ ${namespace}.${relativePath}: ${error.message}`);
                         })
                     );
@@ -220,9 +222,13 @@ class Compiler {
         // Tách các phần của .sao file
         const parts = this.parseSaoFile(fileContent, saoFilePath);
         
+        // Preprocessor: chuyển Saola Syntax mới → PHP/Blade Syntax (cho blade output)
+        // Parts gốc (Saola Syntax) được giữ nguyên cho JS output vì syntax mới đã gần JS
+        const bladeParts = this.preprocessor.preprocess(parts);
+        
         // Lấy relative path để generate view path và output paths
-        const relativePath = path.relative(viewsDir, oneFilePath);
-        const fileNameNoExt = path.basename(oneFilePath, '.sao');
+        const relativePath = path.relative(viewsDir, saoFilePath);
+        const fileNameNoExt = path.basename(saoFilePath, '.sao');
         const dirPath = path.dirname(relativePath);
         
         // Generate view path: namespace.relative.path
@@ -259,15 +265,16 @@ class Compiler {
         
         // GHI BLADE FILE - qua Python sao2blade compiler để thêm reactive markers
         // Blade file = declarations + template (SSR content giữ nguyên vị trí trong template)
+        // Sử dụng bladeParts (đã qua preprocessor) thay vì parts gốc
         let bladeContent = '';
         
-        // Thêm declarations vào đầu file
-        if (parts.declarations.length > 0) {
-            bladeContent = parts.declarations.join('\n') + '\n\n';
+        // Thêm declarations vào đầu file (đã được preprocessor chuyển sang PHP syntax)
+        if (bladeParts.declarations.length > 0) {
+            bladeContent = bladeParts.declarations.join('\n') + '\n\n';
         }
         
-        // Thêm template WITH SSR inline (SSR directives stripped, content kept in-place)
-        bladeContent += parts.bladeWithSSR || parts.blade;
+        // Thêm template WITH SSR inline (đã qua preprocessor)
+        bladeContent += bladeParts.bladeWithSSR || bladeParts.blade;
         
         // Gọi Python sao2blade compiler để xử lý reactive wrapping
         try {
@@ -281,11 +288,14 @@ class Compiler {
         
         // Compile JS: Gửi FULL content cho Python compiler (bao gồm script/style/link)
         // Python cần các tags này để parse userDefined, scripts, styles, resources.
+        // LƯU Ý: Python sao2js compiler vẫn expect PHP syntax (có $, ->, ['key'=>'val'])
+        // Nên phải dùng bladeParts (đã qua preprocessor) thay vì parts gốc (Saola Syntax).
+        // Khi Phase 2 hoàn tất (sửa Python compiler), sẽ chuyển sang dùng parts gốc trực tiếp.
         let jsBladeContent = '';
         
-        // Declarations
-        if (parts.declarations.length > 0) {
-            jsBladeContent = parts.declarations.join('\n') + '\n\n';
+        // Declarations (đã chuyển sang PHP syntax bởi preprocessor)
+        if (bladeParts.declarations.length > 0) {
+            jsBladeContent = bladeParts.declarations.join('\n') + '\n\n';
         }
         
         // Collect script/style/link tags from cleaned content (after @ssr removal)
@@ -318,8 +328,8 @@ class Compiler {
         // Ensure JS output directory exists
         this.ensureDir(path.dirname(jsPath));
         
-        // Template
-        jsBladeContent += parts.blade;
+        // Template (đã chuyển sang PHP syntax bởi preprocessor)
+        jsBladeContent += bladeParts.blade;
         
         // Compile JS song song (không block Blade)
         // Python compiler xử lý Blade (có declarations) → JavaScript
@@ -443,7 +453,8 @@ class Compiler {
             script: '',
             style: '',
             ssrContent: '',  // Content from @ssr blocks (for blade file only)
-            cleanedContent: ''  // Store content after @ssr removal for script extraction
+            cleanedContent: '',  // Store content after @ssr removal for script extraction
+            wrapperType: null // 'sao:blade', 'template', 'blade', or null (no wrapper)
         };
 
         // ========================================================================
@@ -473,7 +484,7 @@ class Compiler {
         // Extract declarations (@useState, @const, @let, @var, @vars)
         // Support nested parentheses like: @let([$x, $y] = useState($data))
         // CRITICAL: Preserve original order from source file
-        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars'];
+        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars', 'state', 'props', 'states'];
         const foundDeclarations = [];
         
         for (const type of declarationTypes) {
@@ -576,13 +587,13 @@ class Compiler {
             return wrappers;
         };
         
-        // Find all level-0 <blade> tags
-        const bladeWrappers = findLevel0Wrappers(content, 'blade');
-        // Find all level-0 <template> tags
+        // Find all level-0 wrappers for each tag type
+        const saoBladeWrappers = findLevel0Wrappers(content, 'sao:blade');
         const templateWrappers = findLevel0Wrappers(content, 'template');
+        const bladeWrappers = findLevel0Wrappers(content, 'blade');
         
         // Combine all found wrappers
-        const allFoundWrappers = [...bladeWrappers, ...templateWrappers];
+        const allFoundWrappers = [...saoBladeWrappers, ...templateWrappers, ...bladeWrappers];
         
         // Filter out wrappers that are INSIDE other wrappers (keep only true level-0)
         const trulyLevel0Wrappers = [];
@@ -611,6 +622,7 @@ class Compiler {
             // Take FIRST wrapper (lowest startPos)
             const firstWrapper = allWrappers[0];
             bladeContentFromWrapper = firstWrapper.innerContent.trim();
+            parts.wrapperType = firstWrapper.tagName;
             
             // Remove ALL level-0 wrappers from content (for script/style extraction later)
             // This ensures script/style inside wrappers are not extracted
@@ -645,12 +657,13 @@ class Compiler {
         // Re-extract from contentForBlade which has @ssr directives stripped but content kept
         if (hasLevel0Wrapper) {
             // Extract inner content from the same wrapper in contentForBlade
-            const bladeWrappersForSSR = findLevel0Wrappers(contentForBlade, 'blade');
+            const saoBladeWrappersForSSR = findLevel0Wrappers(contentForBlade, 'sao:blade');
             const templateWrappersForSSR = findLevel0Wrappers(contentForBlade, 'template');
-            const allWrappersForSSR = [...bladeWrappersForSSR, ...templateWrappersForSSR]
+            const bladeWrappersForSSR = findLevel0Wrappers(contentForBlade, 'blade');
+            const allWrappersForSSR = [...saoBladeWrappersForSSR, ...templateWrappersForSSR, ...bladeWrappersForSSR]
                 .filter(w => {
                     let isInside = false;
-                    for (const other of [...bladeWrappersForSSR, ...templateWrappersForSSR]) {
+                    for (const other of [...saoBladeWrappersForSSR, ...templateWrappersForSSR, ...bladeWrappersForSSR]) {
                         if (w !== other && w.startPos > other.startPos && w.endPos < other.endPos) {
                             isInside = true;
                             break;

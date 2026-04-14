@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'test_useState';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.test-useState';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TestUsestateViewController extends ViewController {
+class TestUseStateViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class TestUsestateViewController extends ViewController {
     }
 }
 
-class TestUsestateView extends View {
+class TestUseStateView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
-        super(__VIEW_PATH__, __VIEW_TYPE__, TestUsestateViewController);
-        const App = app("App");
+        super(__VIEW_PATH__, __VIEW_TYPE__, TestUseStateViewController);
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class TestUsestateView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         const set$users = __STATE__.__.register('users');
@@ -168,7 +170,6 @@ class TestUsestateView extends View {
 }
 
 // Export factory function
-export function TestUsestate(__data__ = {}, systemData = {}) {
-    return new TestUsestateView(__data__, systemData);
+export default function TestUseState(__data__ = {}, systemData = {}) {
+    return new TestUseStateView(__data__, systemData);
 }
-export default TestUsestate;

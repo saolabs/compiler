@@ -1,10 +1,10 @@
-@vars($users = null, $posts = [])
+@vars(users = null, posts = [])
 @await
 <div>
-    @if($user)
-        <h1>Welcome {{$usesr->name}}</h1>
-        @foreach($postList as $post)
-            <div>{{$post->title}}</div>
+    @if(user)
+        <h1>Welcome {{user.name}}</h1>
+        @foreach(postList as post)
+            <div>{{post.title}}</div>
         @endforeach
     @else
         <p>Please login first</p>

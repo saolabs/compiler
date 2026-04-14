@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'todo_list';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.todo-list';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TodoListViewController extends ViewController {
+class TodoListViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class TodoListViewController extends ViewController {
     }
 }
 
-class TodoListView extends View {
+class TodoListView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, TodoListViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class TodoListView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         let {users = []} = __data__;
@@ -230,7 +232,7 @@ class TodoListView extends View {
                                 this.html(`div-1-div-1-div-3-div-1-div-1-div-1`, "div", parentElement,
                                     { classes: [{ type: 'static', value: "input-group" }, { type: 'static', value: "mb-3" }] },
                                     (parentElement) => [
-                                    this.html(`div-1-div-1-div-3-div-1-div-1-div-1-input-1`, "input", parentElement, { classes: [{ type: 'static', value: "form-control" }], events: { keydown: [{"handler":"addTodoByEnter","params":["@EVENT"]}] } }),
+                                    this.html(`div-1-div-1-div-3-div-1-div-1-div-1-input-1`, "input", parentElement, { classes: [{ type: 'static', value: "form-control" }], events: { keydown: [{"handler":"addTodoByEnter","params":[() => event]}] } }),
                                     this.html(`div-1-div-1-div-3-div-1-div-1-div-1-button-2`, "button", parentElement,
                                         { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-primary" }], events: { click: [{"handler":"addTodo","params":[]}] } },
                                         (parentElement) => [
@@ -243,12 +245,12 @@ class TodoListView extends View {
                                     this.reactive(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1`, "foreach", parentReactive, parentElement, ["todos"], (parentReactive, parentElement) => {
                                         return this.__foreach(todos, (todo, __loopKey, __loopIndex, __loop) => [
                                             this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement,
-                                                { classes: [{ type: 'static', value: "todo-item" }, { type: 'static', value: "{{" }, { type: 'static', value: "$todo['completed']" }, { type: 'static', value: "?" }, { type: 'static', value: "'completed'" }, { type: 'static', value: ":" }, { type: 'static', value: "''" }, { type: 'static', value: "}}" }] },
+                                                { classes: [{ type: 'static', value: "todo-item" }, { type: 'static', value: "{{" }, { type: 'static', value: "$todo->completed" }, { type: 'static', value: "?" }, { type: 'static', value: "'completed'" }, { type: 'static', value: ":" }, { type: 'static', value: "''" }, { type: 'static', value: "}}" }] },
                                                 (parentElement) => [
-                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-input-1`, "input", parentElement, { events: { change: [{"handler":"toggleTodo","params":[todo['id']]}] } }),
-                                                this.output(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement) => todo['text']),
+                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-input-1`, "input", parentElement, { events: { change: [{"handler":"toggleTodo","params":[todo.id]}] } }),
+                                                this.output(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement) => todo.text),
                                                 this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-button-2`, "button", parentElement,
-                                                    { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-sm" }, { type: 'static', value: "btn-outline-danger" }], events: { click: [{"handler":"deleteTodo","params":[todo['id']]}] } },
+                                                    { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-sm" }, { type: 'static', value: "btn-outline-danger" }], events: { click: [{"handler":"deleteTodo","params":[todo.id]}] } },
                                                     (parentElement) => [
                                                     this.text('×')
                                                     ])
@@ -269,7 +271,6 @@ class TodoListView extends View {
 }
 
 // Export factory function
-export function TodoList(__data__ = {}, systemData = {}) {
+export default function TodoList(__data__ = {}, systemData = {}) {
     return new TodoListView(__data__, systemData);
 }
-export default TodoList;

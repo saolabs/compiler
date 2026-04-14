@@ -1,6 +1,6 @@
-# Saola Compiler
+# OneView Compiler
 
-Saola Compiler là một công cụ biên dịch chuyên biệt chuyển đổi các file template `.sao` thành hai định dạng output:
+OneView Compiler là một công cụ biên dịch chuyên biệt chuyển đổi các file template `.sao` thành hai định dạng output:
 - **Blade files** (.blade.php) cho Laravel Server-Side Rendering (SSR)
 - **JavaScript View files** (.js) cho client-side rendering
 
@@ -11,7 +11,7 @@ compiler/
 ├── index.js           # Main compiler - Node.js wrapper
 ├── cli.js             # CLI entry point  
 ├── config-manager.js   # Manages sao.config.json
-├── python/            # Python compiler (13k+ lines from sao)
+├── python/            # Python compiler (13k+ lines from onejs)
 │   ├── main_compiler.py
 │   ├── cli.py
 │   ├── function_generators.py
@@ -55,11 +55,11 @@ compiler/
 ```json
 {
   "packages": {
-    "saola": "1.0.0"
+    "oneview": "1.0.0"
   },
   "paths": {
     "resources": "resources",
-    "saolaView": "resources/sao",
+    "oneView": "resources/sao",
     "bladeView": "resources/views",
     "temp": "resources/js/temp",
     "public": "public/static/one"
@@ -128,7 +128,7 @@ compiler/
 
 #### paths (Base Paths)
 Các base paths cho các mục khác nhau:
-- `saolaView`: Base cho views và app sources
+- `oneView`: Base cho views và app sources
 - `bladeView`: Base cho blade outputs  
 - `temp`: Base cho JS temp outputs
 - `public`: Base cho production outputs
@@ -147,26 +147,26 @@ Mỗi context có các relative paths (sẽ được prefix với base paths):
 
 ### 1. Installation
 ```bash
-npm install saola
+npm install oneview
 # hoặc local install để test
-cd /path/to/saola && npm pack
-cd /path/to/your-project && npm install ../saola/saola-1.0.0.tgz
+cd /path/to/oneview && npm pack
+cd /path/to/your-project && npm install ../oneview/oneview-1.0.0.tgz
 ```
 
 ### 2. CLI Commands
 ```bash
 # Compile specific context
-npx sao-compile web
-npx sao-compile admin
+npx one-compile web
+npx one-compile admin
 
 # Compile all contexts (skips 'default')
-npx sao-compile all
+npx one-compile all
 
 # Watch mode (chưa implement)
-npx sao-compile web --watch
+npx one-compile web --watch
 
 # Show help
-npx sao-compile --help
+npx one-compile --help
 ```
 
 ### 3. Quy Trình Compile
@@ -229,8 +229,8 @@ npm run dev:web
 npm run dev:admin
 
 # Or run CLI directly
-sao-build web
-sao-build admin --watch
+onejs-build web
+onejs-build admin --watch
 ```
 
 ## Input: .sao File Format
@@ -417,13 +417,13 @@ EOF
 ### Context not found
 Check that context name in sao.config.json matches CLI argument:
 ```bash
-sao-build web  # 'web' must be in config.contexts
+onejs-build web  # 'web' must be in config.contexts
 ```
 
 ### Files not being compiled
 - Check file has .sao extension
 - Verify file is in paths specified in sao.config.json
-- Run compiler with explicit context: `sao-build web`
+- Run compiler with explicit context: `onejs-build web`
 
 ## Development
 
@@ -434,7 +434,7 @@ npm test
 
 ### Debug mode
 ```bash
-DEBUG=saola:* sao-build web
+DEBUG=oneview:* onejs-build web
 ```
 
 ## License

@@ -1,8 +1,7 @@
-@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
-
 @useState($count, 0)
 @useState($name, 'World')
-@extends($__layout__.'test-yield-layout')
+
+@extends($__layout__ . 'test-yield-layout')
 @block('title')
     Page Title - @startMarker('output', 'block-title-output-1'){{ $name }}@endMarker('output', 'block-title-output-1')
 @endblock

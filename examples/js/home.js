@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'home';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.home';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class HomeViewController extends ViewController {
+class HomeViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class HomeViewController extends ViewController {
     }
 }
 
-class HomeView extends View {
+class HomeView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, HomeViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class HomeView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         const __VARIABLE_LIST__ = [];
@@ -106,48 +108,40 @@ class HomeView extends View {
             let parentElement = this.parentElement;
             let parentReactive = null;
             return this.wrapper((parentElement) => [
-            this.include("component-1", __template__+'sessions.tasks', parentElement, [], (parentElement) => ({
-                    __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                    this.include("component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement) => ({"users": users}))
-                ]
-                })),
-            this.include("component-2", __template__+'sessions.tasks', parentElement, [], (parentElement) => ({"title": "Custom Task List"})),
-            this.include("component-3", __template__+'sessions.projects', parentElement, [], (parentElement) => ({
-                    "projects": projects,
-                    __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                    this.html(`component-3-div-1`, "div", parentElement,
+            this.html(`tasks-1`, "tasks", parentElement, {}, (parentElement) => [
+                this.html(`tasks-1-demo-1`, "demo", parentElement, {})
+            ]),
+            this.html(`tasks-2`, "tasks", parentElement, {}),
+            this.html(`projects-3`, "projects", parentElement, {}, (parentElement) => [
+                this.html(`projects-3-div-1`, "div", parentElement,
+                    { classes: [{ type: 'static', value: "header" }] },
+                    (parentElement) => [
+                    this.html(`projects-3-div-1-h2-1`, "h2", parentElement, {}, (parentElement) => [
+                        this.text('My Projects')
+                    ])
+                    ]),
+                this.html(`projects-3-div-2`, "div", parentElement,
+                    { classes: [{ type: 'static', value: "footer" }] },
+                    (parentElement) => [
+                    this.html(`projects-3-div-2-p-1`, "p", parentElement, {}, (parentElement) => [
+                        this.text('Total Projects: '),
+                        this.output(`projects-3-div-2-p-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.count(projects))
+                    ])
+                    ]),
+                this.html(`projects-3-tasks-3`, "tasks", parentElement, {}, (parentElement) => [
+                    this.html(`projects-3-tasks-3-div-1`, "div", parentElement,
                         { classes: [{ type: 'static', value: "header" }] },
                         (parentElement) => [
-                        this.html(`component-3-div-1-h2-1`, "h2", parentElement, {}, (parentElement) => [
-                            this.text('My Projects')
+                        this.html(`projects-3-tasks-3-div-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
+                            this.text('Task Owners')
                         ])
                         ]),
-                    this.html(`component-3-div-2`, "div", parentElement,
-                        { classes: [{ type: 'static', value: "footer" }] },
-                        (parentElement) => [
-                        this.html(`component-3-div-2-p-1`, "p", parentElement, {}, (parentElement) => [
-                            this.text('Total Projects: '),
-                            this.output(`component-3-div-2-p-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.count(projects))
-                        ])
-                        ]),
-                    this.include("component-3-component-1", __template__+'sessions.tasks', parentElement, [], (parentElement) => ({
-                            "owners": ["Alice", "Bob"],
-                            __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                            this.html(`component-3-component-1-div-1`, "div", parentElement,
-                                { classes: [{ type: 'static', value: "header" }] },
-                                (parentElement) => [
-                                this.html(`component-3-component-1-div-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                    this.text('Task Owners')
-                                ])
-                                ]),
-                            this.include("component-3-component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement) => ({"users": users}))
-                        ]
-                        }))
-                ]
-                })),
-            this.include("component-4", 'sessions.tasks.count', parentElement, [], (parentElement) => ({})),
-            this.include("component-5", __template__+'demo.fetch', parentElement, [], (parentElement) => ({})),
-            this.include("component-6", __blade_custom_path__, parentElement, [], (parentElement) => ({"type": "success", "message": "This is a custom alert component!"}))
+                    this.html(`projects-3-tasks-3-demo-2`, "demo", parentElement, {})
+                ])
+            ]),
+            this.html(`counter-4`, "counter", parentElement, {}),
+            this.html(`demo-5`, "demo", parentElement, {}),
+            this.html(`alert-6`, "alert", parentElement, {})
             ]);
             }
         });
@@ -156,7 +150,6 @@ class HomeView extends View {
 }
 
 // Export factory function
-export function Home(__data__ = {}, systemData = {}) {
+export default function Home(__data__ = {}, systemData = {}) {
     return new HomeView(__data__, systemData);
 }
-export default Home;

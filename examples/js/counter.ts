@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'counter';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'examples.counter';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,8 +22,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class CounterViewController extends ViewController {
-    constructor(view: View) {
+class CounterViewController extends SaolaViewController {
+    constructor(view: SaolaView) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -33,13 +33,14 @@ class CounterViewController extends ViewController {
     }
 }
 
-class CounterView extends View {
+class CounterView extends SaolaView {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, CounterViewController);
-        const App: Application = app("App") as Application;
+        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value: any) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class CounterView extends View {
         const updateStateByKey = (key: string, state: any) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__: any = {};
         let {a = 0, cProp = 0} = __data__;
@@ -226,7 +228,6 @@ class CounterView extends View {
 }
 
 // Export factory function
-export function Counter(__data__ = {}, systemData = {}): CounterView {
+export default function Counter(__data__ = {}, systemData = {}): CounterView {
     return new CounterView(__data__, systemData);
 }
-export default Counter;

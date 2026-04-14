@@ -1,39 +1,39 @@
-@vars($demoList = [])
+@vars(demoList = [])
 
-@useState($status, false)
-@const([$user, $setUser] = useState(['name' => 'Jone', 'email' => 'jon@test.com']))
-@const([$posts, $setPosts] = useState([
-    ['title' => '...', 'content' => '...'],
-    ['title' => '...', 'content' => '...'],
-    ['title' => '...', 'content' => '...'],
-    ['title' => '...', 'content' => '...'],
+@state(status = false)
+@const([user, setUser] = useState({name: 'Jone', email: 'jon@test.com'}))
+@const([posts, setPosts] = useState([
+    {title: '...', content: '...'},
+    {title: '...', content: '...'},
+    {title: '...', content: '...'},
+    {title: '...', content: '...'},
 ]))
 
-@let($i = 0)
+@let(i = 0)
 
-<div class="demo" @class(['active' => $status]) @attr(['data-count' => count($demoList), 'data-user-name' => $user['name']])>
-    <h1>Hello, {{ $user['name'] }}!</h1>
-    <p>Your email is <span>{{ $user['email'] }}</span>.</p>
+<div class="demo" @class(['active': status]) @attr({dataCount: count(demoList), dataUserName: user.name})>
+    <h1>Hello, {{ user.name }}!</h1>
+    <p>Your email is <span>{{ user.email }}</span>.</p>
 
-    <button @click($setStatus(!$status))>Toggle Status: {{ $status ? 'On' : 'Off' }}</button>
+    <button @click(setStatus(!status))>Toggle Status: {{ status ? 'On' : 'Off' }}</button>
 
     <h2>Posts:</h2>
     <ul>
-        @if(count($posts) === 0)
+        @if(count(posts) === 0)
             <li>No posts available.</li>
         @else
-            @foreach($posts as $post)
+            @foreach(posts as post)
                 <li>
-                    <h3>{{ $post['title'] }}</h3>
-                    <p>{{ $post['content'] }}</p>
+                    <h3>{{ post.title }}</h3>
+                    <p>{{ post.content }}</p>
                 </li>
             @endforeach
         @endif
     </ul>
     <div class="while-loop-demo">
-        @while($i < 5)
-            <p>Counter: {{ $i }}</p>
-            @exec($i++)
+        @while(i < 5)
+            <p>Counter: {{ i }}</p>
+            @exec(i++)
         @endwhile
     </div>
 

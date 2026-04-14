@@ -1,7 +1,7 @@
-@useState($users, [])
-@const([$userList, $setUserList] = useState([]))
-@let([$loading, $setLoading] = useState(false))
+@state(users = [])
+@const([userList, setUserList] = useState([]))
+@let([loading, setLoading] = useState(false))
 
 <div class="test">
-    <h2>Test {{ $users }}</h2>
+    <h2>Test {{ users }}</h2>
 </div>

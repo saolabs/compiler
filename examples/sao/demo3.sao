@@ -1,9 +1,9 @@
-@useState($isOpen, false)
-<blade>
+@state(isOpen = false)
+<template>
 <div class="demo3-component" @click(toggle())>
-    Status: {{ $isOpen ? 'Open' : 'Closed' }}
+    Status: {{ isOpen ? 'Open' : 'Closed' }}
 </div>
-</blade>
+</template>
 <script setup>
     export default {
         toggle() {

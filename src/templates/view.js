@@ -1,4 +1,4 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 [COMPONENT_IMPORTS]
 
@@ -12,8 +12,8 @@ const __VIEW_CONFIG__ = {
 
 [COMPONENT_SCRIPT_CONTENTS]
 
-class [COMPONENT_NAME]ViewController extends ViewController {
-    constructor(view:[TYPE:View]) {
+class [COMPONENT_NAME]ViewController extends SaolaViewController {
+    constructor(view:[TYPE:SaolaView]) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as [TYPE:any]).setStaticConfig === 'function') {
             (this as [TYPE:any]).setStaticConfig(__VIEW_CONFIG__);
@@ -23,10 +23,10 @@ class [COMPONENT_NAME]ViewController extends ViewController {
     }
 }
 
-class [COMPONENT_NAME]View extends View {
+class [COMPONENT_NAME]View extends SaolaView {
     constructor(__data__:[TYPE:any] = {}, systemData:[TYPE:any] = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, [COMPONENT_NAME]ViewController);
-        const App:[TYPE:Application] = app("App") as [TYPE:Application];
+        const App:[TYPE:SaolaApplication] = saolaApp("App") as [TYPE:SaolaApplication];
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -60,7 +60,6 @@ class [COMPONENT_NAME]View extends View {
 }
 
 // Export factory function
-export function [FACTORY_FUNCTION_NAME](__data__ = {}, systemData = {}):[TYPE:[COMPONENT_NAME]View] {
+export default function [COMPONENT_NAME](__data__ = {}, systemData = {}):[TYPE:[COMPONENT_NAME]View] {
     return new [COMPONENT_NAME]View(__data__, systemData);
 }
-export default [FACTORY_FUNCTION_NAME];

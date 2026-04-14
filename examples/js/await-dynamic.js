@@ -1,8 +1,8 @@
-import { View, ViewController, app, Application } from 'saola';
+import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
 
 
-const __VIEW_PATH__ = 'await_dynamic';
-const __VIEW_NAMESPACE__ = '';
+const __VIEW_PATH__ = 'sao.await-dynamic';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class AwaitDynamicViewController extends ViewController {
+class AwaitDynamicViewController extends SaolaViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,13 +33,14 @@ class AwaitDynamicViewController extends ViewController {
     }
 }
 
-class AwaitDynamicView extends View {
+class AwaitDynamicView extends SaolaView {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, AwaitDynamicViewController);
-        const App = app("App");
+        const App = saolaApp("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
+
         const useState = (value) => {
             return __STATE__.__useState(value);
         };
@@ -53,6 +54,7 @@ class AwaitDynamicView extends View {
         const updateStateByKey = (key, state) => {
             __STATE__.__.updateStateByKey(key, state);
         };
+
 
         const __UPDATE_DATA_TRAIT__ = {};
         let {users = null, posts = []} = __data__;
@@ -116,7 +118,7 @@ class AwaitDynamicView extends View {
                         reactiveContents.push(
                         this.html(`div-1-rc-if-1-case_1-h1-1`, "h1", parentElement, {}, (parentElement) => [
                             this.text('Welcome '),
-                            this.output(`div-1-rc-if-1-case_1-h1-1-output-1`, parentElement, true, [], (parentElement) => usesr.name)
+                            this.output(`div-1-rc-if-1-case_1-h1-1-output-1`, parentElement, true, [], (parentElement) => user.name)
                         ]),
                         this.__foreach(postList, (post, __loopKey, __loopIndex, __loop) => [
                                 this.html(`div-1-rc-if-1-case_1-foreach-1-${__loopIndex + 1}-div-1`, "div", parentElement, {}, (parentElement) => [
@@ -155,7 +157,6 @@ class AwaitDynamicView extends View {
 }
 
 // Export factory function
-export function AwaitDynamic(__data__ = {}, systemData = {}) {
+export default function AwaitDynamic(__data__ = {}, systemData = {}) {
     return new AwaitDynamicView(__data__, systemData);
 }
-export default AwaitDynamic;

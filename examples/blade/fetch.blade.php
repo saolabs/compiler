@@ -1,10 +1,7 @@
-@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
-
-@const(
-    [$users, $setUsers] = useState([]),
+@const([$users, $setUsers] = useState([]),
     [$isLoading, $setIsLoading] = useState(true),
-    [$error, $setError] = useState(null)
-)
+    [$error, $setError] = useState(null))
+
 @extends($__layout__ . 'base')
 @section('meta:title', 'Demo Fetch Users')
 @block('content')
@@ -13,17 +10,17 @@
         @startMarker('reactive', 'block-content-div-1-rc-if-1', ['stateKey' => ['isLoading'], 'type' => 'if'])
         @if($isLoading)
             <div @hydrate('block-content-div-1-rc-if-1-case_1-div-1') @class(['alert', 'alert-info'])>Đang tải users...</div>
-        @elseif ($error)
+        @elseif($error)
             <div @hydrate('block-content-div-1-rc-if-1-case_2-div-1') @class(['alert', 'alert-danger'])>Error: @startMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1'){{ $error }}@endMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1')</div>
-        @elseif (!$users || count($users) === 0)
+        @elseif(!$users || count($users) === 0)
             <div @hydrate('block-content-div-1-rc-if-1-case_3-div-1') @class(['alert', 'alert-danger'])>Error không có users</div>
         @else
             @startMarker('reactive', 'block-content-div-1-rc-if-1-case_4-foreach-1', ['stateKey' => ['users'], 'type' => 'foreach'])
-            @foreach ($users as $user)
+            @foreach($users as $user)
                 <div @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1") @class(['user-card', 'mb-3', 'p-3', 'border', 'rounded'])>
-                    <h6 @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-h6-1")>{{ $user['name'] }}</h6>
-                    <p @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-p-2") @class(['mb-1'])>{{ $user['email'] }}</p>
-                    <small @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-small-3") @class(['text-muted'])>{{ $user['company']['name'] }}</small>
+                    <h6 @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-h6-1")>{{ $user->name }}</h6>
+                    <p @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-p-2") @class(['mb-1'])>{{ $user->email }}</p>
+                    <small @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-small-3") @class(['text-muted'])>{{ $user->company->name }}</small>
                 </div>
             @endforeach
             @endMarker('reactive', 'block-content-div-1-rc-if-1-case_4-foreach-1')
