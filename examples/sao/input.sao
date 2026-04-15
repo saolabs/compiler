@@ -2,9 +2,9 @@
 @state(editMode = false)
 @state(
     todos = [
-        {id: 1, task: 'Buy groceries', completed: false},
-        {id: 2, task: 'Walk the dog', completed: true},
-        {id: 3, task: 'Read a book', completed: false},
+    {id: 1, task: 'Buy groceries', completed: false},
+    {id: 2, task: 'Walk the dog', completed: true},
+    {id: 3, task: 'Read a book', completed: false},
     ],
     newTodo = '',
     nextTodoIndex = 4
@@ -58,7 +58,7 @@
                         <input type="checkbox" @bind(todo.completed) @checked(todo.completed) />
                         {{ todo.task }}
                     </label>
-                                    
+
                 </li>
             @endforeach
         </ul>
@@ -141,25 +141,25 @@
     {{-- Level 1: @if block --}}
 </template>
 <script setup lang="ts">
-import { ref } from 'saola';
-export default {
-    methods: {
-        handleNewTodoKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Enter') {
-                this.addTodo();
-            }
-        },
-        addTodo() {
-            if (this.newTodo.trim() !== '') {
-                this.todos.push({
-                    id: this.nextTodoIndex,
-                    task: this.newTodo.trim(),
-                    completed: false
-                });
-                this.nextTodoIndex++;
-                this.newTodo = '';
+    import { ref } from 'saola';
+    export default {
+        methods: {
+            handleNewTodoKeyDown(event: KeyboardEvent) {
+                if (event.key === 'Enter') {
+                    this.addTodo();
+                }
+            },
+            addTodo() {
+                if (this.newTodo.trim() !== '') {
+                    this.todos.push({
+                        id: this.nextTodoIndex,
+                        task: this.newTodo.trim(),
+                        completed: false
+                    });
+                    this.nextTodoIndex++;
+                    this.newTodo = '';
+                }
             }
         }
-    }
-};
+    };
 </script>

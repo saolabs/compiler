@@ -70,6 +70,8 @@ class ForeachBlock(Node):
         self.array_js = array_js
         self.value_var = value_var
         self.key_var = key_var
+        self.custom_key = None     # Expression from @key(...)
+        self.custom_key_js = None  # Transpiled JS for @key
         self.children = []
         self.state_vars = set()
 
@@ -80,6 +82,8 @@ class WhileBlock(Node):
         self.condition_js = condition_js
         self.loop_var = loop_var   # e.g. 'i'
         self.end_val = end_val     # e.g. '5'
+        self.custom_key = None
+        self.custom_key_js = None
         self.children = []
 
 
@@ -89,6 +93,8 @@ class ForBlock(Node):
         self.start_js = start_js
         self.end_js = end_js
         self.operator = operator
+        self.custom_key = None
+        self.custom_key_js = None
         self.children = []
         self.state_vars = set()
 
@@ -362,6 +368,21 @@ class TemplateASTParser:
         # @endforeach
         if re.match(r'@endforeach\b', stripped):
             self._pop_to(stack, 'foreach')
+            return True
+
+        # @key(...)
+        if re.match(r'@key\s*\(', stripped):
+            expr = self._extract_directive_parens(stripped, '@key')
+            if expr is not None:
+                # Find nearest loop (foreach, while, or for)
+                loop_node = None
+                for node, ntype, _ in reversed(stack):
+                    if ntype in ('foreach', 'while', 'for'):
+                        loop_node = node
+                        break
+                if loop_node:
+                    loop_node.custom_key = expr
+                    loop_node.custom_key_js = php_to_js(expr)
             return True
 
         # @while(...)

@@ -1,9 +1,11 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @vars($users, $posts)
 @useState($editMode, false)
 @useState($todos, [
-        ['id'=> 1, 'task'=> 'Buy groceries', 'completed'=> false],
-        ['id'=> 2, 'task'=> 'Walk the dog', 'completed'=> true],
-        ['id'=> 3, 'task'=> 'Read a book', 'completed'=> false],
+    ['id'=> 1, 'task'=> 'Buy groceries', 'completed'=> false],
+    ['id'=> 2, 'task'=> 'Walk the dog', 'completed'=> true],
+    ['id'=> 3, 'task'=> 'Read a book', 'completed'=> false],
     ])
 @useState($newTodo, '')
 @useState($nextTodoIndex, 4)
@@ -27,7 +29,6 @@
 ])
 @const($MAX_COUNT = 10)
 @let($n = 0)
-
 @wrapper
 <div @hydrate('div-1') @class(['input-demo'])>
         <h2 @hydrate('div-1-h2-1')>Input State Demo</h2>
@@ -58,7 +59,7 @@
                         <input @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1-input-1") @attr(['type' => 'checkbox', 'todo-' => true])>completed) @checked($todo->completed) />
                         {{ $todo->task }}
                     </label>
-                                    
+
                 </li>
             @endforeach
             @endMarker('reactive', 'div-2-ul-2-foreach-1')
@@ -83,7 +84,7 @@
                         @if($product->tags && count($product->tags) > 0)
                             <div @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
                                 @foreach($product->tags as $tag)
-                                    <span @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1-foreach-1-span-1") @class(['tag'])>{{ $tag }}</span>
+                                    <span @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-span-1") @class(['tag'])>{{ $tag }}</span>
                                 @endforeach
                             </div>
                         @endif
@@ -108,7 +109,7 @@
                         <div @hydrate("div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
                             @startMarker('reactive', 'div-4-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1', ['stateKey' => ['inventory'], 'type' => 'for'])
                             @for($j = 0; $j < count($inventory[$i]->tags); $j++)
-                                <span @hydrate("div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1") @class(['tag'])>@startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1"){{ $inventory[$i]->tags[$j] }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1")</span>
+                                <span @hydrate("div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1") @class(['tag'])>@startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $inventory[$i]->tags[$j] }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
                             @endfor
                             @endMarker('reactive', 'div-4-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1')
                         </div>
@@ -136,7 +137,7 @@
                         <div @hydrate("div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
                             @startMarker('reactive', 'div-5-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1', ['stateKey' => ['catalog'], 'type' => 'for'])
                             @for($j = 0; $j < count($catalog[$i]->tags); $j++)
-                                <span @hydrate("div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1") @class(['tag'])>@startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1"){{ $catalog[$i]->tags[$j] }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-span-1-output-1")</span>
+                                <span @hydrate("div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1") @class(['tag'])>@startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $catalog[$i]->tags[$j] }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
                             @endfor
                             @endMarker('reactive', 'div-5-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1')
                         </div>

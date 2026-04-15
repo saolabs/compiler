@@ -1,3 +1,5 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @wrapper
 <tasks @hydrate('tasks-1')>
         <demo @hydrate('tasks-1-demo-1') @attr([':users' => 'users']) />

@@ -1,4 +1,4 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
 const __VIEW_PATH__ = 'examples.test-nested-reactive';
@@ -22,8 +22,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TestNestedReactiveViewController extends SaolaViewController {
-    constructor(view: SaolaView) {
+class TestNestedReactiveViewController extends ViewController {
+    constructor(view: View) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -33,10 +33,10 @@ class TestNestedReactiveViewController extends SaolaViewController {
     }
 }
 
-class TestNestedReactiveView extends SaolaView {
+class TestNestedReactiveView extends View {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, TestNestedReactiveViewController);
-        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
+        const App: Application = app("App") as Application;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -213,19 +213,19 @@ class TestNestedReactiveView extends SaolaView {
                             ]),
                             this.reactive(`div-1-rc-if-1-case_1-div-1-foreach-1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive: any, parentElement: any) => {
                                 return this.__foreach(items, (item: any, __loopKey: any, __loopIndex: any, __loop: any) => [
-                                    this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1`, "div", parentElement,
+                                    this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1`, "div", parentElement,
                                         { classes: [{ type: 'static', value: "item-card" }] },
                                         (parentElement: any) => [
-                                        this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-strong-1`, "strong", parentElement, {}, (parentElement: any) => [
-                                            this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-strong-1-output-1`, parentElement, true, [], (parentElement: any) => item.name)
+                                        this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-strong-1`, "strong", parentElement, {}, (parentElement: any) => [
+                                            this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-strong-1-output-1`, parentElement, true, [], (parentElement: any) => item.name)
                                         ]),
                                         this.text(' - $'),
-                                        this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-output-1`, parentElement, true, [], (parentElement: any) => item.price),
-                                        this.reactive(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                        this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-output-1`, parentElement, true, [], (parentElement: any) => item.price),
+                                        this.reactive(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                             const reactiveContents = [];
                                             if (item.price > 2) {
                                                 reactiveContents.push(
-                                                this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-rc-if-1-case_1-span-1`, "span", parentElement,
+                                                this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-rc-if-1-case_1-span-1`, "span", parentElement,
                                                     { classes: [{ type: 'static', value: "badge" }, { type: 'static', value: "expensive" }] },
                                                     (parentElement: any) => [
                                                     this.text('Expensive')
@@ -234,7 +234,7 @@ class TestNestedReactiveView extends SaolaView {
                                             }
                                             else {
                                                 reactiveContents.push(
-                                                this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-rc-if-1-case_2-span-1`, "span", parentElement,
+                                                this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-rc-if-1-case_2-span-1`, "span", parentElement,
                                                     { classes: [{ type: 'static', value: "badge" }, { type: 'static', value: "cheap" }] },
                                                     (parentElement: any) => [
                                                     this.text('Affordable')
@@ -243,14 +243,14 @@ class TestNestedReactiveView extends SaolaView {
                                             }
                                             return reactiveContents;
                                         }),
-                                        this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-div-2`, "div", parentElement,
+                                        this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-div-2`, "div", parentElement,
                                             { classes: [{ type: 'static', value: "tags" }] },
                                             (parentElement: any) => [
                                             this.__foreach(item.tags, (tag: any, __loopKey: any, __loopIndex: any, __loop: any) => [
-                                                    this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-div-2-foreach-1-span-1`, "span", parentElement,
+                                                    this.html(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-div-2-foreach-1-${__loopIndex}-span-1`, "span", parentElement,
                                                         { classes: [{ type: 'static', value: "tag" }] },
                                                         (parentElement: any) => [
-                                                        this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex + 1}-div-1-div-2-foreach-1-span-1-output-1`, parentElement, true, [], (parentElement: any) => tag)
+                                                        this.output(`div-1-rc-if-1-case_1-div-1-foreach-1-${__loopIndex}-div-1-div-2-foreach-1-${__loopIndex}-span-1-output-1`, parentElement, true, [], (parentElement: any) => tag)
                                                         ])
                                             ])
                                             ])
@@ -286,23 +286,23 @@ class TestNestedReactiveView extends SaolaView {
                                         for (let i = 0; i < count; i++) {
                                             __loop.setCurrentTimes(i);
                                             __forOutput.push(
-                                            this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i + 1}-div-1`, "div", parentElement,
+                                            this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i}-div-1`, "div", parentElement,
                                                 { classes: [{ type: 'static', value: "counter-item" }] },
                                                 (parentElement: any) => [
                                                 this.text('Item #'),
-                                                this.output(`div-1-rc-switch-2-case_1-div-1-for-1-${i + 1}-div-1-output-1`, parentElement, true, ["i"], (parentElement: any) => i + 1),
-                                                this.reactive(`div-1-rc-switch-2-case_1-div-1-for-1-${i + 1}-div-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                                this.output(`div-1-rc-switch-2-case_1-div-1-for-1-${i}-div-1-output-1`, parentElement, true, ["i"], (parentElement: any) => i + 1),
+                                                this.reactive(`div-1-rc-switch-2-case_1-div-1-for-1-${i}-div-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                                     const reactiveContents = [];
                                                     if (i % 2 === 0) {
                                                         reactiveContents.push(
-                                                        this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i + 1}-div-1-rc-if-1-case_1-span-1`, "span", parentElement, {}, (parentElement: any) => [
+                                                        this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i}-div-1-rc-if-1-case_1-span-1`, "span", parentElement, {}, (parentElement: any) => [
                                                             this.text('(even)')
                                                         ])
                                                         );
                                                     }
                                                     else {
                                                         reactiveContents.push(
-                                                        this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i + 1}-div-1-rc-if-1-case_2-span-1`, "span", parentElement, {}, (parentElement: any) => [
+                                                        this.html(`div-1-rc-switch-2-case_1-div-1-for-1-${i}-div-1-rc-if-1-case_2-span-1`, "span", parentElement, {}, (parentElement: any) => [
                                                             this.text('(odd)')
                                                         ])
                                                         );
@@ -349,24 +349,24 @@ class TestNestedReactiveView extends SaolaView {
                     (parentElement: any) => [
                     this.reactive(`div-1-div-3-foreach-1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive: any, parentElement: any) => {
                         return this.__foreach(items, (item: any, key: any, __loopIndex: any, __loop: any) => [
-                            this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1`, "div", parentElement,
+                            this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "group" }] },
                                 (parentElement: any) => [
-                                this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-h4-1`, "h4", parentElement, {}, (parentElement: any) => [
+                                this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-h4-1`, "h4", parentElement, {}, (parentElement: any) => [
                                     this.text('['),
-                                    this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-h4-1-output-1`, parentElement, true, [], (parentElement: any) => key),
+                                    this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-h4-1-output-1`, parentElement, true, [], (parentElement: any) => key),
                                     this.text('] '),
-                                    this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-h4-1-output-2`, parentElement, true, [], (parentElement: any) => item.name),
+                                    this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-h4-1-output-2`, parentElement, true, [], (parentElement: any) => item.name),
                                     this.text(' ('),
-                                    this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-h4-1-output-3`, parentElement, true, [], (parentElement: any) => item.category),
+                                    this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-h4-1-output-3`, parentElement, true, [], (parentElement: any) => item.category),
                                     this.text(')')
                                 ]),
-                                this.reactive(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-switch-1`, "switch", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                this.reactive(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-switch-1`, "switch", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                     const reactiveContents = [];
                                     switch (item.category) {
                                         case 'fruit':
                                             reactiveContents.push(
-                                            this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-switch-1-case_1-span-1`, "span", parentElement,
+                                            this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-switch-1-case_1-span-1`, "span", parentElement,
                                                 { classes: [{ type: 'static', value: "icon" }] },
                                                 (parentElement: any) => [
                                                 this.text('🍎')
@@ -375,7 +375,7 @@ class TestNestedReactiveView extends SaolaView {
                                             break;
                                         case 'vegetable':
                                             reactiveContents.push(
-                                            this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-switch-1-case_2-span-1`, "span", parentElement,
+                                            this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-switch-1-case_2-span-1`, "span", parentElement,
                                                 { classes: [{ type: 'static', value: "icon" }] },
                                                 (parentElement: any) => [
                                                 this.text('🥦')
@@ -385,22 +385,22 @@ class TestNestedReactiveView extends SaolaView {
                                     }
                                     return reactiveContents;
                                 }),
-                                this.reactive(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                this.reactive(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                     const reactiveContents = [];
                                     if (App.Helper.count(item.tags) > 1) {
                                         reactiveContents.push(
-                                        this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1`, "ul", parentElement, {}, (parentElement: any) => [
+                                        this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1`, "ul", parentElement, {}, (parentElement: any) => [
                                             this.__foreach(item.tags, (tag: any, idx: any, __loopIndex: any, __loop: any) => [
-                                                    this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1`, "li", parentElement, {}, (parentElement: any) => [
+                                                    this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1-foreach-1-${__loopIndex}-li-1`, "li", parentElement, {}, (parentElement: any) => [
                                                         this.text('Tag '),
-                                                        this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-output-1`, parentElement, true, [], (parentElement: any) => idx),
+                                                        this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1-foreach-1-${__loopIndex}-li-1-output-1`, parentElement, true, [], (parentElement: any) => idx),
                                                         this.text(': '),
-                                                        this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-output-2`, parentElement, true, [], (parentElement: any) => tag),
-                                                        this.reactive(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                                        this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1-foreach-1-${__loopIndex}-li-1-output-2`, parentElement, true, [], (parentElement: any) => tag),
+                                                        this.reactive(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1-foreach-1-${__loopIndex}-li-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                                             const reactiveContents = [];
                                                             if (tag === 'sweet') {
                                                                 reactiveContents.push(
-                                                                this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-rc-if-1-case_1-em-1`, "em", parentElement, {}, (parentElement: any) => [
+                                                                this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_1-ul-1-foreach-1-${__loopIndex}-li-1-rc-if-1-case_1-em-1`, "em", parentElement, {}, (parentElement: any) => [
                                                                     this.text(' ← popular!')
                                                                 ])
                                                                 );
@@ -414,9 +414,9 @@ class TestNestedReactiveView extends SaolaView {
                                     }
                                     else {
                                         reactiveContents.push(
-                                        this.html(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                        this.html(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_2-p-1`, "p", parentElement, {}, (parentElement: any) => [
                                             this.text('Only one tag: '),
-                                            this.output(`div-1-div-3-foreach-1-${__loopIndex + 1}-div-1-rc-if-2-case_2-p-1-output-1`, parentElement, true, [], (parentElement: any) => item.tags[0])
+                                            this.output(`div-1-div-3-foreach-1-${__loopIndex}-div-1-rc-if-2-case_2-p-1-output-1`, parentElement, true, [], (parentElement: any) => item.tags[0])
                                         ])
                                         );
                                     }
@@ -436,6 +436,7 @@ class TestNestedReactiveView extends SaolaView {
 }
 
 // Export factory function
-export default function TestNestedReactive(__data__ = {}, systemData = {}): TestNestedReactiveView {
+export function TestNestedReactive(__data__ = {}, systemData = {}): TestNestedReactiveView {
     return new TestNestedReactiveView(__data__, systemData);
 }
+export default TestNestedReactive;

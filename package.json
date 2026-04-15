@@ -20,12 +20,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/saola-compiler.git"
+    "url": "https://github.com/saolabs/saola-compiler.git"
   },
   "author": "Your Name",
   "bugs": {
-    "url": "https://github.com/your-org/saola-compiler/issues"
+    "url": "https://github.com/saolabs/saola-compiler/issues"
   },
-  "homepage": "https://github.com/your-org/saola-compiler#readme"
+  "homepage": "https://github.com/saolabs/saola-compiler#readme"
 }
 

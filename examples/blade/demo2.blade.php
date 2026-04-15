@@ -1,3 +1,5 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @vars($demoList = [])
 @useState($status, false)
 @const([$user, $setUser] = useState(['name'=> 'Jone', 'email'=> 'jon@test.com']))
@@ -8,7 +10,6 @@
     ['title'=> '...', 'content'=> '...'],
 ]))
 @let($i = 0)
-
 @wrapper
 <div @hydrate('div-1') @class(['demo']) @attr(['active' => true])> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
     <h1 @hydrate('div-1-h1-1')>Hello, @startMarker('output', 'div-1-h1-1-output-1'){{ $user->name }}@endMarker('output', 'div-1-h1-1-output-1')!</h1>

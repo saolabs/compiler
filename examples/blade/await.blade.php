@@ -1,5 +1,6 @@
-@vars($user = null, $counter = 0)
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 
+@vars($user = null, $counter = 0)
 @await
 @extends('layout')
 @block('content')

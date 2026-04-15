@@ -1,3 +1,5 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @const([$items, $setItems] = useState([
     ['id'=> 1, 'name'=> 'Apple', 'category'=> 'fruit', 'price'=> 2, 'tags'=> ['red', 'sweet']],
     ['id'=> 2, 'name'=> 'Carrot', 'category'=> 'vegetable', 'price'=> 1, 'tags'=> ['orange']],
@@ -7,7 +9,6 @@
 @const([$status, $setStatus] = useState('active'))
 @const([$count, $setCount] = useState(0))
 @const([$showDetails, $setShowDetails] = useState(true))
-
 @wrapper
 <div @hydrate('div-1') @class(['nested-reactive-demo'])>
     {{-- Level 1: @if with output --}}
@@ -36,7 +37,7 @@
                     {{-- Level 3: nested @foreach inside @foreach (tags) --}}
                     <div @hydrate("div-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-div-1-div-2") @class(['tags'])>
                         @foreach($item->tags as $tag)
-                            <span @hydrate("div-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-div-1-div-2-foreach-1-span-1") @class(['tag'])>{{ $tag }}</span>
+                            <span @hydrate("div-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-div-1-div-2-foreach-1-{$loop->index}-span-1") @class(['tag'])>{{ $tag }}</span>
                         @endforeach
                     </div>
                 </div>
@@ -107,11 +108,11 @@
                 @if(count($item->tags) > 1)
                     <ul @hydrate("div-1-div-3-foreach-1-{$loop->index}-div-1-rc-if-2-case_1-ul-1")>
                         @foreach($item->tags as $idx => $tag)
-                            <li @hydrate("div-1-div-3-foreach-1-{$loop->index}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1")>
+                            <li @hydrate("div-1-div-3-foreach-1-{$loop->index}-div-1-rc-if-2-case_1-ul-1-foreach-1-{$loop->index}-li-1")>
                                 Tag {{ $idx }}: {{ $tag }}
                                 @startMarker('reactive', 'div-1-div-3-foreach-1-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-rc-if-1', ['stateKey' => [], 'type' => 'if'])
                                 @if($tag === 'sweet')
-                                    <em @hydrate("div-1-div-3-foreach-1-{$loop->index}-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-rc-if-1-case_1-em-1")> ← popular!</em>
+                                    <em @hydrate("div-1-div-3-foreach-1-{$loop->index}-div-1-rc-if-2-case_1-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-em-1")> ← popular!</em>
                                 @endif
                                 @endMarker('reactive', 'div-1-div-3-foreach-1-div-1-rc-if-2-case_1-ul-1-foreach-1-li-1-rc-if-1')
                             </li>

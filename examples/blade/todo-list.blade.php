@@ -1,8 +1,9 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @vars($users = [])
 @const([$todos, $setTodos] = useState([]))
 @const([$newTodo, $setNewTodo] = useState(''))
 @const([$todoIndex, $setTodoIndex] = useState(0))
-
 @wrapper
 @await
 <div @hydrate('div-1') @class(['col-lg-6', 'mb-4']) @attr(['data-category' => 'basic forms'])>

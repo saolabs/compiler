@@ -42,7 +42,7 @@ class BladeTemplateCompiler:
         """Load view.blade.php template from compiler/templates/"""
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            template_path = os.path.join(current_dir, '..', '..', 'templates', 'view.blade.php')
+            template_path = os.path.join(current_dir, '..', 'templates', 'view.blade.php')
             template_path = os.path.normpath(template_path)
             with open(template_path, 'r', encoding='utf-8') as f:
                 return f.read()

@@ -1,10 +1,11 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @let($name = 'John Doe')
 @let($posts = [
     ['title'=> 'Post 1', 'content'=> 'Content of post 1'],
     ['title'=> 'Post 2', 'content'=> 'Content of post 2'],
     ['title'=> 'Post 3', 'content'=> 'Content of post 3'],
 ])
-
 @wrapper
 @exec($a = 10, $b = 20, $c = $a + $b)
     <div @hydrate('div-1')>

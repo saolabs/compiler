@@ -1,3 +1,5 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = ['Header' => __template__ + 'header', 'Footer' => __template__ + 'footer', 'post-list' => __template__ + 'post-list']) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 @vars($demoList = [])
 @useState($status, false)
 @const([$user, $setUser] = useState(['name'=> 'Jone', 'email'=> 'jon@test.com']))
@@ -8,7 +10,6 @@
     ['title'=> '...', 'content'=> '...'],
 ]))
 @let($i = 0)
-
 
 
 

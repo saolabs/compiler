@@ -495,7 +495,8 @@ class RenderGenerator:
         keys_str = str(state_keys).replace("'", '"')
 
         # Push loop scope for dynamic IDs
-        self._loop_scopes.append((rc_id, '__loopIndex + 1'))
+        loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex'
+        self._loop_scopes.append((rc_id, loop_id_expr))
 
         # Callback parameters
         if node.key_var:
@@ -574,7 +575,8 @@ class RenderGenerator:
 
         # Determine loop variable and push loop scope
         loop_var = node.loop_var or 'i'
-        self._loop_scopes.append((rc_id, f'{loop_var} + 1'))
+        loop_id_expr = node.custom_key_js if node.custom_key_js else f'{loop_var}'
+        self._loop_scopes.append((rc_id, loop_id_expr))
 
         # Track that we're inside a while/for for output decisions
         prev_in_loop = self._in_while_or_for
@@ -647,7 +649,8 @@ class RenderGenerator:
         rc_id = self.id_gen.push_reactive('for')
         id_str = self._format_id(rc_id)
 
-        self._loop_scopes.append((rc_id, f'{node.var_name} + 1'))
+        loop_id_expr = node.custom_key_js if node.custom_key_js else f'{node.var_name}'
+        self._loop_scopes.append((rc_id, loop_id_expr))
 
         prev_in_loop = self._in_while_or_for
         prev_loop_vars = self._while_for_vars.copy()
@@ -1050,7 +1053,7 @@ class RenderGenerator:
         """Format a hydrate ID as JS template literal, injecting loop variables."""
         result = base_id
 
-        for loop_prefix, js_loop_expr in self._loop_scopes:
+        for loop_prefix, js_loop_expr in reversed(self._loop_scopes):
             if loop_prefix in result and result != loop_prefix:
                 idx = result.index(loop_prefix) + len(loop_prefix)
                 if idx < len(result) and result[idx] == '-':

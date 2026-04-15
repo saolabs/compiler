@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.demo2';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.demo2';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class Demo2ViewController extends SaolaViewController {
+class Demo2ViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class Demo2ViewController extends SaolaViewController {
     }
 }
 
-class Demo2View extends SaolaView {
+class Demo2View extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -196,12 +196,12 @@ class Demo2View extends SaolaView {
                             reactiveContents.push(
                             this.reactive(`div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
                                 return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
-                                    this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement) => [
-                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                    this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1`, "li", parentElement, {}, (parentElement) => [
+                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
+                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                         ]),
-                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
+                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
                                         ])
                                     ])
                                 ])
@@ -220,9 +220,9 @@ class Demo2View extends SaolaView {
                         while (i < 5) {
                             loopCtx.setCurrentTimes(i);
                             __whileOutput.push(
-                                this.html(`div-1-div-6-while-1-${i + 1}-p-1`, "p", parentElement, {}, (parentElement) => [
+                                this.html(`div-1-div-6-while-1-${i}-p-1`, "p", parentElement, {}, (parentElement) => [
                                     this.text('Counter: '),
-                                    this.output(`div-1-div-6-while-1-${i + 1}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
+                                    this.output(`div-1-div-6-while-1-${i}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
                                 ])
                             );
                                 i++;
@@ -239,6 +239,7 @@ class Demo2View extends SaolaView {
 }
 
 // Export factory function
-export default function Demo2(__data__ = {}, systemData = {}) {
+export function Demo2(__data__ = {}, systemData = {}) {
     return new Demo2View(__data__, systemData);
 }
+export default Demo2;

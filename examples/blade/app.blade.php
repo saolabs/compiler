@@ -1,14 +1,15 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
 <?php if(!isset($title) || (!$title && $title !== false)) $title = 'test'; if(!isset($description) || (!$description && $description !== false)) $description = 'Mô tả'; if(!isset($user) || (!$user && $user !== false)) $user = request()->user(); ?>
 @let($test = 'demo')
 @useState($userState, $user)
 @useState($counter, 0)
 @useState($posts, [
-        ['title'=> 'title 1', 'description'=> 'Mô tả 1'],
-        ['title'=> 'title 2', 'description'=> 'Mô tả 2'],
-        ['title'=> 'title 3', 'description'=> 'Mô tả 3'],
+    ['title'=> 'title 1', 'description'=> 'Mô tả 1'],
+    ['title'=> 'title 2', 'description'=> 'Mô tả 2'],
+    ['title'=> 'title 3', 'description'=> 'Mô tả 3'],
     ])
 @const([$userAvatar, $setAvatar] = useState(getUserAvatar($user)))
-
 @extends($__template__ . 'main')
     @section('meta:type', 'article')
     @section('meta:og:image', 'https://vcc.vn/static/images/thumbnai.jpg')
@@ -45,7 +46,7 @@
                                 {{--  --}}
                                 <li @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-1')><a @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-1-a-1') @attr(['href' => route('web.account')])>{{ text('web.account.dashboard') }}</a></li>
                                 <li @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-2')><a @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-2-a-1') @attr(['href' => route('web.account.profile')])>{{ text('web.account.profile') }}</a></li>
-                                <li @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3')><a @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3-a-1') @attr(['href' => route('web.account.change-avatar')]) @click(changeAvatar())>{{ text('web.account.change-avatar') }}</a></li>
+                                <li @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3')><a @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3-a-1') @attr(['href' => route('web.account.change-avatar')]) @click(changeAvatar(event))>{{ text('web.account.change-avatar') }}</a></li>
                                 <li @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-4')><a @hydrate('block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-4-a-1') @attr(['href' => route('web.account.signout')]) @click(signout())>{{ text('web.account.signout') }}</a></li>
                             </ul>
                         @else

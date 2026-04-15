@@ -1036,6 +1036,17 @@ class TemplateProcessor:
             is_attr = self._is_attribute_directive(line)
             return self.loop_handlers.process_foreach_directive(line, stack, output, is_attr)
         
+        # Handle @key (Loop Key)
+        if line.startswith('@key'):
+            expr_match = re.search(r'@key\s*\((.*?)\)', line)
+            if expr_match:
+                expr = expr_match.group(1).strip()
+                # Update loop_var of current reactive scope if it's a loop iteration
+                if len(self.reactive_scope_stack) > 1:
+                    # Only update if it's currently a default loop index or if specifically at top of loop
+                    self.reactive_scope_stack[-1].loop_var = expr
+            return True # Consume line
+        
         if line.startswith('@endforeach'):
             return self.loop_handlers.process_endforeach_directive(stack, output)
         

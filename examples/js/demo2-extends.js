@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.demo2-extends';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.demo2-extends';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -29,7 +29,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class Demo2ExtendsViewController extends SaolaViewController {
+class Demo2ExtendsViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -40,10 +40,10 @@ class Demo2ExtendsViewController extends SaolaViewController {
     }
 }
 
-class Demo2ExtendsView extends SaolaView {
+class Demo2ExtendsView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ExtendsViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -118,7 +118,7 @@ class Demo2ExtendsView extends SaolaView {
         });
 
         this.__ctrl__.setup({
-            superView: __layout__ + 'base',
+            superView: `${__layout__+'base'}`,
             subscribe: true,
             fetch: null,
             data: __data__,
@@ -203,12 +203,12 @@ class Demo2ExtendsView extends SaolaView {
                             reactiveContents.push(
                             this.reactive(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
                                 return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
-                                    this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement, {}, (parentElement) => [
-                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                    this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1`, "li", parentElement, {}, (parentElement) => [
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                         ]),
-                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex + 1}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
                                         ])
                                     ])
                                 ])
@@ -227,9 +227,9 @@ class Demo2ExtendsView extends SaolaView {
                         while (i < 5) {
                             loopCtx.setCurrentTimes(i);
                             __whileOutput.push(
-                                this.html(`block-content-div-1-div-6-while-1-${i + 1}-p-1`, "p", parentElement, {}, (parentElement) => [
+                                this.html(`block-content-div-1-div-6-while-1-${i}-p-1`, "p", parentElement, {}, (parentElement) => [
                                     this.text('Counter: '),
-                                    this.output(`block-content-div-1-div-6-while-1-${i + 1}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
+                                    this.output(`block-content-div-1-div-6-while-1-${i}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
                                 ])
                             );
                                 i++;
@@ -239,7 +239,7 @@ class Demo2ExtendsView extends SaolaView {
                     ])
                 ])
             ]);
-            this.superViewPath = __layout__ + 'base';
+            this.superViewPath = `${__layout__+'base'}`;
             return this.extendView(this.superViewPath, {});
             }
         });
@@ -248,6 +248,7 @@ class Demo2ExtendsView extends SaolaView {
 }
 
 // Export factory function
-export default function Demo2Extends(__data__ = {}, systemData = {}) {
+export function Demo2Extends(__data__ = {}, systemData = {}) {
     return new Demo2ExtendsView(__data__, systemData);
 }
+export default Demo2Extends;

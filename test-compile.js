@@ -68,9 +68,15 @@ for (const file of files) {
         const tempJsInput = path.join(examplesDir, `.${nameNoExt}.temp.js.sao`);
         fs.writeFileSync(tempJsInput, jsSource);
 
-        // 4. Output paths
+        // 4. Detect script language
+        const scriptTagMatch = parts.cleanedContent.match(/<script[^>]*>/i);
+        const scriptLang = scriptTagMatch ? (scriptTagMatch[0].match(/lang=["']([^"']+)["']/i)?.[1] || 'js') : 'js';
+        const isTypeScript = scriptLang.toLowerCase() === 'ts' || scriptLang.toLowerCase() === 'typescript';
+        const jsExtension = isTypeScript ? 'ts' : 'js';
+        
+        // 5. Output paths
         const finalBladePath = path.join(bladeOutputDir, `${nameNoExt}.blade.php`);
-        const finalJsPath = path.join(jsOutputDir, `${nameNoExt}.ts`);
+        const finalJsPath = path.join(jsOutputDir, `${nameNoExt}.${jsExtension}`);
         
         const tempBladeOutput = path.join(examplesDir, `.${nameNoExt}.temp.blade.out`);
         const tempJsOutput = path.join(examplesDir, `.${nameNoExt}.temp.js.out`);
@@ -97,7 +103,7 @@ for (const file of files) {
         } else {
             const outputJsContent = fs.readFileSync(tempJsOutput, 'utf-8');
             fs.writeFileSync(finalJsPath, outputJsContent);
-            console.log(`   ✅ Wrote TS/JS: examples/js/${nameNoExt}.ts`);
+            console.log(`   ✅ Wrote TS/JS: examples/js/${nameNoExt}.${jsExtension}`);
         }
         
         // Cleanup temp files

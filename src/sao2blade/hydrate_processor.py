@@ -57,12 +57,27 @@ class BladeHydrateProcessor:
         loop_scopes = []     # [(rc_id, loop_var_blade, loop_var_js)]
         in_ssr = False       # Track @ssr scope — skip hydrate IDs for HTML inside
         
-        for raw_line in lines:
+        for idx, raw_line in enumerate(lines):
             stripped = raw_line.strip()
             indent = re.match(r'^(\s*)', raw_line).group(1)
             
             if not stripped:
                 output.append(raw_line)
+                continue
+            
+            # ─── @key (Loop Key) ──────────────────────────────────
+            # If we find @key(...) and we are inside a loop, update the current loop scope
+            key_m = re.match(r'^\s*@key\s*\((.*?)\)\s*$', stripped)
+            if key_m:
+                if loop_scopes:
+                    expr = key_m.group(1).strip()
+                    # Convert to blade expression: item.id -> $item->id
+                    expr_blade = self._sao_to_blade_expr(expr)
+                    # Update current loop scope with this key
+                    rc_id, _, js_var = loop_scopes[-1]
+                    loop_scopes[-1] = (rc_id, expr_blade, js_var)
+                
+                # Consume @key directive (it's only used for key generation)
                 continue
             
             # ─── @ssr / @endssr ───────────────────────────────────
@@ -125,7 +140,8 @@ class BladeHydrateProcessor:
                     rc_id = reactive_stack[-1][1]
                     self.id_gen.pop_scope()  # pop current case
                     case_counters[rc_id] += 1
-                    self.id_gen.push_case(case_counters[rc_id])
+                    case_id = case_counters[rc_id]
+                    self.id_gen.push_case(case_id)
                     
                     new_expr = self._extract_parens_from_directive(raw_line, '@elseif')
                     if new_expr:
@@ -150,7 +166,7 @@ class BladeHydrateProcessor:
             if re.match(r'^\s*@endif\b', stripped):
                 if reactive_stack and reactive_stack[-1][0] == 'if':
                     rc_id = reactive_stack[-1][1]
-                    state_keys = reactive_stack[-1][2]
+                    # state_keys = reactive_stack[-1][2]
                     self.id_gen.pop_scope()  # pop case
                     self.id_gen.pop_scope()  # pop reactive
                     reactive_stack.pop()
@@ -175,7 +191,21 @@ class BladeHydrateProcessor:
                     output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'foreach'])")
                 
                 # Push loop iteration scope 
-                loop_scopes.append((rc_id, '$loop->index', '__loopIndex'))
+                # Look ahead for @key 
+                found_key = None
+                for k in range(idx + 1, min(idx + 5, len(lines))):
+                    nl = lines[k].strip()
+                    if not nl: continue
+                    km = re.match(r'^\s*@key\s*\((.*?)\)\s*$', nl)
+                    if km:
+                        found_key = km.group(1).strip()
+                        break
+                    # STOP if we hit another loop before finding @key for this one
+                    if re.match(r'^\s*@(foreach|while|for)\b', nl):
+                        break
+                
+                blade_var = self._sao_to_blade_expr(found_key) if found_key else '$loop->index'
+                loop_scopes.append((rc_id, blade_var, '__loopIndex'))
                 
                 output.append(raw_line)
                 continue
@@ -215,8 +245,21 @@ class BladeHydrateProcessor:
                 output.append(f"{indent}@startMarker('while', '{rc_id}'{opts_str})")
                 
                 # Push loop scope
+                # Look ahead for @key
+                found_key = None
+                for k in range(idx + 1, min(idx + 5, len(lines))):
+                    nl = lines[k].strip()
+                    if not nl: continue
+                    km = re.match(r'^\s*@key\s*\((.*?)\)\s*$', nl)
+                    if km:
+                        found_key = km.group(1).strip()
+                        break
+                    if re.match(r'^\s*@(foreach|while|for)\b', nl):
+                        break
+
                 loop_var_clean = loop_var if loop_var else '$i'
-                loop_scopes.append((rc_id, loop_var_clean, loop_var_clean.lstrip('$') if loop_var_clean else 'i'))
+                blade_var = self._sao_to_blade_expr(found_key) if found_key else loop_var_clean
+                loop_scopes.append((rc_id, blade_var, loop_var_clean.lstrip('$') if loop_var_clean else 'i'))
                 
                 output.append(raw_line)
                 continue
@@ -249,8 +292,21 @@ class BladeHydrateProcessor:
                     keys_php = self._php_array(state_keys)
                     output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'for'])")
                 
+                # Look ahead for @key
+                found_key = None
+                for k in range(idx + 1, min(idx + 5, len(lines))):
+                    nl = lines[k].strip()
+                    if not nl: continue
+                    km = re.match(r'^\s*@key\s*\((.*?)\)\s*$', nl)
+                    if km:
+                        found_key = km.group(1).strip()
+                        break
+                    if re.match(r'^\s*@(foreach|while|for)\b', nl):
+                        break
+
                 loop_var_clean = loop_var if loop_var else '$i'
-                loop_scopes.append((rc_id, loop_var_clean, loop_var_clean.lstrip('$') if loop_var_clean else 'i'))
+                blade_var = self._sao_to_blade_expr(found_key) if found_key else loop_var_clean
+                loop_scopes.append((rc_id, blade_var, loop_var_clean.lstrip('$') if loop_var_clean else 'i'))
                 
                 output.append(raw_line)
                 continue
@@ -561,21 +617,42 @@ class BladeHydrateProcessor:
         """
         result = id_str
         
-        for rc_id, blade_var, js_var in loop_scopes:
+        # Process in reverse order (innermost to outermost) to correctly handle nested IDs
+        # If we have rc-foreach-1 and rc-foreach-1-li-1-rc-foreach-1, 
+        # injecting into the longer one first preserves the structure for the shorter one's search.
+        for rc_id, blade_var, js_var in reversed(loop_scopes):
             # Find the reactive prefix in the ID and inject loop var after it
-            # The rc_id from push_reactive has format like "block-content-div-1-ul-5-rc-foreach-1"
-            # We need to find this prefix in the element ID
-            # The element IDs within the loop will start with this prefix
-            
-            # The prefix is stored in id_gen scopes, let's find it by looking at
-            # where rc_id's prefix appears in the result
-            if rc_id in result and result != rc_id:
+            if rc_id in result:
                 idx = result.index(rc_id) + len(rc_id)
                 if idx < len(result) and result[idx] == '-':
                     # Insert loop var interpolation
                     result = result[:idx] + f"-{{{blade_var}}}" + result[idx:]
         
         return result
+    
+    def _sao_to_blade_expr(self, expr):
+        """Convert Saola dot notation to Blade arrow notation for @key.
+        Example: 'item.id' -> '$item->id'
+        """
+        if not expr:
+            return expr
+            
+        res = expr.strip()
+        
+        # Handle dot to arrow conversion
+        # Match word.word.word patterns
+        res = re.sub(r'([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)', r'\1->\2', res)
+        # Repeat once more for deeper nesting (e.g. item.category.name)
+        res = re.sub(r'->([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)', r'->\1->\2', res)
+        
+        # Handle $ prefix if missing for first identifier
+        # If it starts with a letter, add $
+        if res and res[0].isalpha() and not res.startswith('this->'):
+            # But don't prefix if it's already special or a number
+            if not re.match(r'^(?:true|false|null|this)\b', res):
+                res = '$' + res
+                
+        return res
     
     # ──────────────────────────────────────────────────────────────────
     # Utility

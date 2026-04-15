@@ -1,4 +1,4 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 import {_} from 'saola';
 
@@ -25,8 +25,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class DemoAstViewController extends SaolaViewController {
-    constructor(view: SaolaView) {
+class DemoAstViewController extends ViewController {
+    constructor(view: View) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -36,10 +36,10 @@ class DemoAstViewController extends SaolaViewController {
     }
 }
 
-class DemoAstView extends SaolaView {
+class DemoAstView extends View {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, DemoAstViewController);
-        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
+        const App: Application = app("App") as Application;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -235,18 +235,18 @@ class DemoAstView extends SaolaView {
                                         this.__foreach(posts, (post: any, __loopKey: any, __loopIndex: any, __loop: any) => {
                                             const __execArr = [];
                                             __execArr.push(
-                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-1-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-1-output-1`, parentElement, true, [], (parentElement: any) => content)
                                                 ])
                                             );
                                             let content = 'This is a test';
                                             __execArr.push(
-                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-1`, parentElement, true, [], (parentElement: any) => post.title),
+                                                this.html(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-2-output-1`, parentElement, true, [], (parentElement: any) => post.title),
                                                     this.text(': '),
-                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-2`, parentElement, true, [], (parentElement: any) => post.content),
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-2-output-2`, parentElement, true, [], (parentElement: any) => post.content),
                                                     this.text(' '),
-                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex + 1}-p-2-output-3`, parentElement, true, [], (parentElement: any) => content)
+                                                    this.output(`projects-5-tasks-3-div-1-foreach-1-${__loopIndex}-p-2-output-3`, parentElement, true, [], (parentElement: any) => content)
                                                 ])
                                             );
                                             return __execArr;
@@ -299,6 +299,7 @@ class DemoAstView extends SaolaView {
 }
 
 // Export factory function
-export default function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
+export function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
     return new DemoAstView(__data__, systemData);
 }
+export default DemoAst;

@@ -1,4 +1,4 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
 const __VIEW_PATH__ = 'examples.counter';
@@ -22,8 +22,8 @@ const __VIEW_CONFIG__ = {
 
 
 
-class CounterViewController extends SaolaViewController {
-    constructor(view: SaolaView) {
+class CounterViewController extends ViewController {
+    constructor(view: View) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this as any).setStaticConfig === 'function') {
             (this as any).setStaticConfig(__VIEW_CONFIG__);
@@ -33,10 +33,10 @@ class CounterViewController extends SaolaViewController {
     }
 }
 
-class CounterView extends SaolaView {
+class CounterView extends View {
     constructor(__data__: any = {}, systemData: any = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, CounterViewController);
-        const App: SaolaApplication = saolaApp("App") as SaolaApplication;
+        const App: Application = app("App") as Application;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -228,6 +228,7 @@ class CounterView extends SaolaView {
 }
 
 // Export factory function
-export default function Counter(__data__ = {}, systemData = {}): CounterView {
+export function Counter(__data__ = {}, systemData = {}): CounterView {
     return new CounterView(__data__, systemData);
 }
+export default Counter;

@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.todo-list';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.todo-list';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TodoListViewController extends SaolaViewController {
+class TodoListViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class TodoListViewController extends SaolaViewController {
     }
 }
 
-class TodoListView extends SaolaView {
+class TodoListView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, TodoListViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -244,12 +244,12 @@ class TodoListView extends SaolaView {
                                     (parentElement) => [
                                     this.reactive(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1`, "foreach", parentReactive, parentElement, ["todos"], (parentReactive, parentElement) => {
                                         return this.__foreach(todos, (todo, __loopKey, __loopIndex, __loop) => [
-                                            this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement,
+                                            this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1`, "li", parentElement,
                                                 { classes: [{ type: 'static', value: "todo-item" }, { type: 'static', value: "{{" }, { type: 'static', value: "$todo->completed" }, { type: 'static', value: "?" }, { type: 'static', value: "'completed'" }, { type: 'static', value: ":" }, { type: 'static', value: "''" }, { type: 'static', value: "}}" }] },
                                                 (parentElement) => [
-                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-input-1`, "input", parentElement, { events: { change: [{"handler":"toggleTodo","params":[todo.id]}] } }),
-                                                this.output(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-output-1`, parentElement, true, [], (parentElement) => todo.text),
-                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-button-2`, "button", parentElement,
+                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-input-1`, "input", parentElement, { events: { change: [{"handler":"toggleTodo","params":[todo.id]}] } }),
+                                                this.output(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-output-1`, parentElement, true, [], (parentElement) => todo.text),
+                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-button-2`, "button", parentElement,
                                                     { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-sm" }, { type: 'static', value: "btn-outline-danger" }], events: { click: [{"handler":"deleteTodo","params":[todo.id]}] } },
                                                     (parentElement) => [
                                                     this.text('×')
@@ -271,6 +271,7 @@ class TodoListView extends SaolaView {
 }
 
 // Export factory function
-export default function TodoList(__data__ = {}, systemData = {}) {
+export function TodoList(__data__ = {}, systemData = {}) {
     return new TodoListView(__data__, systemData);
 }
+export default TodoList;

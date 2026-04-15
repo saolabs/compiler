@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.app';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.app';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -47,7 +47,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class AppViewController extends SaolaViewController {
+class AppViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -58,10 +58,10 @@ class AppViewController extends SaolaViewController {
     }
 }
 
-class AppView extends SaolaView {
+class AppView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, AppViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -164,7 +164,7 @@ class AppView extends SaolaView {
         });
 
         this.__ctrl__.setup({
-            superView: __template__ + 'main',
+            superView: `${__template__+'main'}`,
             subscribe: true,
             fetch: null,
             data: __data__,
@@ -233,13 +233,13 @@ class AppView extends SaolaView {
                             (parentElement) => [
                             this.reactive(`block-content-main-1-header-1-nav-1-ul-2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
                                 return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
-                                    this.html(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex + 1}-li-1`, "li", parentElement,
+                                    this.html(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex}-li-1`, "li", parentElement,
                                         { classes: [{ type: 'static', value: "menu-item" }, { type: 'static', value: "nav-item" }] },
                                         (parentElement) => [
-                                        this.html(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-a-1`, "a", parentElement,
+                                        this.html(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex}-li-1-a-1`, "a", parentElement,
                                             { classes: [{ type: 'static', value: "nav-link" }] },
                                             (parentElement) => [
-                                            this.output(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex + 1}-li-1-a-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                            this.output(`block-content-main-1-header-1-nav-1-ul-2-foreach-1-${__loopIndex}-li-1-a-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                             ])
                                         ])
                                 ])
@@ -272,7 +272,7 @@ class AppView extends SaolaView {
                                         ]),
                                         this.html(`block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3`, "li", parentElement, {}, (parentElement) => [
                                             this.html(`block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3-a-1`, "a", parentElement,
-                                                { events: { click: [{"handler":"changeAvatar","params":[]}] } },
+                                                { events: { click: [{"handler":"changeAvatar","params":[() => event]}] } },
                                                 (parentElement) => [
                                                 this.output(`block-content-main-1-header-1-nav-1-div-3-rc-if-1-case_1-ul-2-li-3-a-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.text('web.account.change-avatar'))
                                                 ])
@@ -321,7 +321,7 @@ class AppView extends SaolaView {
                     ])
             ])
             ]);
-            this.superViewPath = __template__ + 'main';
+            this.superViewPath = `${__template__+'main'}`;
             return this.extendView(this.superViewPath, {});
             }
         });
@@ -330,6 +330,7 @@ class AppView extends SaolaView {
 }
 
 // Export factory function
-export default function App(__data__ = {}, systemData = {}) {
+export function App(__data__ = {}, systemData = {}) {
     return new AppView(__data__, systemData);
 }
+export default App;

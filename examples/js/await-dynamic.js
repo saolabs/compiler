@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.await-dynamic';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.await-dynamic';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class AwaitDynamicViewController extends SaolaViewController {
+class AwaitDynamicViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class AwaitDynamicViewController extends SaolaViewController {
     }
 }
 
-class AwaitDynamicView extends SaolaView {
+class AwaitDynamicView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, AwaitDynamicViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -121,8 +121,8 @@ class AwaitDynamicView extends SaolaView {
                             this.output(`div-1-rc-if-1-case_1-h1-1-output-1`, parentElement, true, [], (parentElement) => user.name)
                         ]),
                         this.__foreach(postList, (post, __loopKey, __loopIndex, __loop) => [
-                                this.html(`div-1-rc-if-1-case_1-foreach-1-${__loopIndex + 1}-div-1`, "div", parentElement, {}, (parentElement) => [
-                                    this.output(`div-1-rc-if-1-case_1-foreach-1-${__loopIndex + 1}-div-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                this.html(`div-1-rc-if-1-case_1-foreach-1-${__loopIndex}-div-1`, "div", parentElement, {}, (parentElement) => [
+                                    this.output(`div-1-rc-if-1-case_1-foreach-1-${__loopIndex}-div-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                 ])
                         ])
                         );
@@ -157,6 +157,7 @@ class AwaitDynamicView extends SaolaView {
 }
 
 // Export factory function
-export default function AwaitDynamic(__data__ = {}, systemData = {}) {
+export function AwaitDynamic(__data__ = {}, systemData = {}) {
     return new AwaitDynamicView(__data__, systemData);
 }
+export default AwaitDynamic;

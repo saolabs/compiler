@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.demo2-layout';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.demo2-layout';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class Demo2LayoutViewController extends SaolaViewController {
+class Demo2LayoutViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class Demo2LayoutViewController extends SaolaViewController {
     }
 }
 
-class Demo2LayoutView extends SaolaView {
+class Demo2LayoutView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, Demo2LayoutViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -121,6 +121,7 @@ class Demo2LayoutView extends SaolaView {
 }
 
 // Export factory function
-export default function Demo2Layout(__data__ = {}, systemData = {}) {
+export function Demo2Layout(__data__ = {}, systemData = {}) {
     return new Demo2LayoutView(__data__, systemData);
 }
+export default Demo2Layout;

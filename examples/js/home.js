@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.home';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.home';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class HomeViewController extends SaolaViewController {
+class HomeViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class HomeViewController extends SaolaViewController {
     }
 }
 
-class HomeView extends SaolaView {
+class HomeView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, HomeViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -150,6 +150,7 @@ class HomeView extends SaolaView {
 }
 
 // Export factory function
-export default function Home(__data__ = {}, systemData = {}) {
+export function Home(__data__ = {}, systemData = {}) {
     return new HomeView(__data__, systemData);
 }
+export default Home;

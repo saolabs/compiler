@@ -1,8 +1,8 @@
-import { View as SaolaView, ViewController as SaolaViewController, app as saolaApp, Application as SaolaApplication } from 'saola';
+import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.test-fetch-dynamic';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.test-fetch-dynamic';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -22,7 +22,7 @@ const __VIEW_CONFIG__ = {
 
 
 
-class TestFetchDynamicViewController extends SaolaViewController {
+class TestFetchDynamicViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,10 +33,10 @@ class TestFetchDynamicViewController extends SaolaViewController {
     }
 }
 
-class TestFetchDynamicView extends SaolaView {
+class TestFetchDynamicView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, TestFetchDynamicViewController);
-        const App = saolaApp("App");
+        const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -115,8 +115,8 @@ class TestFetchDynamicView extends SaolaView {
                     this.text('Items')
                 ]),
                 this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
-                        this.html(`div-1-foreach-1-${__loopIndex + 1}-p-1`, "p", parentElement, {}, (parentElement) => [
-                            this.output(`div-1-foreach-1-${__loopIndex + 1}-p-1-output-1`, parentElement, true, [], (parentElement) => item.name)
+                        this.html(`div-1-foreach-1-${__loopIndex}-p-1`, "p", parentElement, {}, (parentElement) => [
+                            this.output(`div-1-foreach-1-${__loopIndex}-p-1-output-1`, parentElement, true, [], (parentElement) => item.name)
                         ])
                 ])
             ])
@@ -128,6 +128,7 @@ class TestFetchDynamicView extends SaolaView {
 }
 
 // Export factory function
-export default function TestFetchDynamic(__data__ = {}, systemData = {}) {
+export function TestFetchDynamic(__data__ = {}, systemData = {}) {
     return new TestFetchDynamicView(__data__, systemData);
 }
+export default TestFetchDynamic;
