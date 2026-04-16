@@ -1,1 +1,5 @@
 node_modules
+# Sensitive files
+npm-token.txt
+*.token.txt
+.env.local
