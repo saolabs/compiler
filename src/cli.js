@@ -45,7 +45,7 @@ Configuration:
 
     // Show version
     if (args[0] === '--version' || args[0] === '-v') {
-        const pkg = require('./package.json');
+         const pkg = require('../package.json');
         console.log(`Saola Compiler v${pkg.version}`);
         process.exit(0);
     }

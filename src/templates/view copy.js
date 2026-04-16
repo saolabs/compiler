@@ -1,4 +1,4 @@
-import { View, ViewController, app, Application } from 'oneview';
+import { View, ViewController, app, Application } from 'saola';
 
 [COMPONENT_IMPORTS]
 

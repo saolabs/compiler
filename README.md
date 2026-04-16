@@ -1,6 +1,6 @@
-# OneView Compiler
+# Saola Compiler
 
-OneView Compiler là một công cụ biên dịch chuyên biệt chuyển đổi các file template `.sao` thành hai định dạng output:
+Saola Compiler là một công cụ biên dịch chuyên biệt chuyển đổi các file template `.sao` thành hai định dạng output:
 - **Blade files** (.blade.php) cho Laravel Server-Side Rendering (SSR)
 - **JavaScript View files** (.js) cho client-side rendering
 
@@ -55,11 +55,11 @@ compiler/
 ```json
 {
   "packages": {
-    "oneview": "1.0.0"
+     "saola": "1.0.0"
   },
   "paths": {
     "resources": "resources",
-    "oneView": "resources/sao",
+     "saoView": "resources/sao",
     "bladeView": "resources/views",
     "temp": "resources/js/temp",
     "public": "public/static/one"
@@ -128,7 +128,7 @@ compiler/
 
 #### paths (Base Paths)
 Các base paths cho các mục khác nhau:
-- `oneView`: Base cho views và app sources
+- `saoView`: Base cho views và app sources
 - `bladeView`: Base cho blade outputs  
 - `temp`: Base cho JS temp outputs
 - `public`: Base cho production outputs
@@ -147,26 +147,26 @@ Mỗi context có các relative paths (sẽ được prefix với base paths):
 
 ### 1. Installation
 ```bash
-npm install oneview
+npm install @saolabs/compiler
 # hoặc local install để test
-cd /path/to/oneview && npm pack
-cd /path/to/your-project && npm install ../oneview/oneview-1.0.0.tgz
+cd /path/to/saola-compiler && npm pack
+cd /path/to/your-project && npm install ../saola-compiler/saolabs-compiler-1.0.0.tgz
 ```
 
 ### 2. CLI Commands
 ```bash
 # Compile specific context
-npx one-compile web
-npx one-compile admin
+npx sao-compile web
+npx sao-compile admin
 
 # Compile all contexts (skips 'default')
-npx one-compile all
+npx sao-compile all
 
-# Watch mode (chưa implement)
-npx one-compile web --watch
+# Watch mode
+npx sao-compile web --watch
 
 # Show help
-npx one-compile --help
+npx sao-compile --help
 ```
 
 ### 3. Quy Trình Compile
@@ -434,7 +434,7 @@ npm test
 
 ### Debug mode
 ```bash
-DEBUG=oneview:* onejs-build web
+DEBUG=saolabs:* sao-build web
 ```
 
 ## License

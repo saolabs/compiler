@@ -4,7 +4,7 @@
  * Saola Build CLI
  * Compiles and bundles Saola applications
  * 
- * Usage: one-build [context|all] [--minify] [--watch]
+ * Usage: sao-build [context|all] [--minify] [--watch]
  */
 
 const Builder = require('./builder');
@@ -19,7 +19,7 @@ async function main() {
 Saola Build CLI
 
 Usage:
-  one-build [context|all] [options]
+    sao-build [context|all] [options]
 
 Contexts:
   <context>        Build specific context (e.g., web, admin, mobile)
@@ -49,12 +49,12 @@ HTML Template Minification:
   Use --no-html-minify to disable this feature.
 
 Examples:
-  one-build                    # Build default context
-  one-build admin              # Build admin context
-  one-build all                # Build all contexts
-  one-build admin --minify     # Build admin with JS minification
-  one-build --watch            # Build and watch for changes
-  one-build --no-html-minify   # Build without HTML template minification
+  sao-build                    # Build default context
+  sao-build admin              # Build admin context
+  sao-build all                # Build all contexts
+  sao-build admin --minify     # Build admin with JS minification
+  sao-build --watch            # Build and watch for changes
+  sao-build --no-html-minify   # Build without HTML template minification
 
 Configuration:
   Requires sao.config.json at project root.
@@ -64,7 +64,7 @@ Configuration:
 
     // Show version
     if (args[0] === '--version' || args[0] === '-v') {
-        const pkg = require('./package.json');
+         const pkg = require('../package.json');
         console.log(`Saola Build v${pkg.version}`);
         process.exit(0);
     }

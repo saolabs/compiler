@@ -1,18 +1,21 @@
 {
-  "name": "@oneview/compiler",
+  "name": "@saolabs/compiler",
   "version": "1.0.0",
-  "description": "OneView template compiler - Transforms .sao files to Blade and JavaScript",
+    "description": "Saola Compiler - Transforms .sao files to Blade and JavaScript",
   "main": "src/index.js",
-  "files": ["src/"],
+  "files": [
+    "src/"
+  ],
   "type": "commonjs",
   "scripts": {
     "test": "node src/test.js",
     "publish-dry-run": "npm publish --dry-run",
-    "prepublishOnly": "echo 'Ready to publish @oneview/compiler'"
+      "prepublishOnly": "echo 'Ready to publish @saolabs/compiler'"
   },
   "keywords": [
-    "oneview",
-    "compiler",
+     "saolabs",
+     "saola Compiler",
+     "compiler",
     "blade",
     "javascript",
     "template"
@@ -20,12 +23,20 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saolabs/saola-compiler.git"
+    "url": "git+https://github.com/saolabs/saola-compiler.git"
   },
   "author": "Your Name",
   "bugs": {
     "url": "https://github.com/saolabs/saola-compiler/issues"
   },
-  "homepage": "https://github.com/saolabs/saola-compiler#readme"
+  "homepage": "https://github.com/saolabs/saola-compiler#readme",
+    "bin": {
+      "sao-compile": "src/cli.js",
+      "sao-build": "src/build-cli.js",
+      "sao-dev": "src/dev-cli.js"
+    },
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  }
 }
-

@@ -4,7 +4,7 @@
  * Saola Dev Server CLI
  * Development server with hot reload
  * 
- * Usage: one-dev [context] [--port=8000]
+ * Usage: sao-dev [context] [--port=8000]
  */
 
 const DevServer = require('./dev-server');
@@ -19,7 +19,7 @@ async function main() {
 Saola Dev Server
 
 Usage:
-  one-dev [context] [options]
+    sao-dev [context] [options]
 
 Contexts:
   <context>        Dev server for specific context (e.g., web, admin, mobile)
@@ -41,10 +41,10 @@ Features:
   • Restarts PHP server when needed
 
 Examples:
-  one-dev                  # Dev server for default context
-  one-dev admin            # Dev server for admin context
-  one-dev web --port=8080  # Dev server on port 8080
-  one-dev --no-browser     # Don't open browser
+  sao-dev                  # Dev server for default context
+  sao-dev admin            # Dev server for admin context
+  sao-dev web --port=8080  # Dev server on port 8080
+  sao-dev --no-browser     # Don't open browser
 
 Configuration:
   Requires sao.config.json at project root.
@@ -55,7 +55,7 @@ Configuration:
 
     // Show version
     if (args[0] === '--version' || args[0] === '-v') {
-        const pkg = require('./package.json');
+         const pkg = require('../package.json');
         console.log(`Saola Dev Server v${pkg.version}`);
         process.exit(0);
     }
