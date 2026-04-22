@@ -4,19 +4,19 @@
 @wrapper
 {{-- Layout template sử dụng @yield --}}
 
-<div @hydrate('div-1') @class(['app-layout'])>
-    <header @hydrate('div-1-header-1')>
-        <h1 @hydrate('div-1-header-1-h1-1')>@yield('title', 'Default Title')</h1>
-        <nav @hydrate('div-1-header-1-nav-2')>@yield('nav')</nav>
+<div @class([$__VIEW_ID__ . '-div-1', 'app-layout'])>
+    <header @class([$__VIEW_ID__ . '-div-1-header-1'])>
+        <h1 @class([$__VIEW_ID__ . '-div-1-header-1-h1-1'])>@yield('title', 'Default Title')</h1>
+        <nav @class([$__VIEW_ID__ . '-div-1-header-1-nav-2'])>@yield('nav')</nav>
     </header>
 
-    <main @hydrate('div-1-main-2')>
+    <main @class([$__VIEW_ID__ . '-div-1-main-2'])>
         @startMarker('yield', 'div-1-main-2-yield-1')
         @yield('content')
         @endMarker('yield', 'div-1-main-2-yield-1')
     </main>
 
-    <footer @hydrate('div-1-footer-3')>
+    <footer @class([$__VIEW_ID__ . '-div-1-footer-3'])>
         @startMarker('yield', 'div-1-footer-3-yield-1')
         @yield('footer', '<p>Default Footer</p>')
         @endMarker('yield', 'div-1-footer-3-yield-1')

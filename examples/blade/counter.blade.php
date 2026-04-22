@@ -9,12 +9,12 @@
 @const([$message, $setMessage] = useState('Hello, Saola!'))
 @let($textContent = $message . ' Count is ' . $count)
 @wrapper
-<div @hydrate('div-1') @class(['counter-component'])>
-    <h4 @hydrate('div-1-h4-1')>Count: <span @hydrate('div-1-h4-1-span-1') @attr(['id' => 'counter-value', 'data-count' => $count])>@startMarker('output', 'div-1-h4-1-span-1-output-1'){{ $count }}@endMarker('output', 'div-1-h4-1-span-1-output-1')</span></h4>
-    <div @hydrate('div-1-div-2') @class(['btn-group'])>
-        <button @hydrate('div-1-div-2-button-1') @class(['btn', 'btn-primary']) @click(decrement())>-</button>
-        <button @hydrate('div-1-div-2-button-2') @class(['btn', 'btn-primary']) @click(increment())>+</button>
-        <button @hydrate('div-1-div-2-button-3') @class(['btn', 'btn-primary']) @click(reset())>Reset</button>
+<div @class([$__VIEW_ID__ . '-div-1', 'counter-component'])>
+    <h4 @class([$__VIEW_ID__ . '-div-1-h4-1'])>Count: <span @class([$__VIEW_ID__ . '-div-1-h4-1-span-1']) @attr(['id' => 'counter-value', 'data-count' => $count])>@startMarker('output', 'div-1-h4-1-span-1-output-1'){{ $count }}@endMarker('output', 'div-1-h4-1-span-1-output-1')</span></h4>
+    <div @class([$__VIEW_ID__ . '-div-1-div-2', 'btn-group'])>
+        <button @class([$__VIEW_ID__ . '-div-1-div-2-button-1', 'btn', 'btn-primary'])>-</button>
+        <button @class([$__VIEW_ID__ . '-div-1-div-2-button-2', 'btn', 'btn-primary'])>+</button>
+        <button @class([$__VIEW_ID__ . '-div-1-div-2-button-3', 'btn', 'btn-primary'])>Reset</button>
     </div>
 </div>
 @endWrapper

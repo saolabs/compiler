@@ -30,33 +30,33 @@
 @const($MAX_COUNT = 10)
 @let($n = 0)
 @wrapper
-<div @hydrate('div-1') @class(['input-demo'])>
-        <h2 @hydrate('div-1-h2-1')>Input State Demo</h2>
-        <div @hydrate('div-1-div-2') @class(['users'])>
-            <h3 @hydrate('div-1-div-2-h3-1')>Users</h3>
-            <ul @hydrate('div-1-div-2-ul-2')>
+<div @class([$__VIEW_ID__ . '-div-1', 'input-demo'])>
+        <h2 @class([$__VIEW_ID__ . '-div-1-h2-1'])>Input State Demo</h2>
+        <div @class([$__VIEW_ID__ . '-div-1-div-2', 'users'])>
+            <h3 @class([$__VIEW_ID__ . '-div-1-div-2-h3-1'])>Users</h3>
+            <ul @class([$__VIEW_ID__ . '-div-1-div-2-ul-2'])>
                 @foreach($users as $user)
-                    <li @hydrate("div-1-div-2-ul-2-foreach-1-{$loop->index}-li-1")>{{ $user->name }} ({{ $user->email }})</li>
+                    <li @class([$__VIEW_ID__ . "-div-1-div-2-ul-2-foreach-1-{$loop->index}-li-1"])>{{ $user->name }} ({{ $user->email }})</li>
                 @endforeach
             </ul>
         </div>
-        <div @hydrate('div-1-div-3') @class(['posts'])>
-            <h3 @hydrate('div-1-div-3-h3-1')>Posts</h3>
-            <ul @hydrate('div-1-div-3-ul-2')>
+        <div @class([$__VIEW_ID__ . '-div-1-div-3', 'posts'])>
+            <h3 @class([$__VIEW_ID__ . '-div-1-div-3-h3-1'])>Posts</h3>
+            <ul @class([$__VIEW_ID__ . '-div-1-div-3-ul-2'])>
                 @foreach($posts as $post)
-                    <li @hydrate("div-1-div-3-ul-2-foreach-1-{$loop->index}-li-1")><strong @hydrate("div-1-div-3-ul-2-foreach-1-{$loop->index}-li-1-strong-1")>{{ $post->title }}</strong>: {{ $post->content }}</li>
+                    <li @class([$__VIEW_ID__ . "-div-1-div-3-ul-2-foreach-1-{$loop->index}-li-1"])><strong @class([$__VIEW_ID__ . "-div-1-div-3-ul-2-foreach-1-{$loop->index}-li-1-strong-1"])>{{ $post->title }}</strong>: {{ $post->content }}</li>
                 @endforeach
             </ul>
         </div>
     </div>
-    <div @hydrate('div-2') @class(['todos-demo'])>
-        <h2 @hydrate('div-2-h2-1')>Todos</h2>
-        <ul @hydrate('div-2-ul-2')>
+    <div @class([$__VIEW_ID__ . '-div-2', 'todos-demo'])>
+        <h2 @class([$__VIEW_ID__ . '-div-2-h2-1'])>Todos</h2>
+        <ul @class([$__VIEW_ID__ . '-div-2-ul-2'])>
             @startMarker('reactive', 'div-2-ul-2-foreach-1', ['stateKey' => ['todos'], 'type' => 'foreach'])
             @foreach($todos as $todo)
-                <li @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1")>
-                    <label @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1")>
-                        <input @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1-input-1") @attr(['type' => 'checkbox']) @bind($todo->completed) @checked($todo->completed) />
+                <li @class([$__VIEW_ID__ . "-div-2-ul-2-foreach-1-{$loop->index}-li-1"])>
+                    <label @class([$__VIEW_ID__ . "-div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1"])>
+                        <input @class([$__VIEW_ID__ . "-div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1-input-1"]) @attr(['type' => 'checkbox']) @bind($todo->completed) @checked($todo->completed) />
                         {{ $todo->task }}
                     </label>
 
@@ -64,27 +64,27 @@
             @endforeach
             @endMarker('reactive', 'div-2-ul-2-foreach-1')
         </ul>
-        <div @hydrate('div-2-div-3') @class(['is-edit-mode'])>
-            <input @hydrate('div-2-div-3-input-1') @attr(['type' => 'text', 'placeholder' => 'Nhập công việc mới']) @bind($newTodo) @keydown(handleNewTodoKeyDown(event)) />
-            <button @hydrate('div-2-div-3-button-2') @click(addTodo())>+</button>
+        <div @class([$__VIEW_ID__ . '-div-2-div-3', 'is-edit-mode'])>
+            <input @class([$__VIEW_ID__ . '-div-2-div-3-input-1']) @attr(['type' => 'text', 'placeholder' => 'Nhập công việc mới']) @bind($newTodo) />
+            <button @class([$__VIEW_ID__ . '-div-2-div-3-button-2'])>+</button>
         </div>
     </div>
-    <div @hydrate('div-3') @class(['products-demo'])>
-        <h2 @hydrate('div-3-h2-1')>Products @startMarker('output', 'div-3-h2-1-output-1'){{ count($products) }}@endMarker('output', 'div-3-h2-1-output-1')</h2>
+    <div @class([$__VIEW_ID__ . '-div-3', 'products-demo'])>
+        <h2 @class([$__VIEW_ID__ . '-div-3-h2-1'])>Products @startMarker('output', 'div-3-h2-1-output-1'){{ count($products) }}@endMarker('output', 'div-3-h2-1-output-1')</h2>
         @startMarker('reactive', 'div-3-rc-if-1', ['stateKey' => ['products'], 'type' => 'if'])
         @if(count($products) === 0)
-            <p @hydrate('div-3-rc-if-1-case_1-p-1')>No products available.</p>
+            <p @class([$__VIEW_ID__ . '-div-3-rc-if-1-case_1-p-1'])>No products available.</p>
         @else
-            <ul @hydrate('div-3-rc-if-1-case_2-ul-1')>
+            <ul @class([$__VIEW_ID__ . '-div-3-rc-if-1-case_2-ul-1'])>
                 @startMarker('reactive', 'div-3-rc-if-1-case_2-ul-1-foreach-1', ['stateKey' => ['products'], 'type' => 'foreach'])
                 @foreach($products as $product)
-                    <li @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1")>
+                    <li @class([$__VIEW_ID__ . "-div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1"])>
                         {{ $product->name }} - ${{ $product->price }}
                         @startMarker('reactive', 'div-3-rc-if-1-case_2-ul-1-foreach-1-li-1-rc-if-1', ['stateKey' => [], 'type' => 'if'])
                         @if($product->tags && count($product->tags) > 0)
-                            <div @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
+                            <div @class([$__VIEW_ID__ . "-div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1", 'tags'])>
                                 @foreach($product->tags as $tag)
-                                    <span @hydrate("div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-span-1") @class(['tag'])>{{ $tag }}</span>
+                                    <span @class([$__VIEW_ID__ . "-div-3-rc-if-1-case_2-ul-1-foreach-1-{$loop->index}-li-1-rc-if-1-case_1-div-1-foreach-1-{$loop->index}-span-1", 'tag'])>{{ $tag }}</span>
                                 @endforeach
                             </div>
                         @endif
@@ -97,19 +97,19 @@
         @endMarker('reactive', 'div-3-rc-if-1')
     </div>
     {{-- for --}}
-    <div @hydrate('div-4') @class(['for-loop'])>
-        <h2 @hydrate('div-4-h2-1')>Inventory (For Loop Demo)</h2>
-        <ul @hydrate('div-4-ul-2')>
+    <div @class([$__VIEW_ID__ . '-div-4', 'for-loop'])>
+        <h2 @class([$__VIEW_ID__ . '-div-4-h2-1'])>Inventory (For Loop Demo)</h2>
+        <ul @class([$__VIEW_ID__ . '-div-4-ul-2'])>
             @startMarker('reactive', 'div-4-ul-2-for-1', ['stateKey' => ['inventory'], 'type' => 'for'])
             @for($i = 0; $i < count($inventory); $i++)
-                <li @hydrate("div-4-ul-2-for-1-{$i}-li-1")>
+                <li @class([$__VIEW_ID__ . "-div-4-ul-2-for-1-{$i}-li-1"])>
                     @startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-output-1"){{ $inventory[$i]->name }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-output-1") - $@startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-output-2"){{ $inventory[$i]->price }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-output-2")
                     @startMarker('reactive', 'div-4-ul-2-for-1-li-1-rc-if-1', ['stateKey' => ['inventory'], 'type' => 'if'])
                     @if($inventory[$i]->tags && count($inventory[$i]->tags) > 0)
-                        <div @hydrate("div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
+                        <div @class([$__VIEW_ID__ . "-div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1", 'tags'])>
                             @startMarker('reactive', 'div-4-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1', ['stateKey' => ['inventory'], 'type' => 'for'])
                             @for($j = 0; $j < count($inventory[$i]->tags); $j++)
-                                <span @hydrate("div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1") @class(['tag'])>@startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $inventory[$i]->tags[$j] }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
+                                <span @class([$__VIEW_ID__ . "-div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1", 'tag'])>@startMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $inventory[$i]->tags[$j] }}@endMarker('output', "div-4-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
                             @endfor
                             @endMarker('reactive', 'div-4-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1')
                         </div>
@@ -121,23 +121,23 @@
         </ul>
     </div>
     {{-- while --}}
-    <div @hydrate('div-5') @class(['while-loop'])>
-        <h2 @hydrate('div-5-h2-1')>Catalog (While Loop Demo)</h2>
-        <ul @hydrate('div-5-ul-2')>
+    <div @class([$__VIEW_ID__ . '-div-5', 'while-loop'])>
+        <h2 @class([$__VIEW_ID__ . '-div-5-h2-1'])>Catalog (While Loop Demo)</h2>
+        <ul @class([$__VIEW_ID__ . '-div-5-ul-2'])>
             @for($i = 0; $i < $MAX_COUNT; $i++)
                 @startMarker('reactive', 'div-5-ul-2-for-1-rc-if-1', ['stateKey' => ['catalog'], 'type' => 'if'])
                 @if($i >= count($catalog))
                     @break
                 @endif
                 @endMarker('reactive', 'div-5-ul-2-for-1-rc-if-1')
-                <li @hydrate("div-5-ul-2-for-1-{$i}-li-1")>
+                <li @class([$__VIEW_ID__ . "-div-5-ul-2-for-1-{$i}-li-1"])>
                     @startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-output-1"){{ $catalog[$i]->name }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-output-1") - $@startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-output-2"){{ $catalog[$i]->price }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-output-2")
                     @startMarker('reactive', 'div-5-ul-2-for-1-li-1-rc-if-1', ['stateKey' => ['catalog'], 'type' => 'if'])
                     @if($catalog[$i]->tags && count($catalog[$i]->tags) > 0)
-                        <div @hydrate("div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1") @class(['tags'])>
+                        <div @class([$__VIEW_ID__ . "-div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1", 'tags'])>
                             @startMarker('reactive', 'div-5-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1', ['stateKey' => ['catalog'], 'type' => 'for'])
                             @for($j = 0; $j < count($catalog[$i]->tags); $j++)
-                                <span @hydrate("div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1") @class(['tag'])>@startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $catalog[$i]->tags[$j] }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
+                                <span @class([$__VIEW_ID__ . "-div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1", 'tag'])>@startMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1"){{ $catalog[$i]->tags[$j] }}@endMarker('output', "div-5-ul-2-for-1-{$i}-li-1-rc-if-1-case_1-div-1-for-1-{$j}-span-1-output-1")</span>
                             @endfor
                             @endMarker('reactive', 'div-5-ul-2-for-1-li-1-rc-if-1-case_1-div-1-for-1')
                         </div>
@@ -147,11 +147,11 @@
             @endfor
         </ul>
         @exec($n = 0)
-        <h3 @hydrate('div-5-h3-3')>While Loop Example</h3>
-        <ul @hydrate('div-5-ul-4')>
+        <h3 @class([$__VIEW_ID__ . '-div-5-h3-3'])>While Loop Example</h3>
+        <ul @class([$__VIEW_ID__ . '-div-5-ul-4'])>
             @startMarker('while', 'div-5-ul-4-while-1', ['start' => $n])
             @while($n < $MAX_COUNT)
-                <li @hydrate("div-5-ul-4-while-1-{$n}-li-1")>
+                <li @class([$__VIEW_ID__ . "-div-5-ul-4-while-1-{$n}-li-1"])>
                     Item #{{ $n + 1 }}
                 </li>
                 @exec($n++)

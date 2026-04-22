@@ -28,7 +28,7 @@
         <main>
             <header>
                 <nav>
-                    <a href="{{route('web.home')}}" title="{{siteinfo('site_name')}}">
+                    <a href="{{route('web.home')}}" title="{{siteinfo('site_name')}}" class="home" @class({demo: test}) >
                         <img src="{{asset('static/web/images/loho.png')}}" alt="{{siteinfo('site_name')}}" @class(['site-logo', 'has-login': userState]) />
                     </a>
                     <ul @class(['site-menu'])>

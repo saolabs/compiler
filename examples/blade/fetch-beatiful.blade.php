@@ -6,23 +6,23 @@
 @extends($__layout__ . 'base')
     @section('meta:title', 'Demo Fetch Users')
     @block('content')
-        <div @hydrate('block-content-div-1') @class(['container', 'py-5'])>
-            <h1 @hydrate('block-content-div-1-h1-1') @class(['mb-4'])>Fetch Users Demo</h1>
+        <div @class([$__VIEW_ID__ . '-block-content-div-1', 'container', 'py-5'])>
+            <h1 @class([$__VIEW_ID__ . '-block-content-div-1-h1-1', 'mb-4'])>Fetch Users Demo</h1>
 
             @startMarker('reactive', 'block-content-div-1-rc-if-1', ['stateKey' => ['isLoading'], 'type' => 'if'])
             @if($isLoading)
-                <div @hydrate('block-content-div-1-rc-if-1-case_1-div-1') @class(['alert', 'alert-info'])>Đang tải users...</div>
+                <div @class([$__VIEW_ID__ . '-block-content-div-1-rc-if-1-case_1-div-1', 'alert', 'alert-info'])>Đang tải users...</div>
             @elseif($error)
-                <div @hydrate('block-content-div-1-rc-if-1-case_2-div-1') @class(['alert', 'alert-danger'])>Error: @startMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1'){{ $error }}@endMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1')</div>
+                <div @class([$__VIEW_ID__ . '-block-content-div-1-rc-if-1-case_2-div-1', 'alert', 'alert-danger'])>Error: @startMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1'){{ $error }}@endMarker('output', 'block-content-div-1-rc-if-1-case_2-div-1-output-1')</div>
             @elseif(!$users || count($users) === 0)
-                <div @hydrate('block-content-div-1-rc-if-1-case_3-div-1') @class(['alert', 'alert-danger'])>Error không có users</div>
+                <div @class([$__VIEW_ID__ . '-block-content-div-1-rc-if-1-case_3-div-1', 'alert', 'alert-danger'])>Error không có users</div>
             @else
                 @startMarker('reactive', 'block-content-div-1-rc-if-1-case_4-foreach-1', ['stateKey' => ['users'], 'type' => 'foreach'])
                 @foreach($users as $user)
-                    <div @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1") @class(['user-card', 'mb-3', 'p-3', 'border', 'rounded'])>
-                        <h6 @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-h6-1")>{{ $user->name }}</h6>
-                        <p @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-p-2") @class(['mb-1'])>{{ $user->email }}</p>
-                        <small @hydrate("block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-small-3") @class(['text-muted'])>{{ $user->company->name }}</small>
+                    <div @class([$__VIEW_ID__ . "-block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1", 'user-card', 'mb-3', 'p-3', 'border', 'rounded'])>
+                        <h6 @class([$__VIEW_ID__ . "-block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-h6-1"])>{{ $user->name }}</h6>
+                        <p @class([$__VIEW_ID__ . "-block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-p-2", 'mb-1'])>{{ $user->email }}</p>
+                        <small @class([$__VIEW_ID__ . "-block-content-div-1-rc-if-1-case_4-foreach-1-{$loop->index}-div-1-small-3", 'text-muted'])>{{ $user->company->name }}</small>
                     </div>
                 @endforeach
                 @endMarker('reactive', 'block-content-div-1-rc-if-1-case_4-foreach-1')

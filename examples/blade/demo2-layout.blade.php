@@ -4,7 +4,7 @@
 @wrapper
 {{-- đây là trang layout --}}
 
-<div @hydrate('div-1') @class(['container'])>
+<div @class([$__VIEW_ID__ . '-div-1', 'container'])>
     @useBlock('content')
     {{-- tương đương vói dạng @blockoutlet('content') hay <block-outlet name="content"></block-outlet> --}}
 </div>

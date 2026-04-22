@@ -28,6 +28,23 @@ class BladeHydrateProcessor:
         'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
         'link', 'meta', 'param', 'source', 'track', 'wbr'
     }
+
+    EVENT_NAMES = {
+        'click', 'dblclick', 'mousedown', 'mouseup', 'mouseover', 'mouseout',
+        'mousemove', 'mouseenter', 'mouseleave', 'wheel',
+        'keydown', 'keyup', 'keypress',
+        'input', 'change', 'submit', 'reset', 'invalid',
+        'focus', 'blur', 'focusin', 'focusout',
+        'touchstart', 'touchmove', 'touchend', 'touchcancel',
+        'dragstart', 'drag', 'dragend', 'dragenter', 'dragleave', 'dragover', 'drop',
+        'scroll', 'resize', 'contextmenu',
+        'copy', 'cut', 'paste', 'select',
+        'load', 'error', 'abort',
+        'animationstart', 'animationend', 'animationiteration',
+        'transitionstart', 'transitionend', 'transitionrun', 'transitioncancel',
+        'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+        'pointerenter', 'pointerleave', 'pointercancel',
+    }
     
     def __init__(self, state_variables=None):
         self.state_variables = state_variables or set()
@@ -434,11 +451,9 @@ class BladeHydrateProcessor:
                     eid = self.id_gen.push_element(tag_name)
                     tag_stack.append(tag_name)
                 
-                hydrate = self._blade_hydrate_attr(eid, loop_scopes)
-                
                 # Parse attrs into @class, @attr, and directive parts
                 classes, regular_attrs, directive_parts = self._parse_html_attrs(attrs_str)
-                new_attrs = self._build_blade_attrs(hydrate, classes, regular_attrs, directive_parts)
+                new_attrs = self._build_blade_attrs(eid, loop_scopes, classes, regular_attrs, directive_parts)
                 new_tag = f"<{tag_name} {new_attrs}{' /' if slash else ''}>"
                 
                 parts.append(new_tag)
@@ -519,11 +534,19 @@ class BladeHydrateProcessor:
             # Blade directive: @something(...)
             dir_m = re.match(r'@(\w+)\s*\(', remaining)
             if dir_m:
+                directive_name = dir_m.group(1).lower()
                 paren_start = pos + dir_m.end() - 1
                 content = self._extract_parens(text, paren_start)
                 if content is not None:
                     full_len = paren_start - pos + len(content) + 2  # +2 for ()
-                    directive_parts.append(text[pos:pos + full_len])
+                    
+                    # Skip event directives
+                    is_event = (directive_name in self.EVENT_NAMES or 
+                               (directive_name.startswith('on') and directive_name[2:] in self.EVENT_NAMES))
+                    
+                    if not is_event:
+                        directive_parts.append(text[pos:pos + full_len])
+                    
                     pos += full_len
                 else:
                     pos += dir_m.end()
@@ -557,13 +580,42 @@ class BladeHydrateProcessor:
         
         return classes, regular_attrs, directive_parts
     
-    def _build_blade_attrs(self, hydrate_attr, classes, regular_attrs, directive_parts):
-        """Build final blade attribute string with @hydrate, @class, @attr, and directives."""
-        parts = [hydrate_attr]
+    def _build_blade_attrs(self, element_id, loop_scopes, classes, regular_attrs, directive_parts):
+        """Build final blade attribute string with @class, @attr, and directives."""
+        # Calculate hydration class
+        if loop_scopes:
+            dynamic_id = self._inject_loop_vars(element_id, loop_scopes)
+            # Use double quotes for PHP interpolation of loop variables
+            hydrate_class = f'$__VIEW_ID__ . "-{dynamic_id}"'
+        else:
+            hydrate_class = f"$__VIEW_ID__ . '-{element_id}'"
+
+        all_classes = [hydrate_class]
         
-        # @class directive
-        if classes:
-            items = ', '.join(f"'{c}'" for c in classes)
+        # Merge static classes from class="..." attribute
+        for c in classes:
+            all_classes.append(f"'{c}'")
+            
+        # Check if @class already exists in directive_parts and merge it
+        final_directive_parts = []
+        for part in directive_parts:
+            if part.startswith('@class'):
+                # Extract content from @class([...])
+                inner_match = re.match(r'@class\s*\(\s*\[(.*)\]\s*\)', part)
+                if inner_match:
+                    inner_content = inner_match.group(1).strip()
+                    if inner_content:
+                        # Split by comma but respect nesting (simplified here as usually it's just 'a'=>cond)
+                        # We just add the whole inner content as a part of our array
+                        all_classes.append(inner_content)
+                continue
+            final_directive_parts.append(part)
+            
+        parts = []
+        
+        # Combined @class directive
+        if all_classes:
+            items = ', '.join(all_classes)
             parts.append(f"@class([{items}])")
         
         # @attr directive
@@ -583,7 +635,7 @@ class BladeHydrateProcessor:
             parts.append(f"@attr([{', '.join(attr_items)}])")
         
         # Event / other directives
-        parts.extend(directive_parts)
+        parts.extend(final_directive_parts)
         
         return ' '.join(parts)
     
@@ -591,12 +643,6 @@ class BladeHydrateProcessor:
     # ID formatting helpers
     # ──────────────────────────────────────────────────────────────────
     
-    def _blade_hydrate_attr(self, element_id, loop_scopes):
-        """Format @hydrate('id') or @hydrate("id-{$var}") attribute."""
-        if loop_scopes:
-            dynamic_id = self._inject_loop_vars(element_id, loop_scopes)
-            return f'@hydrate("{dynamic_id}")'
-        return f"@hydrate('{element_id}')"
     
     def _blade_id_value(self, id_str, loop_scopes):
         """Format ID value for @startMarker: 'id' or "id-{$var}"."""

@@ -22,33 +22,33 @@
     @startMarker('component', 'block-content-component-1')
     @include(__template__ + 'header')
     @endMarker('component', 'block-content-component-1')
-    <div @hydrate('block-content-div-1') @class(['demo']) @class(['active'=> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
-        <h1 @hydrate('block-content-div-1-h1-1')>Hello, @startMarker('output', 'block-content-div-1-h1-1-output-1'){{ $user->name }}@endMarker('output', 'block-content-div-1-h1-1-output-1')!</h1>
-        <p @hydrate('block-content-div-1-p-2')>Your email is <span @hydrate('block-content-div-1-p-2-span-1')>@startMarker('output', 'block-content-div-1-p-2-span-1-output-1'){{ $user->email }}@endMarker('output', 'block-content-div-1-p-2-span-1-output-1')</span>.</p>
+    <div @class([$__VIEW_ID__ . '-block-content-div-1', 'demo', 'active'=> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
+        <h1 @class([$__VIEW_ID__ . '-block-content-div-1-h1-1'])>Hello, @startMarker('output', 'block-content-div-1-h1-1-output-1'){{ $user->name }}@endMarker('output', 'block-content-div-1-h1-1-output-1')!</h1>
+        <p @class([$__VIEW_ID__ . '-block-content-div-1-p-2'])>Your email is <span @class([$__VIEW_ID__ . '-block-content-div-1-p-2-span-1'])>@startMarker('output', 'block-content-div-1-p-2-span-1-output-1'){{ $user->email }}@endMarker('output', 'block-content-div-1-p-2-span-1-output-1')</span>.</p>
 
-        <button @hydrate('block-content-div-1-button-3') @click($setStatus(!$status))>Toggle Status: @startMarker('output', 'block-content-div-1-button-3-output-1'){{ $status ? 'On' : 'Off' }}@endMarker('output', 'block-content-div-1-button-3-output-1')</button>
+        <button @class([$__VIEW_ID__ . '-block-content-div-1-button-3'])>Toggle Status: @startMarker('output', 'block-content-div-1-button-3-output-1'){{ $status ? 'On' : 'Off' }}@endMarker('output', 'block-content-div-1-button-3-output-1')</button>
 
-        <h2 @hydrate('block-content-div-1-h2-4')>Posts:</h2>
-        <ul @hydrate('block-content-div-1-ul-5')>
+        <h2 @class([$__VIEW_ID__ . '-block-content-div-1-h2-4'])>Posts:</h2>
+        <ul @class([$__VIEW_ID__ . '-block-content-div-1-ul-5'])>
             @startMarker('reactive', 'block-content-div-1-ul-5-rc-if-1', ['stateKey' => ['posts'], 'type' => 'if'])
             @if(count($posts) === 0)
-                <li @hydrate('block-content-div-1-ul-5-rc-if-1-case_1-li-1')>No posts available.</li>
+                <li @class([$__VIEW_ID__ . '-block-content-div-1-ul-5-rc-if-1-case_1-li-1'])>No posts available.</li>
             @else
                 @startMarker('reactive', 'block-content-div-1-ul-5-rc-if-1-case_2-foreach-1', ['stateKey' => ['posts'], 'type' => 'foreach'])
                 @foreach($posts as $post)
-                    <li @hydrate("block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1")>
-                        <h3 @hydrate("block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1-h3-1")>{{ $post->title }}</h3>
-                        <p @hydrate("block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1-p-2")>{{ $post->content }}</p>
+                    <li @class([$__VIEW_ID__ . "-block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1"])>
+                        <h3 @class([$__VIEW_ID__ . "-block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1-h3-1"])>{{ $post->title }}</h3>
+                        <p @class([$__VIEW_ID__ . "-block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-{$loop->index}-li-1-p-2"])>{{ $post->content }}</p>
                     </li>
                 @endforeach
                 @endMarker('reactive', 'block-content-div-1-ul-5-rc-if-1-case_2-foreach-1')
             @endif
             @endMarker('reactive', 'block-content-div-1-ul-5-rc-if-1')
         </ul>
-        <div @hydrate('block-content-div-1-div-6') @class(['while-loop-demo'])>
+        <div @class([$__VIEW_ID__ . '-block-content-div-1-div-6', 'while-loop-demo'])>
             @startMarker('while', 'block-content-div-1-div-6-while-1', ['start' => $i, 'end' => 5])
             @while($i < 5)
-                <p @hydrate("block-content-div-1-div-6-while-1-{$i}-p-1")>Counter: {{ $i }}</p>
+                <p @class([$__VIEW_ID__ . "-block-content-div-1-div-6-while-1-{$i}-p-1"])>Counter: {{ $i }}</p>
                 @exec($i++)
             @endwhile
             @endMarker('while', 'block-content-div-1-div-6-while-1')

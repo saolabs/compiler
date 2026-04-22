@@ -5,19 +5,19 @@
 @useState($categoryList, $categories)
 @let($i = 0)
 @wrapper
-<div @hydrate('div-1') @class(['flex', 'flex-col', 'gap-2'])>
+<div @class([$__VIEW_ID__ . '-div-1', 'flex', 'flex-col', 'gap-2'])>
         @for($i = 0; $i < 10; $i++)
-            <div @hydrate("div-1-for-1-{$i}-div-1") @class(['flex', 'items-center', 'gap-2'])>
-                <h2 @hydrate("div-1-for-1-{$i}-div-1-h2-1") @class(['text-sm'])>Title {{ $i }}</h2>
+            <div @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1", 'flex', 'items-center', 'gap-2'])>
+                <h2 @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-h2-1", 'text-sm'])>Title {{ $i }}</h2>
                 @startMarker('reactive', 'div-1-for-1-div-1-foreach-1', ['stateKey' => ['categoryList'], 'type' => 'foreach'])
                 @foreach($categoryList as $categoryItem)
-                    <div @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1") @class(['category-item'])>
-                        <h3 @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-h3-1") @class(['category-name'])>{{ $categoryItem->name }}</h3>
-                        <div @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2") @class(['post-list'])>
+                    <div @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1", 'category-item'])>
+                        <h3 @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-h3-1", 'category-name'])>{{ $categoryItem->name }}</h3>
+                        <div @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2", 'post-list'])>
                             @foreach($categoryItem->posts as $postItem)
-                                <div @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1") @class(['post-item'])>
-                                    <h4 @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1-h4-1") @class(['post-title'])>{{ $postItem->title }}</h4>
-                                    <p @hydrate("div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1-p-2") @class(['post-content'])>{{ $postItem->content }}</p>
+                                <div @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1", 'post-item'])>
+                                    <h4 @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1-h4-1", 'post-title'])>{{ $postItem->title }}</h4>
+                                    <p @class([$__VIEW_ID__ . "-div-1-for-1-{$i}-div-1-foreach-1-{$categoryItem->id}-div-1-div-2-foreach-1-{$postItem->id}-div-1-p-2", 'post-content'])>{{ $postItem->content }}</p>
                                 </div>
                             @endforeach
                         </div>
