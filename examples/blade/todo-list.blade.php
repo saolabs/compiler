@@ -32,9 +32,9 @@
                             @startMarker('reactive', 'div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1', ['stateKey' => ['todos'], 'type' => 'foreach'])
                             @foreach($todos as $todo)
                                 <li @hydrate("div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-{$loop->index}-li-1") @class(['todo-item', '{{', '$todo->completed', '?', ''completed'', ':', '''', '}}'])>
-                                    <input @hydrate("div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-{$loop->index}-li-1-input-1") @attr(['type' => 'checkbox', 'toggleTodo' => true, 'todo-' => true])>id)) @checked($todo->completed)>
+                                    <input @hydrate("div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-{$loop->index}-li-1-input-1") @attr(['type' => 'checkbox']) @change(toggleTodo($todo->id)) @checked($todo->completed)>
                                     {{ $todo->text }}
-                                    <button @hydrate("div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-{$loop->index}-li-1-button-2") @class(['btn', 'btn-sm', 'btn-outline-danger']) @attr(['deleteTodo' => true, 'todo-' => true])>id))>×</button>
+                                    <button @hydrate("div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-{$loop->index}-li-1-button-2") @class(['btn', 'btn-sm', 'btn-outline-danger']) @click(deleteTodo($todo->id))>×</button>
                                 </li>
                             @endforeach
                             @endMarker('reactive', 'div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1')

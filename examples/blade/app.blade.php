@@ -23,7 +23,7 @@
             <header @hydrate('block-content-main-1-header-1')>
                 <nav @hydrate('block-content-main-1-header-1-nav-1')>
                     <a @hydrate('block-content-main-1-header-1-nav-1-a-1') @attr(['href' => route('web.home'), 'title' => siteinfo('site_name')])>
-                        <img @hydrate('block-content-main-1-header-1-nav-1-a-1-img-1') @attr(['src' => asset('static/web/images/loho.png'), 'alt' => siteinfo('site_name'), 'site-logo' => true, 'has-login' => true])> $userState]) />
+                        <img @hydrate('block-content-main-1-header-1-nav-1-a-1-img-1') @attr(['src' => asset('static/web/images/loho.png'), 'alt' => siteinfo('site_name')]) @class(['site-logo', 'has-login'=> $userState]) />
                     </a>
                     <ul @hydrate('block-content-main-1-header-1-nav-1-ul-2') @class(['site-menu'])>
                         @startMarker('reactive', 'block-content-main-1-header-1-nav-1-ul-2-foreach-1', ['stateKey' => ['posts'], 'type' => 'foreach'])

@@ -12,7 +12,7 @@
 @let($i = 0)
 @extends($__layout__ . 'base')
 @block('content')
-    <div @hydrate('block-content-div-1') @class(['demo']) @attr(['active' => true])> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
+    <div @hydrate('block-content-div-1') @class(['demo']) @class(['active'=> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
         <h1 @hydrate('block-content-div-1-h1-1')>Hello, @startMarker('output', 'block-content-div-1-h1-1-output-1'){{ $user->name }}@endMarker('output', 'block-content-div-1-h1-1-output-1')!</h1>
         <p @hydrate('block-content-div-1-p-2')>Your email is <span @hydrate('block-content-div-1-p-2-span-1')>@startMarker('output', 'block-content-div-1-p-2-span-1-output-1'){{ $user->email }}@endMarker('output', 'block-content-div-1-p-2-span-1-output-1')</span>.</p>
 

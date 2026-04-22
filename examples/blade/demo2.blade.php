@@ -11,7 +11,7 @@
 ]))
 @let($i = 0)
 @wrapper
-<div @hydrate('div-1') @class(['demo']) @attr(['active' => true])> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
+<div @hydrate('div-1') @class(['demo']) @class(['active'=> $status]) @attr(['dataCount'=> count($demoList), 'dataUserName'=> $user->name])>
     <h1 @hydrate('div-1-h1-1')>Hello, @startMarker('output', 'div-1-h1-1-output-1'){{ $user->name }}@endMarker('output', 'div-1-h1-1-output-1')!</h1>
     <p @hydrate('div-1-p-2')>Your email is <span @hydrate('div-1-p-2-span-1')>@startMarker('output', 'div-1-p-2-span-1-output-1'){{ $user->email }}@endMarker('output', 'div-1-p-2-span-1-output-1')</span>.</p>
 

@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.await-dynamic';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.await-dynamic';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -157,7 +157,7 @@ class AwaitDynamicView extends View {
 }
 
 // Export factory function
-export function SaoAwaitDynamic(__data__ = {}, systemData = {}) {
+export function AwaitDynamic(__data__ = {}, systemData = {}) {
     return new AwaitDynamicView(__data__, systemData);
 }
-export default SaoAwaitDynamic;
+export default AwaitDynamic;

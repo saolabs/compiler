@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.test-yield-page';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.test-yield-page';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -167,12 +167,16 @@ class TestYieldPageView extends View {
             this.output(`block-title-output-1`, parentElement, true, ["name"], (parentElement) => name)
             ]);
             this.block('block-nav', 'nav', (parentElement) => [
-            this.html(`block-nav-a-1`, "a", parentElement, {}, (parentElement) => [
+            this.html(`block-nav-a-1`, "a", parentElement,
+                { attrs: { "href": { type: 'static', value: "/" } } },
+                (parentElement) => [
                 this.text('Home')
-            ]),
-            this.html(`block-nav-a-2`, "a", parentElement, {}, (parentElement) => [
+                ]),
+            this.html(`block-nav-a-2`, "a", parentElement,
+                { attrs: { "href": { type: 'static', value: "/about" } } },
+                (parentElement) => [
                 this.text('About')
-            ])
+                ])
             ]);
             this.block('block-content', 'content', (parentElement) => [
             this.html(`block-content-div-1`, "div", parentElement,
@@ -209,7 +213,7 @@ class TestYieldPageView extends View {
 }
 
 // Export factory function
-export function SaoTestYieldPage(__data__ = {}, systemData = {}) {
+export function TestYieldPage(__data__ = {}, systemData = {}) {
     return new TestYieldPageView(__data__, systemData);
 }
-export default SaoTestYieldPage;
+export default TestYieldPage;

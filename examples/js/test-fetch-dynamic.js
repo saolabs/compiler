@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.test-fetch-dynamic';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.test-fetch-dynamic';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -128,7 +128,7 @@ class TestFetchDynamicView extends View {
 }
 
 // Export factory function
-export function SaoTestFetchDynamic(__data__ = {}, systemData = {}) {
+export function TestFetchDynamic(__data__ = {}, systemData = {}) {
     return new TestFetchDynamicView(__data__, systemData);
 }
-export default SaoTestFetchDynamic;
+export default TestFetchDynamic;

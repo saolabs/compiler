@@ -985,6 +985,16 @@ class RenderGenerator:
         """Generate attrs configuration object."""
         entries = []
 
+        # Static attrs
+        for attr_name, attr_val in element.static_attrs.items():
+            if attr_val is True:
+                # Boolean attribute
+                entries.append(f'"{attr_name}": {{ type: \'static\', value: true }}')
+            else:
+                # Escape quotes in static attribute values
+                val_escaped = str(attr_val).replace('"', '\\"')
+                entries.append(f'"{attr_name}": {{ type: \'static\', value: "{val_escaped}" }}')
+
         # Binding attrs
         for attr_name, info in element.binding_attrs.items():
             svars = sorted(info.get('state_vars', set()))

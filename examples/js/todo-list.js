@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.todo-list';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.todo-list';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -182,7 +182,7 @@ class TodoListView extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`div-1`, "div", parentElement,
-                { classes: [{ type: 'static', value: "col-lg-6" }, { type: 'static', value: "mb-4" }] },
+                { classes: [{ type: 'static', value: "col-lg-6" }, { type: 'static', value: "mb-4" }], attrs: { "data-category": { type: 'static', value: "basic forms" } } },
                 (parentElement) => [
                 this.html(`div-1-div-1`, "div", parentElement,
                     { classes: [{ type: 'static', value: "example-card" }] },
@@ -224,7 +224,7 @@ class TodoListView extends View {
                         { classes: [{ type: 'static', value: "example-demo" }] },
                         (parentElement) => [
                         this.html(`div-1-div-1-div-3-div-1`, "div", parentElement,
-                            { classes: [{ type: 'static', value: "demo-container" }] },
+                            { classes: [{ type: 'static', value: "demo-container" }], attrs: { "id": { type: 'static', value: "todo-demo" } } },
                             (parentElement) => [
                             this.html(`div-1-div-1-div-3-div-1-div-1`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "todo-app" }] },
@@ -232,7 +232,7 @@ class TodoListView extends View {
                                 this.html(`div-1-div-1-div-3-div-1-div-1-div-1`, "div", parentElement,
                                     { classes: [{ type: 'static', value: "input-group" }, { type: 'static', value: "mb-3" }] },
                                     (parentElement) => [
-                                    this.html(`div-1-div-1-div-3-div-1-div-1-div-1-input-1`, "input", parentElement, { classes: [{ type: 'static', value: "form-control" }], events: { keydown: [{"handler":"addTodoByEnter","params":[() => event]}] } }),
+                                    this.html(`div-1-div-1-div-3-div-1-div-1-div-1-input-1`, "input", parentElement, { classes: [{ type: 'static', value: "form-control" }], attrs: { "type": { type: 'static', value: "text" }, "id": { type: 'static', value: "todo-input" }, "placeholder": { type: 'static', value: "Add new todo..." }, "bind": { type: 'static', value: true }, "newTodo": { type: 'static', value: true } }, events: { keydown: [{"handler":"addTodoByEnter","params":[() => event]}] } }),
                                     this.html(`div-1-div-1-div-3-div-1-div-1-div-1-button-2`, "button", parentElement,
                                         { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-primary" }], events: { click: [{"handler":"addTodo","params":[]}] } },
                                         (parentElement) => [
@@ -240,14 +240,14 @@ class TodoListView extends View {
                                         ])
                                     ]),
                                 this.html(`div-1-div-1-div-3-div-1-div-1-ul-2`, "ul", parentElement,
-                                    { classes: [{ type: 'static', value: "list-unstyled" }] },
+                                    { classes: [{ type: 'static', value: "list-unstyled" }], attrs: { "id": { type: 'static', value: "todo-list" } } },
                                     (parentElement) => [
                                     this.reactive(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1`, "foreach", parentReactive, parentElement, ["todos"], (parentReactive, parentElement) => {
                                         return this.__foreach(todos, (todo, __loopKey, __loopIndex, __loop) => [
                                             this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1`, "li", parentElement,
                                                 { classes: [{ type: 'static', value: "todo-item" }, { type: 'static', value: "{{" }, { type: 'static', value: "$todo->completed" }, { type: 'static', value: "?" }, { type: 'static', value: "'completed'" }, { type: 'static', value: ":" }, { type: 'static', value: "''" }, { type: 'static', value: "}}" }] },
                                                 (parentElement) => [
-                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-input-1`, "input", parentElement, { events: { change: [{"handler":"toggleTodo","params":[todo.id]}] } }),
+                                                this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-input-1`, "input", parentElement, { attrs: { "type": { type: 'static', value: "checkbox" }, "checked": { type: 'static', value: true }, "todo": { type: 'static', value: true }, "completed": { type: 'static', value: true } }, events: { change: [{"handler":"toggleTodo","params":[todo.id]}] } }),
                                                 this.output(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-output-1`, parentElement, true, [], (parentElement) => todo.text),
                                                 this.html(`div-1-div-1-div-3-div-1-div-1-ul-2-foreach-1-${__loopIndex}-li-1-button-2`, "button", parentElement,
                                                     { classes: [{ type: 'static', value: "btn" }, { type: 'static', value: "btn-sm" }, { type: 'static', value: "btn-outline-danger" }], events: { click: [{"handler":"deleteTodo","params":[todo.id]}] } },
@@ -271,7 +271,7 @@ class TodoListView extends View {
 }
 
 // Export factory function
-export function SaoTodoList(__data__ = {}, systemData = {}) {
+export function TodoList(__data__ = {}, systemData = {}) {
     return new TodoListView(__data__, systemData);
 }
-export default SaoTodoList;
+export default TodoList;

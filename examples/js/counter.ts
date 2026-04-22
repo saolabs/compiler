@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.counter';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.counter';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -195,7 +195,7 @@ class CounterView extends View {
                 this.html(`div-1-h4-1`, "h4", parentElement, {}, (parentElement: any) => [
                     this.text('Count: '),
                     this.html(`div-1-h4-1-span-1`, "span", parentElement,
-                        { attrs: { "data-count": { type: 'binding', value: `${count}`, factory: () => `${count}`, stateKeys: ["count"] } } },
+                        { attrs: { "id": { type: 'static', value: "counter-value" }, "data-count": { type: 'binding', value: `${count}`, factory: () => `${count}`, stateKeys: ["count"] } } },
                         (parentElement: any) => [
                         this.output(`div-1-h4-1-span-1-output-1`, parentElement, true, ["count"], (parentElement: any) => count)
                         ])
@@ -228,7 +228,7 @@ class CounterView extends View {
 }
 
 // Export factory function
-export function SaoCounter(__data__ = {}, systemData = {}): CounterView {
+export function Counter(__data__ = {}, systemData = {}): CounterView {
     return new CounterView(__data__, systemData);
 }
-export default SaoCounter;
+export default Counter;

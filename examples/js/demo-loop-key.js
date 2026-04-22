@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.demo-loop-key';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.demo-loop-key';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -210,7 +210,7 @@ class DemoLoopKeyView extends View {
 }
 
 // Export factory function
-export function SaoDemoLoopKey(__data__ = {}, systemData = {}) {
+export function DemoLoopKey(__data__ = {}, systemData = {}) {
     return new DemoLoopKeyView(__data__, systemData);
 }
-export default SaoDemoLoopKey;
+export default DemoLoopKey;

@@ -4,8 +4,8 @@ import {_} from 'saola';
 
 
 
-const __VIEW_PATH__ = 'sao.demo-ast';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.demo-ast';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -175,14 +175,16 @@ class DemoAstView extends View {
                 );
                 __execArr.push(
                     this.html(`tasks-3`, "tasks", parentElement, {}, (parentElement: any) => [
-                        this.html(`tasks-3-demo-1`, "demo", parentElement, {})
+                        this.html(`tasks-3-demo-1`, "demo", parentElement, { attrs: { ":users": { type: 'static', value: "users" } } })
                     ])
                 );
                 __execArr.push(
-                    this.html(`tasks-4`, "tasks", parentElement, {})
+                    this.html(`tasks-4`, "tasks", parentElement, { attrs: { "title": { type: 'static', value: "'Custom Task List'" } } })
                 );
                 __execArr.push(
-                    this.html(`projects-5`, "projects", parentElement, {}, (parentElement: any) => [
+                    this.html(`projects-5`, "projects", parentElement,
+                        { attrs: { ":projects": { type: 'static', value: "projects" } } },
+                        (parentElement: any) => [
                         this.html(`projects-5-div-1`, "div", parentElement,
                             { classes: [{ type: 'static', value: "header" }] },
                             (parentElement: any) => [
@@ -215,7 +217,9 @@ class DemoAstView extends View {
                                 this.output(`projects-5-div-2-p-1-output-1`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
                             ])
                             ]),
-                        this.html(`projects-5-tasks-3`, "tasks", parentElement, {}, (parentElement: any) => [
+                        this.html(`projects-5-tasks-3`, "tasks", parentElement,
+                            { attrs: { ":owners": { type: 'static', value: "['Alice', 'Bob']" } } },
+                            (parentElement: any) => [
                             this.html(`projects-5-tasks-3-div-1`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "header" }] },
                                 (parentElement: any) => {
@@ -257,7 +261,7 @@ class DemoAstView extends View {
                             this.html(`projects-5-tasks-3-p-2`, "p", parentElement, {}, (parentElement: any) => [
                                 this.output(`projects-5-tasks-3-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
                             ]),
-                            this.html(`projects-5-tasks-3-demo-3`, "demo", parentElement, {}),
+                            this.html(`projects-5-tasks-3-demo-3`, "demo", parentElement, { attrs: { ":users": { type: 'static', value: "users" } } }),
                             this.reactive(`projects-5-tasks-3-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                 const reactiveContents = [];
                                 let person: any;
@@ -278,8 +282,8 @@ class DemoAstView extends View {
                                 }
                                 return reactiveContents;
                             })
+                            ])
                         ])
-                    ])
                 );
                 __execArr.push(
                     this.html(`counter-6`, "counter", parentElement, {})
@@ -288,7 +292,7 @@ class DemoAstView extends View {
                     this.html(`demo-7`, "demo", parentElement, {})
                 );
                 __execArr.push(
-                    this.html(`alert-8`, "alert", parentElement, {})
+                    this.html(`alert-8`, "alert", parentElement, { attrs: { "type": { type: 'static', value: "success" }, "message": { type: 'static', value: "This is a custom alert component!" } } })
                 );
             return __execArr;
             });
@@ -299,7 +303,7 @@ class DemoAstView extends View {
 }
 
 // Export factory function
-export function SaoDemoAst(__data__ = {}, systemData = {}): DemoAstView {
+export function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
     return new DemoAstView(__data__, systemData);
 }
-export default SaoDemoAst;
+export default DemoAst;

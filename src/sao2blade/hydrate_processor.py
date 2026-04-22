@@ -417,8 +417,9 @@ class BladeHydrateProcessor:
                 continue
             
             # Opening tag <tag ...> or <tag .../>
+            # Improved regex to handle => and -> in attributes
             open_m = re.match(
-                r'<([a-zA-Z][\w-]*)((?:\s+(?:[^>\'"]|\'[^\']*\'|"[^"]*")*?)?)\s*(/?)>',
+                r'<([a-zA-Z][\w-]*)((?:\s+(?:=>|->|[^>\'"]|\'[^\']*\'|"[^"]*")*?)?)\s*(/?)>',
                 line[pos:], re.DOTALL
             )
             if open_m:

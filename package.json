@@ -9,6 +9,7 @@
     "type": "commonjs",
     "scripts": {
         "test": "node src/test.js",
+        "compile-examples": "./scripts/compile_examples.sh",
         "publish-dry-run": "npm publish --dry-run",
         "prepublishOnly": "echo 'Ready to publish @saolabs/compiler'"
     },

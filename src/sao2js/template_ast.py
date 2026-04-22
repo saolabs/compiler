@@ -907,12 +907,9 @@ class TemplateASTParser:
                 if '{{' in attr_value or '{!!' in attr_value:
                     # Parse as binding attribute with echo expressions
                     js_val, svars = self._convert_attr_echo_value(attr_value)
-                    if svars:
-                        element.binding_attrs[attr_name] = {
-                            'php': attr_value, 'js': js_val, 'state_vars': svars
-                        }
-                    else:
-                        element.static_attrs[attr_name] = attr_value
+                    element.binding_attrs[attr_name] = {
+                        'php': attr_value, 'js': js_val, 'state_vars': svars
+                    }
                 else:
                     element.static_attrs[attr_name] = attr_value
                 pos += m.end()

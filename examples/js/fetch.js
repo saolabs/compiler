@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.fetch';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.fetch';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -257,7 +257,7 @@ class FetchView extends View {
 }
 
 // Export factory function
-export function SaoFetch(__data__ = {}, systemData = {}) {
+export function Fetch(__data__ = {}, systemData = {}) {
     return new FetchView(__data__, systemData);
 }
-export default SaoFetch;
+export default Fetch;

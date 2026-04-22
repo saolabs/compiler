@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'sao.home';
-const __VIEW_NAMESPACE__ = 'sao.';
+const __VIEW_PATH__ = 'examples.home';
+const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -109,10 +109,12 @@ class HomeView extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`tasks-1`, "tasks", parentElement, {}, (parentElement) => [
-                this.html(`tasks-1-demo-1`, "demo", parentElement, {})
+                this.html(`tasks-1-demo-1`, "demo", parentElement, { attrs: { ":users": { type: 'static', value: "users" } } })
             ]),
-            this.html(`tasks-2`, "tasks", parentElement, {}),
-            this.html(`projects-3`, "projects", parentElement, {}, (parentElement) => [
+            this.html(`tasks-2`, "tasks", parentElement, { attrs: { "title": { type: 'static', value: "'Custom Task List'" } } }),
+            this.html(`projects-3`, "projects", parentElement,
+                { attrs: { ":projects": { type: 'static', value: "projects" } } },
+                (parentElement) => [
                 this.html(`projects-3-div-1`, "div", parentElement,
                     { classes: [{ type: 'static', value: "header" }] },
                     (parentElement) => [
@@ -128,7 +130,9 @@ class HomeView extends View {
                         this.output(`projects-3-div-2-p-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.count(projects))
                     ])
                     ]),
-                this.html(`projects-3-tasks-3`, "tasks", parentElement, {}, (parentElement) => [
+                this.html(`projects-3-tasks-3`, "tasks", parentElement,
+                    { attrs: { ":owners": { type: 'static', value: "['Alice', 'Bob']" } } },
+                    (parentElement) => [
                     this.html(`projects-3-tasks-3-div-1`, "div", parentElement,
                         { classes: [{ type: 'static', value: "header" }] },
                         (parentElement) => [
@@ -136,12 +140,12 @@ class HomeView extends View {
                             this.text('Task Owners')
                         ])
                         ]),
-                    this.html(`projects-3-tasks-3-demo-2`, "demo", parentElement, {})
-                ])
-            ]),
+                    this.html(`projects-3-tasks-3-demo-2`, "demo", parentElement, { attrs: { ":users": { type: 'static', value: "users" } } })
+                    ])
+                ]),
             this.html(`counter-4`, "counter", parentElement, {}),
             this.html(`demo-5`, "demo", parentElement, {}),
-            this.html(`alert-6`, "alert", parentElement, {})
+            this.html(`alert-6`, "alert", parentElement, { attrs: { "type": { type: 'static', value: "success" }, "message": { type: 'static', value: "This is a custom alert component!" } } })
             ]);
             }
         });
@@ -150,7 +154,7 @@ class HomeView extends View {
 }
 
 // Export factory function
-export function SaoHome(__data__ = {}, systemData = {}) {
+export function Home(__data__ = {}, systemData = {}) {
     return new HomeView(__data__, systemData);
 }
-export default SaoHome;
+export default Home;

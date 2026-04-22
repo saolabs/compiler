@@ -56,7 +56,7 @@
             @foreach($todos as $todo)
                 <li @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1")>
                     <label @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1")>
-                        <input @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1-input-1") @attr(['type' => 'checkbox', 'todo-' => true])>completed) @checked($todo->completed) />
+                        <input @hydrate("div-2-ul-2-foreach-1-{$loop->index}-li-1-label-1-input-1") @attr(['type' => 'checkbox']) @bind($todo->completed) @checked($todo->completed) />
                         {{ $todo->task }}
                     </label>
 

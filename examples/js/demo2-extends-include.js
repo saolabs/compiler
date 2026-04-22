@@ -1,28 +1,35 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.demo2';
+const __VIEW_PATH__ = 'examples.demo2-extends-include';
 const __VIEW_NAMESPACE__ = 'examples.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
-    hasSuperView: false,
+    hasSuperView: true,
     viewType: 'view',
-    sections: {},
+    sections: {
+        "content":{
+            "type":"long",
+            "preloader":false,
+            "useVars":true,
+            "script":{}
+        }
+    },
     wrapperConfig: { enable: false, tag: null, subscribe: true, attributes: {} },
     hasAwaitData: false,
     hasFetchData: false,
     usesVars: true,
-    hasSections: false,
+    hasSections: true,
     hasSectionPreload: false,
     hasPrerender: false,
-    renderLongSections: [],
+    renderLongSections: ["content"],
     renderSections: [],
     prerenderSections: []
 };
 
 
 
-class Demo2ViewController extends ViewController {
+class Demo2ExtendsIncludeViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
         if (typeof (this).setStaticConfig === 'function') {
@@ -33,9 +40,9 @@ class Demo2ViewController extends ViewController {
     }
 }
 
-class Demo2View extends View {
+class Demo2ExtendsIncludeView extends View {
     constructor(__data__ = {}, systemData = {}) {
-        super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ViewController);
+        super(__VIEW_PATH__, __VIEW_TYPE__, Demo2ExtendsIncludeViewController);
         const App = app("App");
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
@@ -111,7 +118,7 @@ class Demo2View extends View {
         });
 
         this.__ctrl__.setup({
-            superView: null,
+            superView: `${__layout__+'base'}`,
             subscribe: true,
             fetch: null,
             data: __data__,
@@ -157,51 +164,52 @@ class Demo2View extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
-            return this.wrapper((parentElement) => [
-            this.html(`div-1`, "div", parentElement,
+            this.block('block-content', 'content', (parentElement) => [
+            this.include("block-content-component-1", __template__ + 'header', parentElement, [], (parentElement) => ({})),
+            this.html(`block-content-div-1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "dataCount": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "dataUserName": { type: 'binding', value: user.name, factory: () => user.name, stateKeys: ["user"] } } },
                 (parentElement) => [
-                this.html(`div-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
+                this.html(`block-content-div-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
                     this.text('Hello, '),
-                    this.output(`div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user.name),
+                    this.output(`block-content-div-1-h1-1-output-1`, parentElement, true, ["user"], (parentElement) => user.name),
                     this.text('!')
                 ]),
-                this.html(`div-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                this.html(`block-content-div-1-p-2`, "p", parentElement, {}, (parentElement) => [
                     this.text('Your email is '),
-                    this.html(`div-1-p-2-span-1`, "span", parentElement, {}, (parentElement) => [
-                        this.output(`div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user.email)
+                    this.html(`block-content-div-1-p-2-span-1`, "span", parentElement, {}, (parentElement) => [
+                        this.output(`block-content-div-1-p-2-span-1-output-1`, parentElement, true, ["user"], (parentElement) => user.email)
                     ]),
                     this.text('.')
                 ]),
-                this.html(`div-1-button-3`, "button", parentElement,
+                this.html(`block-content-div-1-button-3`, "button", parentElement,
                     { events: { click: [(event) => setStatus(!status)] } },
                     (parentElement) => [
                     this.text('Toggle Status: '),
-                    this.output(`div-1-button-3-output-1`, parentElement, true, ["status"], (parentElement) => status ? 'On' : 'Off')
+                    this.output(`block-content-div-1-button-3-output-1`, parentElement, true, ["status"], (parentElement) => status ? 'On' : 'Off')
                     ]),
-                this.html(`div-1-h2-4`, "h2", parentElement, {}, (parentElement) => [
+                this.html(`block-content-div-1-h2-4`, "h2", parentElement, {}, (parentElement) => [
                     this.text('Posts:')
                 ]),
-                this.html(`div-1-ul-5`, "ul", parentElement, {}, (parentElement) => [
-                    this.reactive(`div-1-ul-5-rc-if-1`, "if", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
+                this.html(`block-content-div-1-ul-5`, "ul", parentElement, {}, (parentElement) => [
+                    this.reactive(`block-content-div-1-ul-5-rc-if-1`, "if", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
                         const reactiveContents = [];
                         if (App.Helper.count(posts) === 0) {
                             reactiveContents.push(
-                            this.html(`div-1-ul-5-rc-if-1-case_1-li-1`, "li", parentElement, {}, (parentElement) => [
+                            this.html(`block-content-div-1-ul-5-rc-if-1-case_1-li-1`, "li", parentElement, {}, (parentElement) => [
                                 this.text('No posts available.')
                             ])
                             );
                         }
                         else {
                             reactiveContents.push(
-                            this.reactive(`div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
+                            this.reactive(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1`, "foreach", parentReactive, parentElement, ["posts"], (parentReactive, parentElement) => {
                                 return this.__foreach(posts, (post, __loopKey, __loopIndex, __loop) => [
-                                    this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1`, "li", parentElement, {}, (parentElement) => [
-                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
+                                    this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1`, "li", parentElement, {}, (parentElement) => [
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1`, "h3", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-h3-1-output-1`, parentElement, true, [], (parentElement) => post.title)
                                         ]),
-                                        this.html(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
-                                            this.output(`div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
+                                        this.html(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                                            this.output(`block-content-div-1-ul-5-rc-if-1-case_2-foreach-1-${__loopIndex}-li-1-p-2-output-1`, parentElement, true, [], (parentElement) => post.content)
                                         ])
                                     ])
                                 ])
@@ -211,7 +219,7 @@ class Demo2View extends View {
                         return reactiveContents;
                     })
                 ]),
-                this.html(`div-1-div-6`, "div", parentElement,
+                this.html(`block-content-div-1-div-6`, "div", parentElement,
                     { classes: [{ type: 'static', value: "while-loop-demo" }] },
                     (parentElement) => [
                     this.__while((loopCtx) => {
@@ -220,9 +228,9 @@ class Demo2View extends View {
                         while (i < 5) {
                             loopCtx.setCurrentTimes(i);
                             __whileOutput.push(
-                                this.html(`div-1-div-6-while-1-${i}-p-1`, "p", parentElement, {}, (parentElement) => [
+                                this.html(`block-content-div-1-div-6-while-1-${i}-p-1`, "p", parentElement, {}, (parentElement) => [
                                     this.text('Counter: '),
-                                    this.output(`div-1-div-6-while-1-${i}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
+                                    this.output(`block-content-div-1-div-6-while-1-${i}-p-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
                                 ])
                             );
                                 i++;
@@ -230,8 +238,16 @@ class Demo2View extends View {
                         return __whileOutput;
                     }, 5)
                     ])
-                ])
+                ]),
+            this.include("block-content-component-2", __template__ + 'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"})),
+            this.include("block-content-component-3", __template__ + 'footer', parentElement, [], (parentElement) => ({
+                    __ONE_CHILDREN_CONTENT__: (parentElement) => [
+                    this.include("block-content-component-3-component-1", __template__ + 'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"}))
+                ]
+                }))
             ]);
+            this.superViewPath = `${__layout__+'base'}`;
+            return this.extendView(this.superViewPath, {});
             }
         });
 
@@ -239,7 +255,7 @@ class Demo2View extends View {
 }
 
 // Export factory function
-export function Demo2(__data__ = {}, systemData = {}) {
-    return new Demo2View(__data__, systemData);
+export function Demo2ExtendsInclude(__data__ = {}, systemData = {}) {
+    return new Demo2ExtendsIncludeView(__data__, systemData);
 }
-export default Demo2;
+export default Demo2ExtendsInclude;

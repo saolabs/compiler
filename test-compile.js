@@ -23,12 +23,12 @@ const pythonPath = 'python3';
 const sao2bladeScript = path.resolve(__dirname, 'src/sao2blade/cli.py');
 const sao2jsScript = path.resolve(__dirname, 'src/sao2js/cli.py');
 
-console.log('🚀 Starting Test Compile\n');
+console.log('Starting compilation of all examples to examples/js and examples/blade...');
 
 const files = fs.readdirSync(examplesDir).filter(f => f.endsWith('.sao'));
 
 for (const file of files) {
-    console.log(`\n📄 Compiling ${file}...`);
+    console.log(`Compiling ${file}...`);
     try {
         const saoPath = path.join(examplesDir, file);
         const nameNoExt = path.basename(file, '.sao');
@@ -88,7 +88,6 @@ for (const file of files) {
         } else {
             const outputBladeContent = fs.readFileSync(tempBladeOutput, 'utf-8');
             fs.writeFileSync(finalBladePath, outputBladeContent);
-            console.log(`   ✅ Wrote Blade: examples/blade/${nameNoExt}.blade.php`);
         }
         
         // --- Compile JS/TS ---
@@ -103,9 +102,10 @@ for (const file of files) {
         } else {
             const outputJsContent = fs.readFileSync(tempJsOutput, 'utf-8');
             fs.writeFileSync(finalJsPath, outputJsContent);
-            console.log(`   ✅ Wrote TS/JS: examples/js/${nameNoExt}.${jsExtension}`);
         }
         
+        console.log(`  - Done: ${nameNoExt}`);
+
         // Cleanup temp files
         const toCleanup = [tempBladeInput, tempJsInput, tempBladeOutput, tempJsOutput];
         for (const f of toCleanup) {
@@ -117,4 +117,7 @@ for (const file of files) {
     }
 }
 
-console.log('\n✨ Build complete!');
+console.log('--------------------------------');
+console.log('All examples compiled successfully!');
+console.log('JS/TS output: examples/js/');
+console.log('Blade output: examples/blade/');
