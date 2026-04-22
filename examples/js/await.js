@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.await';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.await';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -182,7 +182,7 @@ class AwaitView extends View {
 }
 
 // Export factory function
-export function Await(__data__ = {}, systemData = {}) {
+export function SaoAwait(__data__ = {}, systemData = {}) {
     return new AwaitView(__data__, systemData);
 }
-export default Await;
+export default SaoAwait;

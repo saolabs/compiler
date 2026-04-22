@@ -65,6 +65,36 @@
             <div class="card">
                 <button @click(setCounter(counter + 1))>{{text('web.contents.clickme', {counter: counter})}}</button>
             </div>
+            <@if(test == "")>
+                <span>test</span>
+            <@elseif(test == "demo")>
+                <span>test</span>
+            <@else>
+                <span>test</span>
+            </@if>
+            <@foreach(post as posts)>
+                <div>{{post.title}}</div>
+            </@foreach>
+            <@while(counter > 0)>
+                <div>{{counter}}</div>
+            </@while>
+            <@switch(test)>
+                <@case("")>
+                    <span>test</span>
+                </@case>
+                <@case("demo")>
+                    <span>test</span>
+                </@case>
+                <@default>
+                    <span>test</span>
+                <@break/>
+            </@switch>
+            <@for(let i = 0; i < 10; i++)>
+                <div>{{i}}</div>
+            </@for>
+            <@for(let i = 0; i < 10; i++)>
+                <div>{{i}}</div>
+            </@for>
 
         </main>
     @endblock

@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.test-yield-page';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.test-yield-page';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -209,7 +209,7 @@ class TestYieldPageView extends View {
 }
 
 // Export factory function
-export function TestYieldPage(__data__ = {}, systemData = {}) {
+export function SaoTestYieldPage(__data__ = {}, systemData = {}) {
     return new TestYieldPageView(__data__, systemData);
 }
-export default TestYieldPage;
+export default SaoTestYieldPage;

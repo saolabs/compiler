@@ -4,8 +4,8 @@ import {_} from 'saola';
 
 
 
-const __VIEW_PATH__ = 'examples.demo-ast';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.demo-ast';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -299,7 +299,7 @@ class DemoAstView extends View {
 }
 
 // Export factory function
-export function DemoAst(__data__ = {}, systemData = {}): DemoAstView {
+export function SaoDemoAst(__data__ = {}, systemData = {}): DemoAstView {
     return new DemoAstView(__data__, systemData);
 }
-export default DemoAst;
+export default SaoDemoAst;

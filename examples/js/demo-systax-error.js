@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.demo-systax-error';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.demo-systax-error';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -125,7 +125,7 @@ class DemoSystaxErrorView extends View {
 }
 
 // Export factory function
-export function DemoSystaxError(__data__ = {}, systemData = {}) {
+export function SaoDemoSystaxError(__data__ = {}, systemData = {}) {
     return new DemoSystaxErrorView(__data__, systemData);
 }
-export default DemoSystaxError;
+export default SaoDemoSystaxError;

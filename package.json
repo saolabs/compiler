@@ -1,42 +1,42 @@
 {
-  "name": "@saolabs/compiler",
-  "version": "1.0.0",
+    "name": "@saolabs/compiler",
+    "version": "1.0.0",
     "description": "Saola Compiler - Transforms .sao files to Blade and JavaScript",
-  "main": "src/index.js",
-  "files": [
-    "src/"
-  ],
-  "type": "commonjs",
-  "scripts": {
-    "test": "node src/test.js",
-    "publish-dry-run": "npm publish --dry-run",
-      "prepublishOnly": "echo 'Ready to publish @saolabs/compiler'"
-  },
-  "keywords": [
-     "saolabs",
-     "saola Compiler",
-     "compiler",
-    "blade",
-    "javascript",
-    "template"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/saolabs/saola-compiler.git"
-  },
-  "author": "Your Name",
-  "bugs": {
-    "url": "https://github.com/saolabs/saola-compiler/issues"
-  },
-  "homepage": "https://github.com/saolabs/saola-compiler#readme",
-    "bin": {
-      "sao-compile": "src/cli.js",
-      "sao-build": "src/build-cli.js",
-      "sao-dev": "src/dev-cli.js"
+    "main": "src/index.js",
+    "files": [
+        "src/"
+    ],
+    "type": "commonjs",
+    "scripts": {
+        "test": "node src/test.js",
+        "publish-dry-run": "npm publish --dry-run",
+        "prepublishOnly": "echo 'Ready to publish @saolabs/compiler'"
     },
-  "directories": {
-    "doc": "docs",
-    "example": "examples"
-  }
+    "keywords": [
+        "saolabs",
+        "saola Compiler",
+        "compiler",
+        "blade",
+        "javascript",
+        "template"
+    ],
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/saolabs/saola-compiler.git"
+    },
+    "author": "Sao Labs <saolaxoder@gmail.com>",
+    "bugs": {
+        "url": "https://github.com/saolabs/saola-compiler/issues"
+    },
+    "homepage": "https://github.com/saolabs/saola-compiler#readme",
+    "bin": {
+        "sao-compile": "src/cli.js",
+        "sao-build": "src/build-cli.js",
+        "sao-dev": "src/dev-cli.js"
+    },
+    "directories": {
+        "doc": "docs",
+        "example": "examples"
+    }
 }

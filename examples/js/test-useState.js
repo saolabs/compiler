@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.test-useState';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.test-useState';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -170,7 +170,7 @@ class TestUseStateView extends View {
 }
 
 // Export factory function
-export function TestUseState(__data__ = {}, systemData = {}) {
+export function SaoTestUseState(__data__ = {}, systemData = {}) {
     return new TestUseStateView(__data__, systemData);
 }
-export default TestUseState;
+export default SaoTestUseState;

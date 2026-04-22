@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.fetch-beatiful';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.fetch-beatiful';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -257,7 +257,7 @@ class FetchBeatifulView extends View {
 }
 
 // Export factory function
-export function FetchBeatiful(__data__ = {}, systemData = {}) {
+export function SaoFetchBeatiful(__data__ = {}, systemData = {}) {
     return new FetchBeatifulView(__data__, systemData);
 }
-export default FetchBeatiful;
+export default SaoFetchBeatiful;

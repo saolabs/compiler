@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.test-directives';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.test-directives';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -180,7 +180,7 @@ class TestDirectivesView extends View {
 }
 
 // Export factory function
-export function TestDirectives(__data__ = {}, systemData = {}) {
+export function SaoTestDirectives(__data__ = {}, systemData = {}) {
     return new TestDirectivesView(__data__, systemData);
 }
-export default TestDirectives;
+export default SaoTestDirectives;

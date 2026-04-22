@@ -24,8 +24,10 @@ class ConfigManager {
                 if (fs.existsSync(configPath)) {
                     try {
                         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                        // Normalize old format to new format before returning
+                        const normalizedConfig = ConfigManager.normalizeConfig(config);
                         return {
-                            config,
+                            config: normalizedConfig,
                             configPath,
                             projectRoot: currentPath
                         };
@@ -42,27 +44,95 @@ class ConfigManager {
     }
 
     /**
+     * Normalize old config format (with `root` + context `temp`) to new format
+     * (with `paths` + context `compiled`).
+     * 
+     * Old format:
+     *   { root, output, contexts: { web: { app, views, blade, temp: { views, registry } } } }
+     *
+     * New format:
+     *   { paths: { resources, saoView, bladeView, compiled }, contexts: { web: { app, views, blade, compiled: { views, registry } } } }
+     */
+    static normalizeConfig(config) {
+        // Already new format — nothing to do
+        if (config.paths) return config;
+
+        // Old format detected (has 'root' at top level but no 'paths')
+
+        // Derive common compiled base from all context temp.views paths
+        // e.g. ["resources/saola/js/temp/web/views", "resources/saola/js/temp/admin/views"]
+        //   -> commonBase = "resources/saola/js/temp"
+        const tempViewPaths = Object.values(config.contexts || {})
+            .filter(ctx => ctx.temp && ctx.temp.views)
+            .map(ctx => ctx.temp.views);
+
+        let compiledBase = '';
+        if (tempViewPaths.length > 0) {
+            const parts = tempViewPaths[0].split('/');
+            for (let i = parts.length - 1; i >= 0; i--) {
+                const prefix = parts.slice(0, i).join('/');
+                if (prefix && tempViewPaths.every(p => p.startsWith(prefix + '/'))) {
+                    compiledBase = prefix;
+                    break;
+                }
+            }
+        }
+
+        config.paths = {
+            resources: '.',
+            saoView: '',    // view paths in old format are already full relative paths
+            bladeView: '',  // blade paths in old format are already full relative paths
+            compiled: compiledBase,
+        };
+
+        // Normalize each context: map `temp` → `compiled` with paths relative to compiledBase
+        for (const ctx of Object.values(config.contexts || {})) {
+            if (ctx.temp && !ctx.compiled) {
+                const makeRelative = (absRelPath) => {
+                    if (!absRelPath || !compiledBase) return absRelPath || null;
+                    const prefix = compiledBase + '/';
+                    return absRelPath.startsWith(prefix) ? absRelPath.slice(prefix.length) : absRelPath;
+                };
+
+                ctx.compiled = {
+                    views: makeRelative(ctx.temp.views) || null,
+                    registry: makeRelative(ctx.temp.registry) || null,
+                    // No compiled.app in old format; app source dirs are used directly
+                    app: null,
+                };
+            }
+        }
+
+        return config;
+    }
+
+    /**
      * Validate configuration structure
+     * Supports both new format (with paths) and old format (already normalized by normalizeConfig).
      */
     static validateConfig(config) {
         // Validate paths (base paths)
+        // After normalizeConfig, config.paths always exists.
         if (!config.paths) {
             throw new Error('Missing required field: paths');
         }
 
-        if (!config.paths.resources) {
+        // resources is required; in normalized old format it is set to "."
+        if (config.paths.resources === undefined || config.paths.resources === null) {
             throw new Error('Missing required paths field: resources');
         }
 
-        if (!config.paths.saoView && !config.paths.saoView) {
-            throw new Error('Missing required paths field: saoView or saolaView');
+        // saoView / bladeView / compiled may be empty string ("") for old-format configs
+        // where view paths are stored as absolute-relative paths.
+        if (config.paths.saoView === undefined) {
+            throw new Error('Missing required paths field: saoView');
         }
 
-        if (!config.paths.bladeView) {
+        if (config.paths.bladeView === undefined || config.paths.bladeView === null) {
             throw new Error('Missing required paths field: bladeView');
         }
 
-        if (!config.paths.compiled) {
+        if (config.paths.compiled === undefined || config.paths.compiled === null) {
             throw new Error('Missing required paths field: compiled');
         }
 
@@ -79,10 +149,11 @@ class ConfigManager {
         // Validate each context
         for (const contextName of contextNames) {
             const context = config.contexts[contextName];
+            // 'compiled' may have been added by normalizeConfig from 'temp'
             const contextRequired = ['name', 'app', 'views', 'blade', 'compiled'];
 
             for (const field of contextRequired) {
-                if (!context[field]) {
+                if (context[field] === undefined || context[field] === null) {
                     throw new Error(`Context "${contextName}" missing required field: ${field}`);
                 }
             }
@@ -124,7 +195,7 @@ class ConfigManager {
      * Resolve view path: paths.saoView || paths.saoView + relative path
      */
     static resolveViewPath(projectRoot, paths, relativePath) {
-        const basePath = paths.saoView || paths.saoView;
+        const basePath = paths.saoView;
         return path.resolve(projectRoot, basePath, relativePath);
     }
 
@@ -148,7 +219,7 @@ class ConfigManager {
      * Resolve app path: paths.saoView || paths.saoView + relative path
      */
     static resolveAppPath(projectRoot, paths, relativePath) {
-        const basePath = paths.saoView || paths.saoView;
+        const basePath = paths.saoView;
         return path.resolve(projectRoot, basePath, relativePath);
     }
 

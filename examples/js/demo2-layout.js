@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.demo2-layout';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.demo2-layout';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: false,
@@ -121,7 +121,7 @@ class Demo2LayoutView extends View {
 }
 
 // Export factory function
-export function Demo2Layout(__data__ = {}, systemData = {}) {
+export function SaoDemo2Layout(__data__ = {}, systemData = {}) {
     return new Demo2LayoutView(__data__, systemData);
 }
-export default Demo2Layout;
+export default SaoDemo2Layout;

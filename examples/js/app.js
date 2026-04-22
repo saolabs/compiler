@@ -1,8 +1,8 @@
 import { View, ViewController, app, Application } from 'saola';
 
 
-const __VIEW_PATH__ = 'examples.app';
-const __VIEW_NAMESPACE__ = 'examples.';
+const __VIEW_PATH__ = 'sao.app';
+const __VIEW_NAMESPACE__ = 'sao.';
 const __VIEW_TYPE__ = 'view';
 const __VIEW_CONFIG__ = {
     hasSuperView: true,
@@ -330,7 +330,7 @@ class AppView extends View {
 }
 
 // Export factory function
-export function App(__data__ = {}, systemData = {}) {
+export function SaoApp(__data__ = {}, systemData = {}) {
     return new AppView(__data__, systemData);
 }
-export default App;
+export default SaoApp;
