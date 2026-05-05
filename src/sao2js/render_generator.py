@@ -495,8 +495,7 @@ class RenderGenerator:
         keys_str = str(state_keys).replace("'", '"')
 
         # Push loop scope for dynamic IDs
-        loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex'
-        self._loop_scopes.append((rc_id, loop_id_expr))
+        self._loop_scopes.append((rc_id, '__loopIndex + 1'))
 
         # Callback parameters
         if node.key_var:

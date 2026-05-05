@@ -75,6 +75,12 @@ class ExpressionTransformer {
             return declaration;
         }
 
+        // @import(expr) -> @import(php_expr)
+        const importMatch = declaration.match(/^@import\s*\(([\s\S]*)\)$/);
+        if (importMatch) {
+            return `@import(${this.transformExpression(importMatch[1])})`;
+        }
+
         return declaration;
     }
 
@@ -110,11 +116,107 @@ class ExpressionTransformer {
         // 3. Transform @directive(expr) — with loop scope management
         result = this._transformDirectives(result);
 
-        // 4. Restore blade comments
+        // 4. Transform bound HTML attributes (:attr="expr", @event="expr")
+        result = this._transformAttributeBindings(result);
+
+        // 5. Restore blade comments
         for (let i = 0; i < bladeComments.length; i++) {
             result = result.replace(`__BLADE_COMMENT_${i}__`, bladeComments[i]);
         }
 
+        return result;
+    }
+
+    _transformAttributeBindings(template) {
+        let result = '';
+        let inTag = false;
+        let inString = false;
+        let stringChar = '';
+        let i = 0;
+        
+        while (i < template.length) {
+            const ch = template[i];
+            
+            if (!inTag) {
+                if (ch === '<' && template[i+1] && /[a-zA-Z/]/.test(template[i+1])) {
+                    inTag = true;
+                }
+                result += ch;
+                i++;
+                continue;
+            }
+            
+            // Inside a tag
+            if (!inString) {
+                if (ch === '>') {
+                    inTag = false;
+                    result += ch;
+                    i++;
+                    continue;
+                }
+                if (ch === '"' || ch === "'") {
+                    inString = true;
+                    stringChar = ch;
+                    result += ch;
+                    i++;
+                    continue;
+                }
+                
+                // Check for attribute binding: :name="expr" or x-bind:name="expr"
+                // Do NOT transform event bindings (@name="expr" or x-on:name="expr") 
+                // because they execute client-side and must remain JS syntax.
+                let attrMatch = template.substring(i).match(/^(x-bind:|:)([a-zA-Z_:\-]+)\s*=\s*(["'])/);
+                if (attrMatch) {
+                    const prefix = attrMatch[1];
+                    const name = attrMatch[2];
+                    const quote = attrMatch[3];
+                    
+                    result += template.substring(i, i + attrMatch[0].length);
+                    i += attrMatch[0].length;
+                    
+                    // Read until matching quote
+                    let exprStart = i;
+                    let exprEnd = -1;
+                    while (i < template.length) {
+                        if (template[i] === '\\') {
+                            i += 2; // skip escaped
+                            continue;
+                        }
+                        if (template[i] === quote) {
+                            exprEnd = i;
+                            break;
+                        }
+                        i++;
+                    }
+                    
+                    if (exprEnd !== -1) {
+                        const expr = template.substring(exprStart, exprEnd);
+                        const transformed = this.transformExpression(expr.trim());
+                        result += transformed;
+                        result += template[exprEnd]; // the quote
+                        i = exprEnd + 1;
+                    }
+                    continue;
+                }
+            } else {
+                if (ch === '\\') {
+                    result += ch;
+                    if (template[i+1]) {
+                        result += template[i+1];
+                        i++;
+                    }
+                } else if (ch === stringChar) {
+                    inString = false;
+                }
+                result += ch;
+                i++;
+                continue;
+            }
+            
+            result += ch;
+            i++;
+        }
+        
         return result;
     }
 

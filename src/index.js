@@ -484,7 +484,7 @@ class Compiler {
         // Extract declarations (@useState, @const, @let, @var, @vars)
         // Support nested parentheses like: @let([$x, $y] = useState($data))
         // CRITICAL: Preserve original order from source file
-        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars', 'state', 'props', 'states'];
+        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars', 'state', 'props', 'states', 'import'];
         const foundDeclarations = [];
         
         for (const type of declarationTypes) {

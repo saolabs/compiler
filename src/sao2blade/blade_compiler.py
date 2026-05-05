@@ -116,8 +116,6 @@ class BladeTemplateCompiler:
         if component_imports:
             tag_resolver = ImportTagResolver(imports=component_imports, target='blade')
             blade_content = tag_resolver.resolve_tags(blade_content)
-            # Resolve @importInclude...@endImportInclude blocks for blade output
-            blade_content = self._resolve_import_includes_blade(blade_content)
         
         # Step 1: Parse declarations to find state variables
         state_variables = self._extract_state_variables(one_content, decl_list)
@@ -130,11 +128,17 @@ class BladeTemplateCompiler:
             # Add hydrate IDs without reactive markers
             hydrate_proc = BladeHydrateProcessor(state_variables=set())
             processed_template = hydrate_proc.process(blade_content, has_extends=has_extends)
+            if component_imports:
+                processed_template = self._resolve_import_includes_blade(processed_template)
             return self._assemble_output(decl_list, ssr_content, processed_template, component_imports, has_extends=has_extends)
         
         # Step 4: Add hydrate IDs and @startMarker/@endMarker (replaces old ReactiveWrapper)
         hydrate_proc = BladeHydrateProcessor(state_variables=state_variables)
         processed_template = hydrate_proc.process(blade_content, has_extends=has_extends)
+        
+        # Resolve @importInclude...@endImportInclude blocks for blade output
+        if component_imports:
+            processed_template = self._resolve_import_includes_blade(processed_template)
         
         # Step 5: Assemble final output
         return self._assemble_output(decl_list, ssr_content, processed_template, component_imports, has_extends=has_extends)

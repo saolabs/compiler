@@ -510,10 +510,7 @@ class TemplateASTParser:
             if expr is not None:
                 path_php, data_php = self._parse_include_params(expr)
                 if path_php:
-                    path_js = php_to_js(path_php)
-                    # If original PHP path is a simple string (no $), wrap JS in quotes
-                    if '$' not in path_php and re.match(r'^[a-zA-Z_][\w.]*$', path_js):
-                        path_js = f"'{path_js}'"
+                    path_js = self._convert_path_to_js(path_php)
                 else:
                     path_js = "''"
                 data_js = php_to_js(data_php) if data_php else None
@@ -1200,6 +1197,44 @@ class TemplateASTParser:
             path_raw = path_raw[1:-1]
         return path_raw, None
 
+    def _convert_path_to_js(self, path_expr):
+        """Convert a path expression to JS, detecting whether it's already JS syntax.
+        
+        Saola (.sao) files produce paths in JS syntax: __template__ + 'sessions.tasks'
+        Legacy PHP files produce paths in PHP syntax: $__template__ . 'sessions.tasks'
+        
+        If path is already JS (contains + but no $ or PHP . concat), skip php_to_js.
+        """
+        path_expr = path_expr.strip()
+        
+        # Already a quoted simple string — keep as-is
+        if (path_expr.startswith("'") and path_expr.endswith("'") and path_expr.count("'") == 2) or \
+           (path_expr.startswith('"') and path_expr.endswith('"') and path_expr.count('"') == 2):
+            return path_expr
+        
+        # Check if path is already in JS syntax:
+        # - Contains + operator (JS concat)
+        # - No $ prefix (not PHP variable)
+        # - No PHP -> accessor
+        is_already_js = ('+' in path_expr and '$' not in path_expr and '->' not in path_expr)
+        
+        if is_already_js:
+            # Path is already JS — use as-is
+            path_js = path_expr
+        else:
+            # Path is PHP syntax — convert via php_to_js
+            path_js = php_to_js(path_expr)
+        
+        # If result is a simple dotted identifier (like sessions.tasks.count), wrap in quotes
+        # But NOT if it contains operators (+), quotes, or looks like a system variable (__xxx__)
+        if re.match(r'^[a-zA-Z_][\w.]*$', path_js) and '.' in path_js:
+            path_js = f"'{path_js}'"
+        elif re.match(r'^[a-zA-Z_]\w*$', path_js) and not path_js.startswith('__'):
+            # Simple identifier that's not a known system variable — treat as string path
+            path_js = f"'{path_js}'"
+        
+        return path_js
+
     def _parse_import_include_params(self, expr):
         """Parse @importInclude parameters: tagName, path [, data].
         Returns (path_php, path_js, data_pairs) where data_pairs is list of (key, value_js)."""
@@ -1215,9 +1250,7 @@ class TemplateASTParser:
             path_php = parts[1].strip()
         
         # Convert path
-        path_js = php_to_js(path_php)
-        if '$' not in path_php and re.match(r'^[a-zA-Z_][\w.]*$', path_js):
-            path_js = f"'{path_js}'"
+        path_js = self._convert_path_to_js(path_php)
         
         # Parse data pairs if present
         data_pairs = []

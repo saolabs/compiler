@@ -395,6 +395,28 @@ class BladeHydrateProcessor:
                 output.append(f"{indent}@endMarker('component', {id_val})")
                 continue
             
+            # ─── @importInclude → wrap with @startMarker ─────
+            import_include_m = re.match(r'^(\s*)@importInclude\s*\(', raw_line)
+            if import_include_m:
+                comp_id = self.id_gen.push_component()
+                id_val = self._blade_id_value(comp_id, loop_scopes)
+                output.append(f"{indent}@startMarker('component', {id_val})")
+                output.append(raw_line)
+                continue
+                
+            # ─── @endImportInclude → wrap with @endMarker ─────
+            end_import_include_m = re.match(r'^(\s*)@endImportInclude\b', stripped)
+            if end_import_include_m:
+                # Get ID before popping to keep the correct ID for the end marker
+                # Since id_gen.current_component() isn't standard, we reconstruct it
+                # The current scope prefix is the component ID!
+                comp_id = self.id_gen.current_scope.prefix
+                id_val = self._blade_id_value(comp_id, loop_scopes)
+                self.id_gen.pop_scope()
+                output.append(raw_line)
+                output.append(f"{indent}@endMarker('component', {id_val})")
+                continue
+
             # ─── @yield → wrap with @startMarker/@endMarker ──────
             yield_m = re.match(r'^(\s*)@yield\s*\(', raw_line)
             if yield_m:

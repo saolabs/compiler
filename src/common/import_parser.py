@@ -59,8 +59,8 @@ class ImportParser:
             # Remove Blade comments {{-- ... --}} from content
             content = re.sub(r'\{\{--.*?--\}\}', '', content, flags=re.DOTALL).strip()
             
-            if content.startswith('['):
-                # Array import: @import([ 'tag' => 'path', ... ])
+            if content.startswith('[') or content.startswith('{'):
+                # Array/Object import: @import([ 'tag' => 'path' ]) or @import({ tag: 'path' })
                 self._parse_array_import(content)
             else:
                 # Single import: with or without 'as'
@@ -121,8 +121,8 @@ class ImportParser:
         content = content.strip()
         
         # Check for 'as' keyword (must be standalone word, not part of path)
-        # Pattern: ... as identifier (at the end)
-        as_match = re.search(r'\s+as\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$', content)
+        # Pattern: ... as [$]identifier (at the end)
+        as_match = re.search(r'\s+as\s+\$?([a-zA-Z_][a-zA-Z0-9_]*)\s*$', content)
         
         if as_match:
             # Has 'as' alias
@@ -140,9 +140,9 @@ class ImportParser:
         """
         Parse array import: [ 'tag1' => 'path1', 'tag2' => path2, ... ]
         """
-        # Remove outer brackets
+        # Remove outer brackets or braces
         inner = content.strip()
-        if inner.startswith('[') and inner.endswith(']'):
+        if (inner.startswith('[') and inner.endswith(']')) or (inner.startswith('{') and inner.endswith('}')):
             inner = inner[1:-1].strip()
         
         # Remove Blade comments inside array
@@ -158,10 +158,10 @@ class ImportParser:
             if not entry:
                 continue
             
-            # Match 'tag' => path or "tag" => path
+            # Match 'tag' => path, "tag" => path, or tag: path
             arrow_match = re.match(
-                r"""['"]([a-zA-Z_][a-zA-Z0-9_]*)['"]  # tag in quotes
-                \s*=>\s*                               # =>
+                r"""(?:['"]?([a-zA-Z_][a-zA-Z0-9_]*)['"]?)  # tag in quotes or unquoted
+                \s*(?:=>|:)\s*                         # => or :
                 (.+)                                   # path expression
                 """,
                 entry, re.VERBOSE | re.DOTALL

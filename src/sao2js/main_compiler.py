@@ -767,6 +767,10 @@ class BladeCompiler:
             ast_blade = re.sub(r'<blade\b[^>]*>', '', ast_blade, flags=re.IGNORECASE)
             ast_blade = re.sub(r'</blade>', '', ast_blade, flags=re.IGNORECASE)
             
+            # Remove <template> wrapper tags (Saola syntax wrapper)
+            ast_blade = re.sub(r'<template\b[^>]*>', '', ast_blade, flags=re.IGNORECASE)
+            ast_blade = re.sub(r'</template>', '', ast_blade, flags=re.IGNORECASE)
+            
             # Remove declaration directives (already parsed) using balanced parentheses
             for directive in ['@vars', '@data', '@props', '@let', '@const', '@useState', '@states']:
                 pattern = re.compile(rf'{re.escape(directive)}\s*\(')
