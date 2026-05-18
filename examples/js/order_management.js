@@ -256,39 +256,39 @@ class OrderManagementView extends View {
             let parentElement = this.parentElement;
             let parentReactive = null;
             this.block('block-content', 'content', (parentElement) => [
-            this.html(`block-content-div-1`, "div", parentElement,
+            this.html(`e085b222`, "div", parentElement,
                 { classes: [{ type: 'static', value: "admin-wrapper" }, { type: 'binding', value: "sidebar-collapsed", factory: () => !sidebarOpen, stateKeys: ["sidebarOpen"] }] },
                 (parentElement) => [
-                this.html(`block-content-div-1-header-1`, "header", parentElement,
+                this.html(`c417c587`, "header", parentElement,
                     { classes: [{ type: 'static', value: "flex" }, { type: 'static', value: "justify-between" }, { type: 'static', value: "items-center" }, { type: 'static', value: "mb-8" }] },
                     (parentElement) => [
-                    this.html(`block-content-div-1-header-1-h1-1`, "h1", parentElement, {}, (parentElement) => [
-                        this.output(`block-content-div-1-header-1-h1-1-output-1`, parentElement, true, [], (parentElement) => pageTitle)
+                    this.html(`241d3fd8`, "h1", parentElement, {}, (parentElement) => [
+                        this.output(`8121b856`, parentElement, true, [], (parentElement) => pageTitle)
                     ]),
-                    this.html(`block-content-div-1-header-1-div-2`, "div", parentElement,
+                    this.html(`5cade1a4`, "div", parentElement,
                         { classes: [{ type: 'static', value: "user-profile" }, { type: 'static', value: "flex" }, { type: 'static', value: "items-center" }, { type: 'static', value: "gap-3" }] },
                         (parentElement) => [
-                        this.reactive(`block-content-div-1-header-1-div-2-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
+                        this.reactive(`b4ef86fc`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                             const reactiveContents = [];
                             if (currentUser && currentUser.is_admin) {
                                 reactiveContents.push(
-                                this.html(`block-content-div-1-header-1-div-2-rc-if-1-case_1-span-1`, "span", parentElement,
+                                this.html(`4111cf25`, "span", parentElement,
                                     { classes: [{ type: 'static', value: "badge" }, { type: 'static', value: "badge-admin" }] },
                                     (parentElement) => [
                                     this.text('Admin Mode')
                                     ]),
                                 this.text('} @else {'),
-                                this.html(`block-content-div-1-header-1-div-2-rc-if-1-case_1-span-2`, "span", parentElement,
+                                this.html(`c2dbe4b4`, "span", parentElement,
                                     { classes: [{ type: 'static', value: "badge" }, { type: 'static', value: "badge-staff" }] },
                                     (parentElement) => [
                                     this.text('Staff')
                                     ]),
                                 this.text('}'),
-                                this.reactive(`block-content-div-1-header-1-div-2-rc-if-1-case_1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
+                                this.reactive(`6395ee19`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                                     const reactiveContents = [];
                                     if (currentUser) {
                                         reactiveContents.push(
-                                        this.html(`block-content-div-1-header-1-div-2-rc-if-1-case_1-rc-if-1-case_1-img-1`, "img", parentElement, { classes: [{ type: 'static', value: "w-10" }, { type: 'static', value: "h-10" }, { type: 'static', value: "rounded-full" }], attrs: { "alt": { type: 'static', value: "avatar" }, "src": { type: 'binding', value: `${currentUser.avatar}`, factory: () => `${currentUser.avatar}`, stateKeys: [] } } }),
+                                        this.html(`acae5bea`, "img", parentElement, { classes: [{ type: 'static', value: "w-10" }, { type: 'static', value: "h-10" }, { type: 'static', value: "rounded-full" }], attrs: { "alt": { type: 'static', value: "avatar" }, "src": { type: 'binding', value: `${currentUser.avatar}`, factory: () => `${currentUser.avatar}`, stateKeys: [] } } }),
                                         this.text('}')
                                         );
                                     }
@@ -300,33 +300,33 @@ class OrderManagementView extends View {
                         })
                         ])
                     ]),
-                this.html(`block-content-div-1-div-2`, "div", parentElement,
+                this.html(`2e937ea2`, "div", parentElement,
                     { classes: [{ type: 'static', value: "grid" }, { type: 'static', value: "grid-cols-4" }, { type: 'static', value: "gap-4" }, { type: 'static', value: "mb-6" }] },
                     (parentElement) => [
                     this.text('@each (key, value in stats) {'),
-                    this.html(`block-content-div-1-div-2-div-1`, "div", parentElement,
+                    this.html(`f4ba9c28`, "div", parentElement,
                         { classes: [{ type: 'static', value: "stat-card" }, { type: 'static', value: "p-4" }, { type: 'static', value: "bg-white" }, { type: 'static', value: "shadow" }, { type: 'static', value: "rounded-lg" }] },
                         (parentElement) => [
-                        this.html(`block-content-div-1-div-2-div-1-label-1`, "label", parentElement,
+                        this.html(`14578384`, "label", parentElement,
                             { classes: [{ type: 'static', value: "text-gray-500" }, { type: 'static', value: "uppercase" }, { type: 'static', value: "text-xs" }, { type: 'static', value: "font-bold" }] },
                             (parentElement) => [
-                            this.output(`block-content-div-1-div-2-div-1-label-1-output-1`, parentElement, true, [], (parentElement) => key)
+                            this.output(`07bcf96b`, parentElement, true, [], (parentElement) => key)
                             ]),
-                        this.html(`block-content-div-1-div-2-div-1-div-2`, "div", parentElement,
+                        this.html(`fb6bbef0`, "div", parentElement,
                             { classes: [{ type: 'static', value: "text-2xl" }, { type: 'static', value: "font-semibold" }] },
                             (parentElement) => [
-                            this.reactive(`block-content-div-1-div-2-div-1-div-2-rc-switch-1`, "switch", parentReactive, parentElement, [], (parentReactive, parentElement) => {
+                            this.reactive(`1a0825fc`, "switch", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                                 const reactiveContents = [];
                                 switch (key) {
                                     case 'revenue':
                                         reactiveContents.push(
-                                        this.html(`block-content-div-1-div-2-div-1-div-2-rc-switch-1-case_1-span-1`, "span", parentElement, {}, (parentElement) => [
+                                        this.html(`27fe675b`, "span", parentElement, {}, (parentElement) => [
                                             this.text('$'),
-                                            this.output(`block-content-div-1-div-2-div-1-div-2-rc-switch-1-case_1-span-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.formatMoney(value))
+                                            this.output(`69dd3353`, parentElement, true, [], (parentElement) => App.Helper.formatMoney(value))
                                         ]),
                                         this.text('@default:'),
-                                        this.html(`block-content-div-1-div-2-div-1-div-2-rc-switch-1-case_1-span-2`, "span", parentElement, {}, (parentElement) => [
-                                            this.output(`block-content-div-1-div-2-div-1-div-2-rc-switch-1-case_1-span-2-output-1`, parentElement, true, [], (parentElement) => value)
+                                        this.html(`354b41ea`, "span", parentElement, {}, (parentElement) => [
+                                            this.output(`119c6da9`, parentElement, true, [], (parentElement) => value)
                                         ]),
                                         this.text('}')
                                         );
@@ -338,132 +338,132 @@ class OrderManagementView extends View {
                         ]),
                     this.text('}')
                     ]),
-                this.html(`block-content-div-1-section-3`, "section", parentElement,
+                this.html(`fb892c29`, "section", parentElement,
                     { classes: [{ type: 'static', value: "filters-bar" }, { type: 'static', value: "mb-6" }, { type: 'static', value: "p-4" }, { type: 'static', value: "bg-gray-50" }, { type: 'static', value: "rounded" }, { type: 'static', value: "flex" }, { type: 'static', value: "gap-4" }] },
                     (parentElement) => [
-                    this.html(`block-content-div-1-section-3-input-1`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "placeholder": { type: 'static', value: "Tìm mã đơn hàng..." } }, events: { input: [{"handler":"searchOrders","params":[event.target.value]}] } }),
-                    this.html(`block-content-div-1-section-3-select-2`, "select", parentElement,
+                    this.html(`d2c3fe70`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "placeholder": { type: 'static', value: "Tìm mã đơn hàng..." } }, events: { input: [{"handler":"searchOrders","params":[event.target.value]}] } }),
+                    this.html(`00f2a266`, "select", parentElement,
                         { events: { change: [{"handler":"setStatusFilter","params":[event.target.value]}] } },
                         (parentElement) => [
                         this.text('@each (status in [\'all\', \'pending\', \'shipping\', \'completed\', \'cancelled\']) {'),
-                        this.html(`block-content-div-1-section-3-select-2-option-1`, "option", parentElement,
+                        this.html(`f2ce61c0`, "option", parentElement,
                             { attrs: { "selected": { type: 'static', value: true }, "filters": { type: 'static', value: true }, "status": { type: 'static', value: true }, "value": { type: 'binding', value: `${status}`, factory: () => `${status}`, stateKeys: [] } } },
                             (parentElement) => [
-                            this.output(`block-content-div-1-section-3-select-2-option-1-output-1`, parentElement, true, [], (parentElement) => App.Helper.text('status.' + status))
+                            this.output(`0f69fa05`, parentElement, true, [], (parentElement) => App.Helper.text('status.' + status))
                             ]),
                         this.text('}')
                         ])
                     ]),
-                this.html(`block-content-div-1-div-4`, "div", parentElement,
+                this.html(`0be9bda4`, "div", parentElement,
                     { classes: [{ type: 'static', value: "table-responsive" }, { type: 'static', value: "bg-white" }, { type: 'static', value: "rounded-xl" }, { type: 'static', value: "shadow-sm" }, { type: 'static', value: "overflow-hidden" }] },
                     (parentElement) => [
-                    this.reactive(`block-content-div-1-div-4-rc-if-1`, "if", parentReactive, parentElement, ["isLoading"], (parentReactive, parentElement) => {
+                    this.reactive(`7d177d0b`, "if", parentReactive, parentElement, ["isLoading"], (parentReactive, parentElement) => {
                         const reactiveContents = [];
                         if (isLoading) {
                             reactiveContents.push(
-                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-1`, "div", parentElement,
+                            this.html(`f6be0d28`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "p-20" }, { type: 'static', value: "text-center" }] },
                                 (parentElement) => [
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-1-div-1`, "div", parentElement, { classes: [{ type: 'static', value: "spinner" }] }),
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-1-p-2`, "p", parentElement, {}, (parentElement) => [
+                                this.html(`af7434a2`, "div", parentElement, { classes: [{ type: 'static', value: "spinner" }] }),
+                                this.html(`be5bab06`, "p", parentElement, {}, (parentElement) => [
                                     this.text('Đang tải dữ liệu đơn hàng...')
                                 ])
                                 ]),
                             this.text('} @elseif($orders && count($orders) > 0) {'),
-                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2`, "table", parentElement,
+                            this.html(`1947d87a`, "table", parentElement,
                                 { classes: [{ type: 'static', value: "w-full" }, { type: 'static', value: "text-left" }] },
                                 (parentElement) => [
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1`, "thead", parentElement,
+                                this.html(`14b61282`, "thead", parentElement,
                                     { classes: [{ type: 'static', value: "bg-gray-100" }, { type: 'static', value: "border-b" }] },
                                     (parentElement) => [
-                                    this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1`, "tr", parentElement, {}, (parentElement) => [
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-1`, "th", parentElement, {}, (parentElement) => [
+                                    this.html(`311b2b99`, "tr", parentElement, {}, (parentElement) => [
+                                        this.html(`6ea6413f`, "th", parentElement, {}, (parentElement) => [
                                             this.text('ID')
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-2`, "th", parentElement, {}, (parentElement) => [
+                                        this.html(`7d748134`, "th", parentElement, {}, (parentElement) => [
                                             this.text('Khách hàng')
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-3`, "th", parentElement, {}, (parentElement) => [
+                                        this.html(`82f1866c`, "th", parentElement, {}, (parentElement) => [
                                             this.text('Sản phẩm')
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-4`, "th", parentElement, {}, (parentElement) => [
+                                        this.html(`17debd00`, "th", parentElement, {}, (parentElement) => [
                                             this.text('Trạng thái')
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-5`, "th", parentElement, {}, (parentElement) => [
+                                        this.html(`bd4e6746`, "th", parentElement, {}, (parentElement) => [
                                             this.text('Tổng tiền')
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-thead-1-tr-1-th-6`, "th", parentElement, {}, (parentElement) => [
+                                        this.html(`b48a274e`, "th", parentElement, {}, (parentElement) => [
                                             this.text('Thao tác')
                                         ])
                                     ])
                                     ]),
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2`, "tbody", parentElement, {}, (parentElement) => [
+                                this.html(`c2245727`, "tbody", parentElement, {}, (parentElement) => [
                                     this.text('@each (order in orders) {'),
-                                    this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1`, "tr", parentElement,
+                                    this.html(`50e283f2`, "tr", parentElement,
                                         { classes: [{ type: 'static', value: "hover:bg-gray-50" }, { type: 'static', value: "transition-colors" }, { type: 'static', value: "border-b" }] },
                                         (parentElement) => [
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-1`, "td", parentElement,
+                                        this.html(`227c3816`, "td", parentElement,
                                             { classes: [{ type: 'static', value: "font-mono" }, { type: 'static', value: "text-blue-600" }] },
                                             (parentElement) => [
                                             this.text('#'),
-                                            this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-1-output-1`, parentElement, true, [], (parentElement) => order.id)
+                                            this.output(`c669d743`, parentElement, true, [], (parentElement) => order.id)
                                             ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-2`, "td", parentElement, {}, (parentElement) => [
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-2-div-1`, "div", parentElement,
+                                        this.html(`9da54501`, "td", parentElement, {}, (parentElement) => [
+                                            this.html(`aac1830f`, "div", parentElement,
                                                 { classes: [{ type: 'static', value: "font-bold" }] },
                                                 (parentElement) => [
-                                                this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-2-div-1-output-1`, parentElement, true, [], (parentElement) => order.customer.name)
+                                                this.output(`006f33ff`, parentElement, true, [], (parentElement) => order.customer.name)
                                                 ]),
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-2-div-2`, "div", parentElement,
+                                            this.html(`83832293`, "div", parentElement,
                                                 { classes: [{ type: 'static', value: "text-xs" }, { type: 'static', value: "text-gray-400" }] },
                                                 (parentElement) => [
-                                                this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-2-div-2-output-1`, parentElement, true, [], (parentElement) => order.customer.email)
+                                                this.output(`02516c80`, parentElement, true, [], (parentElement) => order.customer.email)
                                                 ])
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-3`, "td", parentElement, {}, (parentElement) => [
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-3-ul-1`, "ul", parentElement,
+                                        this.html(`2e96d88a`, "td", parentElement, {}, (parentElement) => [
+                                            this.html(`c2091ad0`, "ul", parentElement,
                                                 { classes: [{ type: 'static', value: "item-list" }] },
                                                 (parentElement) => [
                                                 this.text('@each (item in order.items) {'),
-                                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-3-ul-1-li-1`, "li", parentElement,
+                                                this.html(`b288174c`, "li", parentElement,
                                                     { classes: [{ type: 'static', value: "text-sm" }] },
                                                     (parentElement) => [
-                                                    this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-3-ul-1-li-1-output-1`, parentElement, true, [], (parentElement) => item.qty),
+                                                    this.output(`2b0b3f5a`, parentElement, true, [], (parentElement) => item.qty),
                                                     this.text('x '),
-                                                    this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-3-ul-1-li-1-output-2`, parentElement, true, [], (parentElement) => item.name)
+                                                    this.output(`49ea343d`, parentElement, true, [], (parentElement) => item.name)
                                                     ]),
                                                 this.text('}')
                                                 ])
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-4`, "td", parentElement, {}, (parentElement) => [
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-4-span-1`, "span", parentElement, { classes: [{ type: 'static', value: "status-dot" }, { type: 'static', value: "status-' + $order->status" }] }),
-                                            this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-4-output-1`, parentElement, true, [], (parentElement) => order.status_label)
+                                        this.html(`01b63702`, "td", parentElement, {}, (parentElement) => [
+                                            this.html(`729c69cb`, "span", parentElement, { classes: [{ type: 'static', value: "status-dot" }, { type: 'static', value: "status-' + $order->status" }] }),
+                                            this.output(`3cbe6d00`, parentElement, true, [], (parentElement) => order.status_label)
                                         ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-5`, "td", parentElement,
+                                        this.html(`9a406095`, "td", parentElement,
                                             { classes: [{ type: 'static', value: "font-bold" }] },
                                             (parentElement) => [
                                             this.text('$'),
-                                            this.output(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-5-output-1`, parentElement, true, [], (parentElement) => order.total_amount)
+                                            this.output(`e4e38ac3`, parentElement, true, [], (parentElement) => order.total_amount)
                                             ]),
-                                        this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-6`, "td", parentElement,
+                                        this.html(`19e253d3`, "td", parentElement,
                                             { classes: [{ type: 'static', value: "actions" }] },
                                             (parentElement) => [
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-6-button-1`, "button", parentElement,
+                                            this.html(`6a9a31ae`, "button", parentElement,
                                                 { classes: [{ type: 'static', value: "btn-icon" }], events: { click: [{"handler":"viewDetail","params":[order.id]}] } },
                                                 (parentElement) => [
                                                 this.text('👁️')
                                                 ]),
-                                            this.reactive(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-6-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
+                                            this.reactive(`e76bb09d`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                                                 const reactiveContents = [];
                                                 if (order.status == 'pending' && currentUser.can('edit_orders')) {
                                                     reactiveContents.push(
-                                                    this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-6-rc-if-1-case_1-button-1`, "button", parentElement,
+                                                    this.html(`99261a55`, "button", parentElement,
                                                         { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-green-500" }], events: { click: [{"handler":"approveOrder","params":[order.id]}] } },
                                                         (parentElement) => [
                                                         this.text('✅')
                                                         ]),
                                                     this.text('}'),
-                                                    this.html(`block-content-div-1-div-4-rc-if-1-case_1-table-2-tbody-2-tr-1-td-6-rc-if-1-case_1-button-2`, "button", parentElement,
+                                                    this.html(`ce53726e`, "button", parentElement,
                                                         { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-red-500" }], events: { click: [{"handler":"deleteOrder","params":[order.id]}] } },
                                                         (parentElement) => [
                                                         this.text('🗑️')
@@ -477,19 +477,19 @@ class OrderManagementView extends View {
                                     this.text('}')
                                 ])
                                 ]),
-                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-footer-3`, "footer", parentElement,
+                            this.html(`dc18f357`, "footer", parentElement,
                                 { classes: [{ type: 'static', value: "pagination" }, { type: 'static', value: "p-4" }, { type: 'static', value: "flex" }, { type: 'static', value: "justify-center" }, { type: 'static', value: "gap-2" }] },
                                 (parentElement) => [
-                                this.reactive(`block-content-div-1-div-4-rc-if-1-case_1-footer-3-for-1`, "for", parentReactive, parentElement, ["totalPages"], (parentReactive, parentElement) => {
+                                this.reactive(`e0c9362e`, "for", parentReactive, parentElement, ["totalPages"], (parentReactive, parentElement) => {
                                     return this.__for("increment", 1, totalPages, (__loop) => {
                                         let __forOutput = [];
                                         for (let i = 1; i <= totalPages; i++) {
                                             __loop.setCurrentTimes(i);
                                             __forOutput.push(
-                                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-footer-3-for-1-${i}-button-1`, "button", parentElement,
+                                            this.html(`4ebaee7c-${i}`, "button", parentElement,
                                                 { classes: [{ type: 'static', value: "page-link" }, { type: 'binding', value: "active", factory: () => i == currentPage, stateKeys: ["currentPage"] }], events: { click: [{"handler":"goToPage","params":[() => i]}] } },
                                                 (parentElement) => [
-                                                this.output(`block-content-div-1-div-4-rc-if-1-case_1-footer-3-for-1-${i}-button-1-output-1`, parentElement, true, ["i"], (parentElement) => i)
+                                                this.output(`90d930f7-${i}`, parentElement, true, ["i"], (parentElement) => i)
                                                 ]),
                                             this.text('}')
                                             );
@@ -499,17 +499,17 @@ class OrderManagementView extends View {
                                 })
                                 ]),
                             this.text('} @else {'),
-                            this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-4`, "div", parentElement,
+                            this.html(`2a93ae03`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "empty-state" }, { type: 'static', value: "p-20" }, { type: 'static', value: "text-center" }] },
                                 (parentElement) => [
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-4-img-1`, "img", parentElement, { classes: [{ type: 'static', value: "mx-auto" }, { type: 'static', value: "mb-4" }], attrs: { "src": { type: 'static', value: "/static/empty-orders.svg" } } }),
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-4-h3-2`, "h3", parentElement, {}, (parentElement) => [
+                                this.html(`6ed8b0c1`, "img", parentElement, { classes: [{ type: 'static', value: "mx-auto" }, { type: 'static', value: "mb-4" }], attrs: { "src": { type: 'static', value: "/static/empty-orders.svg" } } }),
+                                this.html(`ee8a8daa`, "h3", parentElement, {}, (parentElement) => [
                                     this.text('Không tìm thấy đơn hàng nào')
                                 ]),
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-4-p-3`, "p", parentElement, {}, (parentElement) => [
+                                this.html(`52b2337c`, "p", parentElement, {}, (parentElement) => [
                                     this.text('Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.')
                                 ]),
-                                this.html(`block-content-div-1-div-4-rc-if-1-case_1-div-4-button-4`, "button", parentElement,
+                                this.html(`093d532b`, "button", parentElement,
                                     { classes: [{ type: 'static', value: "btn-primary" }, { type: 'static', value: "mt-4" }], events: { click: [{"handler":"resetFilters","params":[]}] } },
                                     (parentElement) => [
                                     this.text('Xóa bộ lọc')
@@ -521,11 +521,11 @@ class OrderManagementView extends View {
                         return reactiveContents;
                     })
                     ]),
-                this.reactive(`block-content-div-1-rc-if-1`, "if", parentReactive, parentElement, ["debugMode"], (parentReactive, parentElement) => {
+                this.reactive(`97d74020`, "if", parentReactive, parentElement, ["debugMode"], (parentReactive, parentElement) => {
                     const reactiveContents = [];
                     if (debugMode) {
                         reactiveContents.push(
-                        this.html(`block-content-div-1-rc-if-1-case_1-div-1`, "div", parentElement,
+                        this.html(`44e075bd`, "div", parentElement,
                             { classes: [{ type: 'static', value: "debug-panel" }, { type: 'static', value: "fixed" }, { type: 'static', value: "bottom-0" }, { type: 'static', value: "right-0" }, { type: 'static', value: "p-4" }, { type: 'static', value: "bg-black" }, { type: 'static', value: "text-green-400" }, { type: 'static', value: "font-mono" }, { type: 'static', value: "text-xs" }, { type: 'static', value: "opacity-75" }] },
                             (parentElement) => [
                             this.__while((loopCtx) => {
@@ -534,9 +534,9 @@ class OrderManagementView extends View {
                                 while (i > 0) {
                                     loopCtx.setCurrentTimes(i);
                                     __whileOutput.push(
-                                        this.html(`block-content-div-1-rc-if-1-case_1-div-1-while-1-${i}-div-1`, "div", parentElement, {}, (parentElement) => [
+                                        this.html(`2b0c4e57-${i}`, "div", parentElement, {}, (parentElement) => [
                                             this.text('[DEBUG] System health check: OK ('),
-                                            this.output(`block-content-div-1-rc-if-1-case_1-div-1-while-1-${i}-div-1-output-1`, parentElement, true, ["i"], (parentElement) => i),
+                                            this.output(`c2e92979-${i}`, parentElement, true, ["i"], (parentElement) => i),
                                             this.text(')')
                                         ]),
                                         this.text('}')

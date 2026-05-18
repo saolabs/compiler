@@ -132,42 +132,42 @@ class DemoAstView extends View {
             const __execArr = [];
                 let a = 10; let b = 20; let c = a + b;
                 __execArr.push(
-                    this.html(`div-1`, "div", parentElement, {}, (parentElement: any) => [
-                        this.html(`div-1-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                    this.html(`d69e6b1d`, "div", parentElement, {}, (parentElement: any) => [
+                        this.html(`e4a2aaaf`, "p", parentElement, {}, (parentElement: any) => [
                             this.text('Value of a: '),
-                            this.output(`div-1-p-1-output-1`, parentElement, true, [], (parentElement: any) => a)
+                            this.output(`ff7c5797`, parentElement, true, [], (parentElement: any) => a)
                         ]),
-                        this.html(`div-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                        this.html(`96323a6c`, "p", parentElement, {}, (parentElement: any) => [
                             this.text('Value of b: '),
-                            this.output(`div-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => b)
+                            this.output(`4ed23a9a`, parentElement, true, [], (parentElement: any) => b)
                         ]),
-                        this.html(`div-1-p-3`, "p", parentElement, {}, (parentElement: any) => [
+                        this.html(`7d4b4366`, "p", parentElement, {}, (parentElement: any) => [
                             this.text('Value of c (a + b): '),
-                            this.output(`div-1-p-3-output-1`, parentElement, true, [], (parentElement: any) => c)
+                            this.output(`7ca907d2`, parentElement, true, [], (parentElement: any) => c)
                         ])
                     ])
                 );
                 __execArr.push(
-                    this.html(`div-2`, "div", parentElement, {},
+                    this.html(`eced4db6`, "div", parentElement, {},
                         (parentElement: any) => {
                             const __execArr = [];
                             let email = 'Jane Smith'; let age = 30;
                             __execArr.push(
-                                this.html(`div-2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                this.html(`04230c5b`, "p", parentElement, {}, (parentElement: any) => [
                                     this.text('Name: '),
-                                    this.output(`div-2-p-1-output-1`, parentElement, true, [], (parentElement: any) => name)
+                                    this.output(`2b4809b2`, parentElement, true, [], (parentElement: any) => name)
                                 ])
                             );
                             __execArr.push(
-                                this.html(`div-2-p-2`, "p", parentElement, {}, (parentElement: any) => [
+                                this.html(`8d2ed3cb`, "p", parentElement, {}, (parentElement: any) => [
                                     this.text('Email: '),
-                                    this.output(`div-2-p-2-output-1`, parentElement, true, [], (parentElement: any) => email)
+                                    this.output(`cb8ca079`, parentElement, true, [], (parentElement: any) => email)
                                 ])
                             );
                             __execArr.push(
-                                this.html(`div-2-p-3`, "p", parentElement, {}, (parentElement: any) => [
+                                this.html(`a37650dc`, "p", parentElement, {}, (parentElement: any) => [
                                     this.text('Age: '),
-                                    this.output(`div-2-p-3-output-1`, parentElement, true, [], (parentElement: any) => age)
+                                    this.output(`73d53b35`, parentElement, true, [], (parentElement: any) => age)
                                 ])
                             );
                             return __execArr;
@@ -187,12 +187,12 @@ class DemoAstView extends View {
                     this.include("component-3", __template__+'sessions.projects', parentElement, [], (parentElement: any) => ({
                             "projects": projects,
                             __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                            this.html(`component-3-div-1`, "div", parentElement,
+                            this.html(`b18fe9d7`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "header" }] },
                                 (parentElement: any) => [
-                                this.html(`component-3-div-1-h2-1`, "h2", parentElement, {}, (parentElement: any) => [
+                                this.html(`1c77c20b`, "h2", parentElement, {}, (parentElement: any) => [
                                     this.text('My Projects '),
-                                    this.reactive(`component-3-div-1-h2-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                    this.reactive(`6e3435ab`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                         const reactiveContents = [];
                                         let t: any;
                                         if (!(t = App.Helper.count(projects))) {
@@ -203,7 +203,7 @@ class DemoAstView extends View {
                                         else {
                                             reactiveContents.push(
                                             this.text(' ('),
-                                            this.output(`component-3-div-1-h2-1-rc-if-1-case_2-output-1`, parentElement, true, [], (parentElement: any) => t),
+                                            this.output(`a48680dc`, parentElement, true, [], (parentElement: any) => t),
                                             this.text(') ')
                                             );
                                         }
@@ -211,29 +211,29 @@ class DemoAstView extends View {
                                     })
                                 ])
                                 ]),
-                            this.html(`component-3-div-2`, "div", parentElement,
+                            this.html(`fe28a62f`, "div", parentElement,
                                 { classes: [{ type: 'static', value: "footer" }] },
                                 (parentElement: any) => [
-                                this.html(`component-3-div-2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                this.html(`c9f0c18f`, "p", parentElement, {}, (parentElement: any) => [
                                     this.text('Total Projects: '),
-                                    this.output(`component-3-div-2-p-1-output-1`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
+                                    this.output(`0f81d2b8`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
                                 ])
                                 ]),
                             this.include("component-3-component-1", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
                                     "owners": ["Alice", "Bob"],
                                     __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                                    this.html(`component-3-component-1-div-1`, "div", parentElement,
+                                    this.html(`727ca7d7`, "div", parentElement,
                                         { classes: [{ type: 'static', value: "header" }] },
                                         (parentElement: any) => {
                                             const __execArr = [];
                                             __execArr.push(
-                                                this.html(`component-3-component-1-div-1-h3-1`, "h3", parentElement, {}, (parentElement: any) => [
+                                                this.html(`8a745b38`, "h3", parentElement, {}, (parentElement: any) => [
                                                     this.text('Task Owners')
                                                 ])
                                             );
                                             __execArr.push(
-                                                this.html(`component-3-component-1-div-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                                    this.output(`component-3-component-1-div-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                                this.html(`87be49e9`, "p", parentElement, {}, (parentElement: any) => [
+                                                    this.output(`c6fff7a4`, parentElement, true, [], (parentElement: any) => content)
                                                 ])
                                             );
                                             let test = 'Hello World';
@@ -241,18 +241,18 @@ class DemoAstView extends View {
                                                 this.__foreach(posts, (post: any, __loopKey: any, __loopIndex: any, __loop: any) => {
                                                     const __execArr = [];
                                                     __execArr.push(
-                                                        this.html(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-1`, "p", parentElement, {}, (parentElement: any) => [
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-1-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                                        this.html(`95b8e5df-${__loopIndex + 1}`, "p", parentElement, {}, (parentElement: any) => [
+                                                            this.output(`fdc458ea-${__loopIndex + 1}`, parentElement, true, [], (parentElement: any) => content)
                                                         ])
                                                     );
                                                     let content = 'This is a test';
                                                     __execArr.push(
-                                                        this.html(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-1`, parentElement, true, [], (parentElement: any) => post.title),
+                                                        this.html(`b36f132d-${__loopIndex + 1}`, "p", parentElement, {}, (parentElement: any) => [
+                                                            this.output(`a3056b3f-${__loopIndex + 1}`, parentElement, true, [], (parentElement: any) => post.title),
                                                             this.text(': '),
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-2`, parentElement, true, [], (parentElement: any) => post.content),
+                                                            this.output(`1425822f-${__loopIndex + 1}`, parentElement, true, [], (parentElement: any) => post.content),
                                                             this.text(' '),
-                                                            this.output(`component-3-component-1-div-1-foreach-1-${__loopIndex + 1}-p-2-output-3`, parentElement, true, [], (parentElement: any) => content)
+                                                            this.output(`6bc4e3ef-${__loopIndex + 1}`, parentElement, true, [], (parentElement: any) => content)
                                                         ])
                                                     );
                                                     return __execArr;
@@ -260,25 +260,25 @@ class DemoAstView extends View {
                                             );
                                             return __execArr;
                                         }),
-                                    this.html(`component-3-component-1-p-2`, "p", parentElement, {}, (parentElement: any) => [
-                                        this.output(`component-3-component-1-p-2-output-1`, parentElement, true, [], (parentElement: any) => content)
+                                    this.html(`7cbd68c8`, "p", parentElement, {}, (parentElement: any) => [
+                                        this.output(`17e16670`, parentElement, true, [], (parentElement: any) => content)
                                     ]),
                                     this.include("component-3-component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users})),
-                                    this.reactive(`component-3-component-1-rc-if-1`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
+                                    this.reactive(`59eeb50a`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                         const reactiveContents = [];
                                         let person: any;
                                         if (!(person = App.Helper.getPerson())) {
                                             reactiveContents.push(
-                                            this.html(`component-3-component-1-rc-if-1-case_1-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                            this.html(`6559f3b5`, "p", parentElement, {}, (parentElement: any) => [
                                                 this.text('No person found.')
                                             ])
                                             );
                                         }
                                         else {
                                             reactiveContents.push(
-                                            this.html(`component-3-component-1-rc-if-1-case_2-p-1`, "p", parentElement, {}, (parentElement: any) => [
+                                            this.html(`b9d01ee9`, "p", parentElement, {}, (parentElement: any) => [
                                                 this.text('Person found: '),
-                                                this.output(`component-3-component-1-rc-if-1-case_2-p-1-output-1`, parentElement, true, [], (parentElement: any) => person.name)
+                                                this.output(`9bf8f93c`, parentElement, true, [], (parentElement: any) => person.name)
                                             ])
                                             );
                                         }

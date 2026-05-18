@@ -108,7 +108,7 @@ class Demo2LayoutView extends View {
             let parentElement = this.parentElement;
             let parentReactive = null;
             return this.wrapper((parentElement) => [
-            this.html(`div-1`, "div", parentElement,
+            this.html(`d69e6b1d`, "div", parentElement,
                 { classes: [{ type: 'static', value: "container" }] },
                 (parentElement) => [
                 this.blockOutlet("div-1-block-outlet", "content", parentElement)

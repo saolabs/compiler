@@ -138,11 +138,12 @@ class BladeHydrateProcessor:
                 state_keys = self._get_state_keys(expr)
                 
                 rc_id = self.id_gen.push_reactive('if')
+                id_val = self._blade_id_value(rc_id, loop_scopes)
                 case_counters[rc_id] = 0
                 reactive_stack.append(('if', rc_id, state_keys, {}))
                 
                 keys_php = self._php_array(state_keys)
-                output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'if'])")
+                output.append(f"{indent}@startMarker('reactive', {id_val}, ['stateKey' => {keys_php}, 'type' => 'if'])")
                 
                 # Enter case_1 branch
                 case_counters[rc_id] += 1
@@ -189,8 +190,9 @@ class BladeHydrateProcessor:
                     reactive_stack.pop()
                     del case_counters[rc_id]
                     
+                    id_val = self._blade_id_value(rc_id, loop_scopes)
                     output.append(f"{indent}@endif")
-                    output.append(f"{indent}@endMarker('reactive', '{rc_id}')")
+                    output.append(f"{indent}@endMarker('reactive', {id_val})")
                     continue
                 output.append(raw_line)
                 continue
@@ -201,11 +203,12 @@ class BladeHydrateProcessor:
                 state_keys = self._get_state_keys(expr)
                 
                 rc_id = self.id_gen.push_reactive('foreach')
+                id_val = self._blade_id_value(rc_id, loop_scopes)
                 reactive_stack.append(('foreach', rc_id, state_keys, {}))
                 
                 if state_keys:
                     keys_php = self._php_array(state_keys)
-                    output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'foreach'])")
+                    output.append(f"{indent}@startMarker('reactive', {id_val}, ['stateKey' => {keys_php}, 'type' => 'foreach'])")
                 
                 # Push loop iteration scope 
                 # Look ahead for @key 
@@ -238,7 +241,8 @@ class BladeHydrateProcessor:
                     
                     output.append(f"{indent}@endforeach")
                     if state_keys:
-                        output.append(f"{indent}@endMarker('reactive', '{rc_id}')")
+                        id_val = self._blade_id_value(rc_id, loop_scopes)
+                        output.append(f"{indent}@endMarker('reactive', {id_val})")
                     continue
                 output.append(raw_line)
                 continue
@@ -251,6 +255,7 @@ class BladeHydrateProcessor:
                 end_val = self._extract_while_end(expr)
                 
                 rc_id = self.id_gen.push_reactive('while')
+                id_val = self._blade_id_value(rc_id, loop_scopes)
                 reactive_stack.append(('while', rc_id, [], {'loop_var': loop_var, 'end_val': end_val}))
                 
                 opts = []
@@ -259,7 +264,7 @@ class BladeHydrateProcessor:
                 if end_val:
                     opts.append(f"'end' => {end_val}")
                 opts_str = ', [' + ', '.join(opts) + ']' if opts else ''
-                output.append(f"{indent}@startMarker('while', '{rc_id}'{opts_str})")
+                output.append(f"{indent}@startMarker('while', {id_val}{opts_str})")
                 
                 # Push loop scope
                 # Look ahead for @key
@@ -289,8 +294,9 @@ class BladeHydrateProcessor:
                     if loop_scopes and loop_scopes[-1][0] == rc_id:
                         loop_scopes.pop()
                     
+                    id_val = self._blade_id_value(rc_id, loop_scopes)
                     output.append(f"{indent}@endwhile")
-                    output.append(f"{indent}@endMarker('while', '{rc_id}')")
+                    output.append(f"{indent}@endMarker('while', {id_val})")
                     continue
                 output.append(raw_line)
                 continue
@@ -303,11 +309,12 @@ class BladeHydrateProcessor:
                 loop_var = self._extract_for_var(expr)
                 
                 rc_id = self.id_gen.push_reactive('for')
+                id_val = self._blade_id_value(rc_id, loop_scopes)
                 reactive_stack.append(('for', rc_id, state_keys, {'loop_var': loop_var}))
                 
                 if state_keys:
                     keys_php = self._php_array(state_keys)
-                    output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'for'])")
+                    output.append(f"{indent}@startMarker('reactive', {id_val}, ['stateKey' => {keys_php}, 'type' => 'for'])")
                 
                 # Look ahead for @key
                 found_key = None
@@ -339,7 +346,8 @@ class BladeHydrateProcessor:
                     
                     output.append(f"{indent}@endfor")
                     if state_keys:
-                        output.append(f"{indent}@endMarker('reactive', '{rc_id}')")
+                        id_val = self._blade_id_value(rc_id, loop_scopes)
+                        output.append(f"{indent}@endMarker('reactive', {id_val})")
                     continue
                 output.append(raw_line)
                 continue
@@ -350,11 +358,12 @@ class BladeHydrateProcessor:
                 state_keys = self._get_state_keys(expr)
                 
                 rc_id = self.id_gen.push_reactive('switch')
+                id_val = self._blade_id_value(rc_id, loop_scopes)
                 case_counters[rc_id] = 0
                 reactive_stack.append(('switch', rc_id, state_keys, {}))
                 
                 keys_php = self._php_array(state_keys)
-                output.append(f"{indent}@startMarker('reactive', '{rc_id}', ['stateKey' => {keys_php}, 'type' => 'switch'])")
+                output.append(f"{indent}@startMarker('reactive', {id_val}, ['stateKey' => {keys_php}, 'type' => 'switch'])")
                 
                 output.append(raw_line)
                 continue
@@ -379,8 +388,9 @@ class BladeHydrateProcessor:
                     reactive_stack.pop()
                     del case_counters[rc_id]
                     
+                    id_val = self._blade_id_value(rc_id, loop_scopes)
                     output.append(f"{indent}@endswitch")
-                    output.append(f"{indent}@endMarker('reactive', '{rc_id}')")
+                    output.append(f"{indent}@endMarker('reactive', {id_val})")
                     continue
                 output.append(raw_line)
                 continue
@@ -604,13 +614,16 @@ class BladeHydrateProcessor:
     
     def _build_blade_attrs(self, element_id, loop_scopes, classes, regular_attrs, directive_parts):
         """Build final blade attribute string with @class, @attr, and directives."""
+        import hashlib
+        hashed_id = hashlib.md5(element_id.encode('utf-8')).hexdigest()[:8]
+        
         # Calculate hydration class
         if loop_scopes:
             dynamic_id = self._inject_loop_vars(element_id, loop_scopes)
             # Use double quotes for PHP interpolation of loop variables
             hydrate_class = f'$__VIEW_ID__ . "-{dynamic_id}"'
         else:
-            hydrate_class = f"$__VIEW_ID__ . '-{element_id}'"
+            hydrate_class = f"$__VIEW_ID__ . '-{hashed_id}'"
 
         all_classes = [hydrate_class]
         
@@ -671,33 +684,25 @@ class BladeHydrateProcessor:
         if loop_scopes:
             dynamic_id = self._inject_loop_vars(id_str, loop_scopes)
             return f'"{dynamic_id}"'
-        return f"'{id_str}'"
+            
+        import hashlib
+        hashed_id = hashlib.md5(id_str.encode('utf-8')).hexdigest()[:8]
+        return f"'{hashed_id}'"
     
     def _inject_loop_vars(self, id_str, loop_scopes):
         """Inject PHP variable interpolation into ID string for loop contexts.
-        
-        For each active loop scope, we inject {$loop->index} or {$i} after 
-        the reactive prefix that corresponds to that loop.
-        
-        Example:
-            id_str = "block-content-div-1-ul-5-rc-foreach-1-li-1"
-            loop_scopes = [('rc-foreach-1_id', '$loop->index', '__loopIndex')]
-            → "block-content-div-1-ul-5-rc-foreach-1-{$loop->index}-li-1"
+        Generates a 6-character hash of the base ID and appends -{key} for each loop.
         """
-        result = id_str
+        import hashlib
+        hashed_id = hashlib.md5(id_str.encode('utf-8')).hexdigest()[:8]
         
-        # Process in reverse order (innermost to outermost) to correctly handle nested IDs
-        # If we have rc-foreach-1 and rc-foreach-1-li-1-rc-foreach-1, 
-        # injecting into the longer one first preserves the structure for the shorter one's search.
-        for rc_id, blade_var, js_var in reversed(loop_scopes):
-            # Find the reactive prefix in the ID and inject loop var after it
-            if rc_id in result:
-                idx = result.index(rc_id) + len(rc_id)
-                if idx < len(result) and result[idx] == '-':
-                    # Insert loop var interpolation
-                    result = result[:idx] + f"-{{{blade_var}}}" + result[idx:]
-        
-        return result
+        dynamic_parts = []
+        for rc_id, blade_var, js_var in loop_scopes:
+            dynamic_parts.append(f"{{{blade_var}}}")
+            
+        if dynamic_parts:
+            return f"{hashed_id}-" + "-".join(dynamic_parts)
+        return hashed_id
     
     def _sao_to_blade_expr(self, expr):
         """Convert Saola dot notation to Blade arrow notation for @key.

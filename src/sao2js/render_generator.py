@@ -495,7 +495,8 @@ class RenderGenerator:
         keys_str = str(state_keys).replace("'", '"')
 
         # Push loop scope for dynamic IDs
-        self._loop_scopes.append((rc_id, '__loopIndex + 1'))
+        loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex + 1'
+        self._loop_scopes.append((rc_id, loop_id_expr))
 
         # Callback parameters
         if node.key_var:
@@ -1059,15 +1060,17 @@ class RenderGenerator:
     # ──────────────────────────────────────────────────────────────────
 
     def _format_id(self, base_id):
-        """Format a hydrate ID as JS template literal, injecting loop variables."""
-        result = base_id
-
-        for loop_prefix, js_loop_expr in reversed(self._loop_scopes):
-            if loop_prefix in result and result != loop_prefix:
-                idx = result.index(loop_prefix) + len(loop_prefix)
-                if idx < len(result) and result[idx] == '-':
-                    result = result[:idx] + f'-${{{js_loop_expr}}}' + result[idx:]
-
-        if '${' in result:
-            return f'`{result}`'
-        return f'`{result}`'
+        """Format a hydrate ID as JS template literal, injecting loop variables.
+        Generates a 6-character hash of the base ID and appends -{key} for each loop.
+        """
+        import hashlib
+        hashed_id = hashlib.md5(base_id.encode('utf-8')).hexdigest()[:8]
+        
+        dynamic_parts = []
+        for loop_prefix, js_loop_expr in self._loop_scopes:
+            dynamic_parts.append(f'${{{js_loop_expr}}}')
+            
+        if dynamic_parts:
+            keys_str = '-'.join(dynamic_parts)
+            return f'`{hashed_id}-{keys_str}`'
+        return f'`{hashed_id}`'
