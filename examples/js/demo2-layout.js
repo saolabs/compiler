@@ -111,7 +111,7 @@ class Demo2LayoutView extends View {
             this.html(`d69e6b1d`, "div", parentElement,
                 { classes: [{ type: 'static', value: "container" }] },
                 (parentElement) => [
-                this.blockOutlet("div-1-block-outlet", "content", parentElement)
+                this.blockOutlet(`d9c86768`, "content", parentElement)
                 ])
             ]);
             }

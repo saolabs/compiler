@@ -763,6 +763,83 @@ class BladeCompiler:
             # Remove @register blocks 
             ast_blade = re.sub(r'@register\s*\n.*?@endregister', '', ast_blade, flags=re.DOTALL | re.IGNORECASE)
             
+            # Find level-0 wrappers first in ast_blade BEFORE stripping them
+            wrappers = []
+            for tag in ['template', 'blade', 'sao:blade']:
+                open_tag = f"<{tag}>"
+                close_tag = f"</{tag}>"
+                pos = 0
+                while True:
+                    # Let's search case-insensitively or with regex for the open tag
+                    open_match = re.search(rf"<{re.escape(tag)}\b[^>]*>", ast_blade[pos:], re.IGNORECASE)
+                    if not open_match:
+                        break
+                    open_pos = pos + open_match.start()
+                    
+                    # Find matching close tag tracking depth
+                    depth = 1
+                    search_pos = open_pos + len(open_match.group(0))
+                    close_pos = -1
+                    while search_pos < len(ast_blade) and depth > 0:
+                        next_open_match = re.search(rf"<{re.escape(tag)}\b[^>]*>", ast_blade[search_pos:], re.IGNORECASE)
+                        next_close_match = re.search(rf"</{re.escape(tag)}>", ast_blade[search_pos:], re.IGNORECASE)
+                        
+                        next_open = (search_pos + next_open_match.start()) if next_open_match else -1
+                        next_close = (search_pos + next_close_match.start()) if next_close_match else -1
+                        
+                        if next_close == -1:
+                            break
+                        
+                        if next_open != -1 and next_open < next_close:
+                            depth += 1
+                            search_pos = next_open + len(next_open_match.group(0))
+                        else:
+                            depth -= 1
+                            if depth == 0:
+                                close_pos = next_close
+                            search_pos = next_close + len(next_close_match.group(0))
+                    
+                    if close_pos != -1:
+                        wrappers.append((open_pos, close_pos + len(next_close_match.group(0))))
+                        pos = close_pos + len(next_close_match.group(0))
+                    else:
+                        pos = open_pos + len(open_match.group(0))
+
+            # Helper to check if a position is inside any wrapper
+            def is_inside_wrapper(pos):
+                for w_start, w_end in wrappers:
+                    if w_start <= pos < w_end:
+                        return True
+                return False
+
+            # Find declaration directives to remove
+            decls_to_remove = []
+            for directive in ['@vars', '@data', '@props', '@let', '@const', '@useState', '@states']:
+                pattern = re.compile(rf'{re.escape(directive)}\s*\(')
+                pos = 0
+                while True:
+                    m = pattern.search(ast_blade, pos)
+                    if not m:
+                        break
+                    start_pos = m.start()
+                    paren_pos = m.end() - 1
+                    content, end_pos = extract_balanced_parentheses(ast_blade, paren_pos)
+                    if content is None:
+                        pos = paren_pos + 1
+                        continue
+                    
+                    if not is_inside_wrapper(start_pos):
+                        decls_to_remove.append((start_pos, end_pos))
+                    
+                    pos = end_pos
+            
+            # Sort from end to start (descending by start_pos)
+            decls_to_remove.sort(key=lambda x: x[0], reverse=True)
+            
+            # Remove them
+            for start_pos, end_pos in decls_to_remove:
+                ast_blade = ast_blade[:start_pos] + ast_blade[end_pos:]
+
             # Remove <blade> wrapper tags
             ast_blade = re.sub(r'<blade\b[^>]*>', '', ast_blade, flags=re.IGNORECASE)
             ast_blade = re.sub(r'</blade>', '', ast_blade, flags=re.IGNORECASE)
@@ -770,17 +847,6 @@ class BladeCompiler:
             # Remove <template> wrapper tags (Saola syntax wrapper)
             ast_blade = re.sub(r'<template\b[^>]*>', '', ast_blade, flags=re.IGNORECASE)
             ast_blade = re.sub(r'</template>', '', ast_blade, flags=re.IGNORECASE)
-            
-            # Remove declaration directives (already parsed) using balanced parentheses
-            for directive in ['@vars', '@data', '@props', '@let', '@const', '@useState', '@states']:
-                pattern = re.compile(rf'{re.escape(directive)}\s*\(')
-                while True:
-                    m = pattern.search(ast_blade)
-                    if not m:
-                        break
-                    paren_pos = m.end() - 1  # position of '('
-                    _, end_pos = extract_balanced_parentheses(ast_blade, paren_pos)
-                    ast_blade = ast_blade[:m.start()] + ast_blade[end_pos:]
             
             # Remove <style> blocks (not part of render output)
             ast_blade = re.sub(r'<style\b[^>]*>.*?</style>', '', ast_blade, flags=re.DOTALL | re.IGNORECASE)

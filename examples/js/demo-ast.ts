@@ -174,17 +174,17 @@ class DemoAstView extends View {
                         })
                 );
                 __execArr.push(
-                    this.include("component-1", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
+                    this.include(`68594f9a`, __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
                             __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
-                            this.include("component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users}))
+                            this.include(`fa6abab0`, __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users}))
                         ]
                         }))
                 );
                 __execArr.push(
-                    this.include("component-2", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({"title": "Custom Task List"}))
+                    this.include(`cdc4fc98`, __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({"title": "Custom Task List"}))
                 );
                 __execArr.push(
-                    this.include("component-3", __template__+'sessions.projects', parentElement, [], (parentElement: any) => ({
+                    this.include(`e0f18838`, __template__+'sessions.projects', parentElement, [], (parentElement: any) => ({
                             "projects": projects,
                             __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
                             this.html(`b18fe9d7`, "div", parentElement,
@@ -219,7 +219,7 @@ class DemoAstView extends View {
                                     this.output(`0f81d2b8`, parentElement, true, [], (parentElement: any) => App.Helper.count(projects))
                                 ])
                                 ]),
-                            this.include("component-3-component-1", __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
+                            this.include(`4aac35d9`, __template__+'sessions.tasks', parentElement, [], (parentElement: any) => ({
                                     "owners": ["Alice", "Bob"],
                                     __ONE_CHILDREN_CONTENT__: (parentElement: any) => [
                                     this.html(`727ca7d7`, "div", parentElement,
@@ -263,7 +263,7 @@ class DemoAstView extends View {
                                     this.html(`7cbd68c8`, "p", parentElement, {}, (parentElement: any) => [
                                         this.output(`17e16670`, parentElement, true, [], (parentElement: any) => content)
                                     ]),
-                                    this.include("component-3-component-1-component-1", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users})),
+                                    this.include(`f02a36c3`, __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({"users": users})),
                                     this.reactive(`59eeb50a`, "if", parentReactive, parentElement, [], (parentReactive: any, parentElement: any) => {
                                         const reactiveContents = [];
                                         let person: any;
@@ -290,13 +290,13 @@ class DemoAstView extends View {
                         }))
                 );
                 __execArr.push(
-                    this.include("component-4", 'sessions.tasks.count', parentElement, [], (parentElement: any) => ({}))
+                    this.include(`712094c8`, 'sessions.tasks.count', parentElement, [], (parentElement: any) => ({}))
                 );
                 __execArr.push(
-                    this.include("component-5", __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({}))
+                    this.include(`0aed4ae2`, __template__+'demo.fetch', parentElement, [], (parentElement: any) => ({}))
                 );
                 __execArr.push(
-                    this.include("component-6", __blade_custom_path__, parentElement, [], (parentElement: any) => ({"type": "success", "message": "This is a custom alert component!"}))
+                    this.include(`f06e1819`, __blade_custom_path__, parentElement, [], (parentElement: any) => ({"type": "success", "message": "This is a custom alert component!"}))
                 );
             return __execArr;
             });

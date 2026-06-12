@@ -57,117 +57,23 @@ class OrderManagementView extends View {
 
 
         const __UPDATE_DATA_TRAIT__ = {};
-        let {pageTitle = 'Quản lý đơn hàng', currentUser = App.Helper.request().user(), filters = {"status": "all", "search": ""}} = __data__;
-        const set$orders = __STATE__.__.register('orders');
-        let orders = null;
-        const setOrders = (state) => {
-            orders = state;
-            set$orders(state);
-        };
-        __STATE__.__.setters.setOrders = setOrders;
-        __STATE__.__.setters.orders = setOrders;
-        const update$orders = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('orders', value);
-                orders = value;
-            }
-        };
-        const set$isLoading = __STATE__.__.register('isLoading');
-        let isLoading = null;
-        const setIsLoading = (state) => {
-            isLoading = state;
-            set$isLoading(state);
-        };
-        __STATE__.__.setters.setIsLoading = setIsLoading;
-        __STATE__.__.setters.isLoading = setIsLoading;
-        const update$isLoading = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('isLoading', value);
-                isLoading = value;
-            }
-        };
-        const set$stats = __STATE__.__.register('stats');
-        let stats = null;
-        const setStats = (state) => {
-            stats = state;
-            set$stats(state);
-        };
-        __STATE__.__.setters.setStats = setStats;
-        __STATE__.__.setters.stats = setStats;
-        const update$stats = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('stats', value);
-                stats = value;
-            }
-        };
-        const set$sidebarOpen = __STATE__.__.register('sidebarOpen');
-        let sidebarOpen = null;
-        const setSidebarOpen = (state) => {
-            sidebarOpen = state;
-            set$sidebarOpen(state);
-        };
-        __STATE__.__.setters.setSidebarOpen = setSidebarOpen;
-        __STATE__.__.setters.sidebarOpen = setSidebarOpen;
-        const update$sidebarOpen = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('sidebarOpen', value);
-                sidebarOpen = value;
-            }
-        };
-        const set$debugMode = __STATE__.__.register('debugMode');
-        let debugMode = null;
-        const setDebugMode = (state) => {
-            debugMode = state;
-            set$debugMode(state);
-        };
-        __STATE__.__.setters.setDebugMode = setDebugMode;
-        __STATE__.__.setters.debugMode = setDebugMode;
-        const update$debugMode = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('debugMode', value);
-                debugMode = value;
-            }
-        };
-        const set$totalPages = __STATE__.__.register('totalPages');
-        let totalPages = null;
-        const setTotalPages = (state) => {
-            totalPages = state;
-            set$totalPages(state);
-        };
-        __STATE__.__.setters.setTotalPages = setTotalPages;
-        __STATE__.__.setters.totalPages = setTotalPages;
-        const update$totalPages = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('totalPages', value);
-                totalPages = value;
-            }
-        };
-        const set$currentPage = __STATE__.__.register('currentPage');
-        let currentPage = null;
-        const setCurrentPage = (state) => {
-            currentPage = state;
-            set$currentPage(state);
-        };
-        __STATE__.__.setters.setCurrentPage = setCurrentPage;
-        __STATE__.__.setters.currentPage = setCurrentPage;
-        const update$currentPage = (value) => {
-            if(__STATE__.__.canUpdateStateByKey){
-                updateStateByKey('currentPage', value);
-                currentPage = value;
-            }
-        };
-        let i = 3;
-        let i = i - 1;
-        let i = 3;
-        let i = i - 1;
-        __UPDATE_DATA_TRAIT__.pageTitle = value => pageTitle = value;
-        __UPDATE_DATA_TRAIT__.currentUser = value => currentUser = value;
-        __UPDATE_DATA_TRAIT__.filters = value => filters = value;
-        __UPDATE_DATA_TRAIT__.i = value => i = value;
-        __UPDATE_DATA_TRAIT__.i = value => i = value;
-        __UPDATE_DATA_TRAIT__.i = value => i = value;
-        __UPDATE_DATA_TRAIT__.i = value => i = value;
-        const __VARIABLE_LIST__ = ["pageTitle", "currentUser", "filters", "i", "i", "i", "i"];
+        let {pageTitle: 'Quản lý đơn hàng', currentUser: request().user(), filters: {
+            status: 'all',
+            search: ''
+        }} = __data__;
+        __UPDATE_DATA_TRAIT__.pageTitle: 'Quản lý đơn hàng' = value => pageTitle: 'Quản lý đơn hàng' = value;
+        __UPDATE_DATA_TRAIT__.currentUser: request().user() = value => currentUser: request().user() = value;
+        __UPDATE_DATA_TRAIT__.filters: {
+            status: 'all',
+            search: ''
+        } = value => filters: {
+            status: 'all',
+            search: ''
+        } = value;
+        const __VARIABLE_LIST__ = ["pageTitle: 'Quản lý đơn hàng'", "currentUser: request().user()", "filters: {
+            status: 'all',
+            search: ''
+        }"];
 
 
         this.__ctrl__.setUserDefinedConfig({
@@ -212,15 +118,9 @@ class OrderManagementView extends View {
             resources: [],
             commitConstructorData: function() {
                 // Then update states from data
-                update$orders([]);
-                update$isLoading(true);
-                update$stats({"total": 0, "revenue": 0});
-                update$sidebarOpen(true);
-                update$debugMode(true);
-                update$totalPages(10);
-                update$currentPage(1);
+
                 // Finally lock state updates
-                lockUpdateRealState();
+
             },
             updateVariableData: function(data) {
                 // Update all variables first
@@ -233,15 +133,9 @@ class OrderManagementView extends View {
                     }
                 }
                 // Then update states from data
-                update$orders([]);
-                update$isLoading(true);
-                update$stats({"total": 0, "revenue": 0});
-                update$sidebarOpen(true);
-                update$debugMode(true);
-                update$totalPages(10);
-                update$currentPage(1);
+
                 // Finally lock state updates
-                lockUpdateRealState();
+
             },
             updateVariableItemData: function(key, value) {
                 this.data[key] = value;
@@ -257,7 +151,7 @@ class OrderManagementView extends View {
             let parentReactive = null;
             this.block('block-content', 'content', (parentElement) => [
             this.html(`e085b222`, "div", parentElement,
-                { classes: [{ type: 'static', value: "admin-wrapper" }, { type: 'binding', value: "sidebar-collapsed", factory: () => !sidebarOpen, stateKeys: ["sidebarOpen"] }] },
+                { classes: [{ type: 'static', value: "admin-wrapper" }, { type: 'static', value: "{'sidebar-collapsed': !sidebarOpen}" }] },
                 (parentElement) => [
                 this.html(`c417c587`, "header", parentElement,
                     { classes: [{ type: 'static', value: "flex" }, { type: 'static', value: "justify-between" }, { type: 'static', value: "items-center" }, { type: 'static', value: "mb-8" }] },
@@ -341,13 +235,13 @@ class OrderManagementView extends View {
                 this.html(`fb892c29`, "section", parentElement,
                     { classes: [{ type: 'static', value: "filters-bar" }, { type: 'static', value: "mb-6" }, { type: 'static', value: "p-4" }, { type: 'static', value: "bg-gray-50" }, { type: 'static', value: "rounded" }, { type: 'static', value: "flex" }, { type: 'static', value: "gap-4" }] },
                     (parentElement) => [
-                    this.html(`d2c3fe70`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "placeholder": { type: 'static', value: "Tìm mã đơn hàng..." } }, events: { input: [{"handler":"searchOrders","params":[event.target.value]}] } }),
+                    this.html(`d2c3fe70`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "placeholder": { type: 'static', value: "Tìm mã đơn hàng..." } }, events: { input: [{"handler":"searchOrders","params":[(event) => event+target+value]}] } }),
                     this.html(`00f2a266`, "select", parentElement,
-                        { events: { change: [{"handler":"setStatusFilter","params":[event.target.value]}] } },
+                        { events: { change: [{"handler":"setStatusFilter","params":[(event) => event+target+value]}] } },
                         (parentElement) => [
                         this.text('@each (status in [\'all\', \'pending\', \'shipping\', \'completed\', \'cancelled\']) {'),
                         this.html(`f2ce61c0`, "option", parentElement,
-                            { attrs: { "selected": { type: 'static', value: true }, "filters": { type: 'static', value: true }, "status": { type: 'static', value: true }, "value": { type: 'binding', value: `${status}`, factory: () => `${status}`, stateKeys: [] } } },
+                            { attrs: { "selected": { type: 'static', value: true }, "filters.status": { type: 'static', value: true }, "status": { type: 'static', value: true }, "value": { type: 'binding', value: `${status}`, factory: () => `${status}`, stateKeys: [] } } },
                             (parentElement) => [
                             this.output(`0f69fa05`, parentElement, true, [], (parentElement) => App.Helper.text('status.' + status))
                             ]),
@@ -357,7 +251,7 @@ class OrderManagementView extends View {
                 this.html(`0be9bda4`, "div", parentElement,
                     { classes: [{ type: 'static', value: "table-responsive" }, { type: 'static', value: "bg-white" }, { type: 'static', value: "rounded-xl" }, { type: 'static', value: "shadow-sm" }, { type: 'static', value: "overflow-hidden" }] },
                     (parentElement) => [
-                    this.reactive(`7d177d0b`, "if", parentReactive, parentElement, ["isLoading"], (parentReactive, parentElement) => {
+                    this.reactive(`7d177d0b`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                         const reactiveContents = [];
                         if (isLoading) {
                             reactiveContents.push(
@@ -369,7 +263,7 @@ class OrderManagementView extends View {
                                     this.text('Đang tải dữ liệu đơn hàng...')
                                 ])
                                 ]),
-                            this.text('} @elseif($orders && count($orders) > 0) {'),
+                            this.text('} @elseif (orders && orders.length > 0) {'),
                             this.html(`1947d87a`, "table", parentElement,
                                 { classes: [{ type: 'static', value: "w-full" }, { type: 'static', value: "text-left" }] },
                                 (parentElement) => [
@@ -436,7 +330,7 @@ class OrderManagementView extends View {
                                                 ])
                                         ]),
                                         this.html(`01b63702`, "td", parentElement, {}, (parentElement) => [
-                                            this.html(`729c69cb`, "span", parentElement, { classes: [{ type: 'static', value: "status-dot" }, { type: 'static', value: "status-' + $order->status" }] }),
+                                            this.html(`729c69cb`, "span", parentElement, { classes: [{ type: 'static', value: "status-dot" }, { type: 'static', value: "status-' + order.status" }] }),
                                             this.output(`3cbe6d00`, parentElement, true, [], (parentElement) => order.status_label)
                                         ]),
                                         this.html(`9a406095`, "td", parentElement,
@@ -449,7 +343,7 @@ class OrderManagementView extends View {
                                             { classes: [{ type: 'static', value: "actions" }] },
                                             (parentElement) => [
                                             this.html(`6a9a31ae`, "button", parentElement,
-                                                { classes: [{ type: 'static', value: "btn-icon" }], events: { click: [{"handler":"viewDetail","params":[order.id]}] } },
+                                                { classes: [{ type: 'static', value: "btn-icon" }], events: { click: [{"handler":"viewDetail","params":[(event) => order+id]}] } },
                                                 (parentElement) => [
                                                 this.text('👁️')
                                                 ]),
@@ -458,13 +352,13 @@ class OrderManagementView extends View {
                                                 if (order.status == 'pending' && currentUser.can('edit_orders')) {
                                                     reactiveContents.push(
                                                     this.html(`99261a55`, "button", parentElement,
-                                                        { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-green-500" }], events: { click: [{"handler":"approveOrder","params":[order.id]}] } },
+                                                        { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-green-500" }], events: { click: [{"handler":"approveOrder","params":[(event) => order+id]}] } },
                                                         (parentElement) => [
                                                         this.text('✅')
                                                         ]),
                                                     this.text('}'),
                                                     this.html(`ce53726e`, "button", parentElement,
-                                                        { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-red-500" }], events: { click: [{"handler":"deleteOrder","params":[order.id]}] } },
+                                                        { classes: [{ type: 'static', value: "btn-icon" }, { type: 'static', value: "text-red-500" }], events: { click: [{"handler":"deleteOrder","params":[(event) => order+id]}] } },
                                                         (parentElement) => [
                                                         this.text('🗑️')
                                                         ])
@@ -480,14 +374,13 @@ class OrderManagementView extends View {
                             this.html(`dc18f357`, "footer", parentElement,
                                 { classes: [{ type: 'static', value: "pagination" }, { type: 'static', value: "p-4" }, { type: 'static', value: "flex" }, { type: 'static', value: "justify-center" }, { type: 'static', value: "gap-2" }] },
                                 (parentElement) => [
-                                this.reactive(`e0c9362e`, "for", parentReactive, parentElement, ["totalPages"], (parentReactive, parentElement) => {
-                                    return this.__for("increment", 1, totalPages, (__loop) => {
+                                this.__for("increment", 1, totalPages, (__loop) => {
                                         let __forOutput = [];
                                         for (let i = 1; i <= totalPages; i++) {
                                             __loop.setCurrentTimes(i);
                                             __forOutput.push(
                                             this.html(`4ebaee7c-${i}`, "button", parentElement,
-                                                { classes: [{ type: 'static', value: "page-link" }, { type: 'binding', value: "active", factory: () => i == currentPage, stateKeys: ["currentPage"] }], events: { click: [{"handler":"goToPage","params":[() => i]}] } },
+                                                { classes: [{ type: 'static', value: "page-link" }, { type: 'static', value: "active': i == currentPage" }], events: { click: [{"handler":"goToPage","params":[() => i]}] } },
                                                 (parentElement) => [
                                                 this.output(`90d930f7-${i}`, parentElement, true, ["i"], (parentElement) => i)
                                                 ]),
@@ -496,7 +389,6 @@ class OrderManagementView extends View {
                                         }
                                         return __forOutput;
                                     })
-                                })
                                 ]),
                             this.text('} @else {'),
                             this.html(`2a93ae03`, "div", parentElement,
@@ -521,30 +413,36 @@ class OrderManagementView extends View {
                         return reactiveContents;
                     })
                     ]),
-                this.reactive(`97d74020`, "if", parentReactive, parentElement, ["debugMode"], (parentReactive, parentElement) => {
+                this.reactive(`97d74020`, "if", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                     const reactiveContents = [];
                     if (debugMode) {
                         reactiveContents.push(
                         this.html(`44e075bd`, "div", parentElement,
                             { classes: [{ type: 'static', value: "debug-panel" }, { type: 'static', value: "fixed" }, { type: 'static', value: "bottom-0" }, { type: 'static', value: "right-0" }, { type: 'static', value: "p-4" }, { type: 'static', value: "bg-black" }, { type: 'static', value: "text-green-400" }, { type: 'static', value: "font-mono" }, { type: 'static', value: "text-xs" }, { type: 'static', value: "opacity-75" }] },
-                            (parentElement) => [
-                            this.__while((loopCtx) => {
-                                    loopCtx.setCount(0);
-                                let __whileOutput = [];
-                                while (i > 0) {
-                                    loopCtx.setCurrentTimes(i);
-                                    __whileOutput.push(
-                                        this.html(`2b0c4e57-${i}`, "div", parentElement, {}, (parentElement) => [
-                                            this.text('[DEBUG] System health check: OK ('),
-                                            this.output(`c2e92979-${i}`, parentElement, true, ["i"], (parentElement) => i),
-                                            this.text(')')
-                                        ]),
-                                        this.text('}')
-                                    );
-                                }
-                                return __whileOutput;
-                            }, 0)
-                            ]),
+                            (parentElement) => {
+                                const __execArr = [];
+                                let i = 3;
+                                __execArr.push(
+                                    this.__while((loopCtx) => {
+                                            loopCtx.setCount(0);
+                                        let __whileOutput = [];
+                                        while (i > 0) {
+                                            loopCtx.setCurrentTimes(i);
+                                            __whileOutput.push(
+                                                this.html(`2b0c4e57-${i}`, "div", parentElement, {}, (parentElement) => [
+                                                    this.text('[DEBUG] System health check: OK ('),
+                                                    this.output(`c2e92979-${i}`, parentElement, true, ["i"], (parentElement) => i),
+                                                    this.text(')')
+                                                ]),
+                                                this.text('}')
+                                            );
+                                                i = i - 1;
+                                        }
+                                        return __whileOutput;
+                                    }, 0)
+                                );
+                                return __execArr;
+                            }),
                         this.text('}')
                         );
                     }

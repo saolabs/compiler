@@ -120,10 +120,10 @@ class TestYieldLayoutView extends View {
                     ])
                 ]),
                 this.html(`338c536e`, "main", parentElement, {}, (parentElement) => [
-                    this.yield("div-1-main-2-yield-1", "content", null, parentElement)
+                    this.yield(`efa5f298`, "content", null, parentElement)
                 ]),
                 this.html(`04d65fe4`, "footer", parentElement, {}, (parentElement) => [
-                    this.yield("div-1-footer-3-yield-1", "footer", '<p>Default Footer</p>', parentElement)
+                    this.yield(`71c047e9`, "footer", '<p>Default Footer</p>', parentElement)
                 ])
                 ])
             ]);

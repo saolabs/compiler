@@ -426,7 +426,7 @@ class TestNestedReactiveView extends View {
                         ])
                     })
                     ]),
-                this.include("div-1-component-1", components.item-card, parentElement, [], (parentElement: any) => ({"items": items, "count": count}))
+                this.include(`64cf91d6`, components.item-card, parentElement, [], (parentElement: any) => ({"items": items, "count": count}))
                 ])
             ]);
             }

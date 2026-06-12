@@ -44,7 +44,12 @@ for (const file of files) {
         if (bladeParts.declarations && bladeParts.declarations.length > 0) {
             bladeSource += bladeParts.declarations.join('\n') + '\n\n';
         }
-        bladeSource += bladeParts.bladeWithSSR || bladeParts.blade;
+        const tempContentBlade = bladeParts.bladeWithSSR || bladeParts.blade;
+        if (parts.wrapperType) {
+            bladeSource += `<${parts.wrapperType}>\n` + tempContentBlade + `\n</${parts.wrapperType}>`;
+        } else {
+            bladeSource += tempContentBlade;
+        }
         
         const tempBladeInput = path.join(examplesDir, `.${nameNoExt}.temp.blade.sao`);
         fs.writeFileSync(tempBladeInput, bladeSource);
@@ -63,7 +68,11 @@ for (const file of files) {
         if (scriptTags.length > 0 || styleTags.length > 0 || linkStyleTags.length > 0) {
             jsSource += [...scriptTags, ...styleTags, ...linkStyleTags].join('\n') + '\n\n';
         }
-        jsSource += bladeParts.blade;
+        if (parts.wrapperType) {
+            jsSource += `<${parts.wrapperType}>\n` + bladeParts.blade + `\n</${parts.wrapperType}>`;
+        } else {
+            jsSource += bladeParts.blade;
+        }
 
         const tempJsInput = path.join(examplesDir, `.${nameNoExt}.temp.js.sao`);
         fs.writeFileSync(tempJsInput, jsSource);
@@ -100,6 +109,9 @@ for (const file of files) {
         if (jsRes.status !== 0) {
             console.error(`❌ JS Compile Error for ${file}: ${jsRes.stderr || jsRes.stdout}`);
         } else {
+            if (jsRes.stderr && jsRes.stderr.trim()) {
+                console.warn(`⚠️ JS Compile Stderr for ${file}:\n${jsRes.stderr}`);
+            }
             const outputJsContent = fs.readFileSync(tempJsOutput, 'utf-8');
             fs.writeFileSync(finalJsPath, outputJsContent);
         }

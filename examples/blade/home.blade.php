@@ -1,7 +1,6 @@
 @exec($__ONE_COMPONENT_REGISTRY__ = ['tasks' => $__template__ . 'sessions.tasks', 'projects' => $__template__ . 'sessions.projects', 'counter' => 'sessions.tasks.count', 'demo' => $__template__ . 'demo.fetch', 'baseLayout' => $__layout__ . 'base', 'alert' => $__blade_custom_path__]) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 
 @wrapper
-
 @startMarker('component', '68594f9a')
 @exec($__env->startSection($__ONE_COMPONENT_REGISTRY__['tasks'].'_0'))
 @startMarker('component', 'fa6abab0')

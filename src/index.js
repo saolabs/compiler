@@ -274,7 +274,12 @@ class Compiler {
         }
         
         // Thêm template WITH SSR inline (đã qua preprocessor)
-        bladeContent += bladeParts.bladeWithSSR || bladeParts.blade;
+        const templateContent = bladeParts.bladeWithSSR || bladeParts.blade;
+        if (parts.wrapperType) {
+            bladeContent += `<${parts.wrapperType}>\n` + templateContent + `\n</${parts.wrapperType}>`;
+        } else {
+            bladeContent += templateContent;
+        }
         
         // Gọi Python sao2blade compiler để xử lý reactive wrapping
         try {
@@ -329,7 +334,11 @@ class Compiler {
         this.ensureDir(path.dirname(jsPath));
         
         // Template (đã chuyển sang PHP syntax bởi preprocessor)
-        jsBladeContent += bladeParts.blade;
+        if (parts.wrapperType) {
+            jsBladeContent += `<${parts.wrapperType}>\n` + bladeParts.blade + `\n</${parts.wrapperType}>`;
+        } else {
+            jsBladeContent += bladeParts.blade;
+        }
         
         // Compile JS song song (không block Blade)
         // Python compiler xử lý Blade (có declarations) → JavaScript
@@ -481,55 +490,9 @@ class Compiler {
         // Store cleaned content for later script extraction (JS file)
         parts.cleanedContent = content;
 
-        // Extract declarations (@useState, @const, @let, @var, @vars)
-        // Support nested parentheses like: @let([$x, $y] = useState($data))
-        // CRITICAL: Preserve original order from source file
-        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars', 'state', 'props', 'states', 'import'];
-        const foundDeclarations = [];
-        
-        for (const type of declarationTypes) {
-            const regex = new RegExp(`@${type}\\s*\\(`, 'g');
-            let match;
-            while ((match = regex.exec(content)) !== null) {
-                // Find matching closing parenthesis
-                let depth = 1;
-                let i = match.index + match[0].length;
-                while (i < content.length && depth > 0) {
-                    if (content[i] === '(') depth++;
-                    else if (content[i] === ')') depth--;
-                    i++;
-                }
-                if (depth === 0) {
-                    const declaration = content.substring(match.index, i);
-                    foundDeclarations.push({
-                        text: declaration,
-                        index: match.index
-                    });
-                }
-            }
-        }
-        
-        // Sort by original position in file to preserve order
-        foundDeclarations.sort((a, b) => a.index - b.index);
-        parts.declarations = foundDeclarations.map(d => d.text);
-
-        // Extract @await and @fetch directives (these are NOT declarations, but compiler flags)
-        const awaitMatch = content.match(/@await(\s|$)/);
-        const fetchMatch = content.match(/@fetch\s*\(/);
-        
         // ========================================================================
-        // Extract blade/template wrapper (PRIORITY: handle nested/multiple wrappers)
+        // Extract blade/template wrapper bounds first to filter out local declarations
         // ========================================================================
-        // Rules:
-        // 1. If multiple nested wrappers: take level-0 (outermost) wrapper
-        // 2. If multiple level-0 wrappers: take FIRST one, remove others
-        // 3. Content inside level-0 wrapper is ALL blade content (even inner <template>/<blade> tags are HTML)
-        // 4. Script/style tags INSIDE level-0 wrapper: keep as-is (don't extract)
-        // 5. Script/style tags OUTSIDE wrapper: extract normally (unless in @ssr)
-        
-        let hasLevel0Wrapper = false;
-        let bladeContentFromWrapper = null;
-        
         // Find all level-0 <blade> and <template> tags (not nested)
         // Strategy: Parse character by character to track nesting depth
         const findLevel0Wrappers = (text, tagName) => {
@@ -615,6 +578,67 @@ class Compiler {
         
         // Sort by position (to get first one)
         const allWrappers = trulyLevel0Wrappers.sort((a, b) => a.startPos - b.startPos);
+
+        // Extract declarations (@useState, @const, @let, @var, @vars)
+        // Support nested parentheses like: @let([$x, $y] = useState($data))
+        // CRITICAL: Preserve original order from source file
+        const declarationTypes = ['useState', 'const', 'let', 'var', 'vars', 'state', 'props', 'states', 'import'];
+        const foundDeclarations = [];
+        
+        for (const type of declarationTypes) {
+            const regex = new RegExp(`@${type}\\s*\\(`, 'g');
+            let match;
+            while ((match = regex.exec(content)) !== null) {
+                // Find matching closing parenthesis
+                let depth = 1;
+                let i = match.index + match[0].length;
+                while (i < content.length && depth > 0) {
+                    if (content[i] === '(') depth++;
+                    else if (content[i] === ')') depth--;
+                    i++;
+                }
+                if (depth === 0) {
+                    const declaration = content.substring(match.index, i);
+                    
+                    // Check if this declaration falls inside any level-0 wrapper
+                    let isInsideWrapper = false;
+                    for (const wrapper of allWrappers) {
+                        if (match.index >= wrapper.startPos && i <= wrapper.endPos) {
+                            isInsideWrapper = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isInsideWrapper) {
+                        foundDeclarations.push({
+                            text: declaration,
+                            index: match.index
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Sort by original position in file to preserve order
+        foundDeclarations.sort((a, b) => a.index - b.index);
+        parts.declarations = foundDeclarations.map(d => d.text);
+
+        // Extract @await and @fetch directives (these are NOT declarations, but compiler flags)
+        const awaitMatch = content.match(/@await(\s|$)/);
+        const fetchMatch = content.match(/@fetch\s*\(/);
+        
+        // ========================================================================
+        // Extract blade/template wrapper (PRIORITY: handle nested/multiple wrappers)
+        // ========================================================================
+        // Rules:
+        // 1. If multiple nested wrappers: take level-0 (outermost) wrapper
+        // 2. If multiple level-0 wrappers: take FIRST one, remove others
+        // 3. Content inside level-0 wrapper is ALL blade content (even inner <template>/<blade> tags are HTML)
+        // 4. Script/style tags INSIDE level-0 wrapper: keep as-is (don't extract)
+        // 5. Script/style tags OUTSIDE wrapper: extract normally (unless in @ssr)
+        
+        let hasLevel0Wrapper = false;
+        let bladeContentFromWrapper = null;
         
         if (allWrappers.length > 0) {
             hasLevel0Wrapper = true;

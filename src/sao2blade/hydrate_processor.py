@@ -436,6 +436,16 @@ class BladeHydrateProcessor:
                 output.append(raw_line)
                 output.append(f"{indent}@endMarker('yield', {id_val})")
                 continue
+
+            # ─── @useBlock / @blockOutlet → wrap with @startMarker/@endMarker ──────
+            useblock_m = re.match(r'^(\s*)@(?:useBlock|blockOutlet|blockoutlet)\s*\(', raw_line)
+            if useblock_m:
+                outlet_id = self.id_gen.next_block_outlet()
+                id_val = self._blade_id_value(outlet_id, loop_scopes)
+                output.append(f"{indent}@startMarker('blockoutlet', {id_val})")
+                output.append(raw_line)
+                output.append(f"{indent}@endMarker('blockoutlet', {id_val})")
+                continue
             
             # ─── Process HTML and outputs ─────────────────────────
             processed = self._process_html_and_outputs(raw_line, tag_stack, loop_scopes)

@@ -7,9 +7,6 @@
     ['title'=> 'Post 3', 'content'=> 'Content of post 3'],
 ])
 @wrapper
-
-
-
 @exec($a = 10, $b = 20, $c = $a + $b)
     <div @class([$__VIEW_ID__ . '-d69e6b1d'])>
         <p @class([$__VIEW_ID__ . '-e4a2aaaf'])>Value of a: {{ $a }}</p>

@@ -291,29 +291,7 @@ class TemplateProcessor:
                 else:
                     break
         
-        # Remove @let directives with balanced parentheses
-        let_pattern = r'@let\s*\('
-        while re.search(let_pattern, blade_code):
-            match = re.search(let_pattern, blade_code)
-            if match:
-                start_pos = match.end() - 1
-                content, end_pos = extract_balanced_parentheses(blade_code, start_pos)
-                if content is not None:
-                    blade_code = blade_code[:match.start()] + blade_code[start_pos + len(content) + 2:]
-                else:
-                    break
-        
-        # Remove @const directives with balanced parentheses
-        const_pattern = r'@const\s*\('
-        while re.search(const_pattern, blade_code):
-            match = re.search(const_pattern, blade_code)
-            if match:
-                start_pos = match.end() - 1
-                content, end_pos = extract_balanced_parentheses(blade_code, start_pos)
-                if content is not None:
-                    blade_code = blade_code[:match.start()] + blade_code[start_pos + len(content) + 2:]
-                else:
-                    break
+        # Keep @let and @const directives so they can be compiled locally inside the template
         
         # Remove @useState directives with balanced parentheses
         usestate_pattern = r'@useState\s*\('
@@ -872,6 +850,18 @@ class TemplateProcessor:
         result = self.template_processors.process_clientside_directive(line)
         if result:
             return result
+        
+        # Handle @let
+        if line.startswith('@let'):
+            result = self.directive_processors.process_let_directive(line, stack, output)
+            if result:
+                return result
+        
+        # Handle @const
+        if line.startswith('@const'):
+            result = self.directive_processors.process_const_directive(line, stack, output)
+            if result:
+                return result
         
         # Handle @auth/@guest
         result = self.directive_processors.process_auth_directive(line)

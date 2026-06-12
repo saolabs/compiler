@@ -792,13 +792,13 @@ class RenderGenerator:
     def _gen_block_outlet(self, node, indent):
         """Generate this.blockOutlet("id", "name", parentElement)."""
         outlet_id = self.id_gen.next_block_outlet()
-        id_str = f'"{outlet_id}"'
+        id_str = self._format_id(outlet_id)
         return f'{indent}this.blockOutlet({id_str}, "{node.name}", parentElement)'
 
     def _gen_yield(self, node, indent):
         """Generate this.yield("id", "name", defaultValue, parentElement)."""
         yield_id = self.id_gen.next_yield()
-        id_str = f'"{yield_id}"'
+        id_str = self._format_id(yield_id)
         default_str = node.default_js if node.default_js else 'null'
         return f'{indent}this.yield({id_str}, "{node.name}", {default_str}, parentElement)'
 
@@ -852,7 +852,7 @@ class RenderGenerator:
     def _gen_include(self, node, indent):
         """Generate this.include(id, path, parentElement, stateKeys, dataFactory) call."""
         comp_id = self.id_gen.next_component()
-        id_str = f'"{comp_id}"'
+        id_str = self._format_id(comp_id)
 
         # Parse data_js (PHP array converted to JS object) into key-value pairs
         data_parts = []
@@ -879,7 +879,7 @@ class RenderGenerator:
             comp_id = self.id_gen.push_component()
         else:
             comp_id = self.id_gen.next_component()
-        id_str = f'"{comp_id}"'
+        id_str = self._format_id(comp_id)
 
         # Build data factory parts from explicit data pairs
         data_parts = []

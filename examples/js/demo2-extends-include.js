@@ -165,7 +165,7 @@ class Demo2ExtendsIncludeView extends View {
             let parentElement = this.parentElement;
             let parentReactive = null;
             this.block('block-content', 'content', (parentElement) => [
-            this.include("block-content-component-1", __template__+'header', parentElement, [], (parentElement) => ({})),
+            this.include(`501029e0`, __template__+'header', parentElement, [], (parentElement) => ({})),
             this.html(`e085b222`, "div", parentElement,
                 { classes: [{ type: 'static', value: "demo" }, { type: 'binding', value: "active", factory: () => status, stateKeys: ["status"] }], attrs: { "dataCount": { type: 'binding', value: App.Helper.count(demoList), factory: () => App.Helper.count(demoList), stateKeys: [] }, "dataUserName": { type: 'binding', value: user.name, factory: () => user.name, stateKeys: ["user"] } } },
                 (parentElement) => [
@@ -239,10 +239,10 @@ class Demo2ExtendsIncludeView extends View {
                     }, 5)
                     ])
                 ]),
-            this.include("block-content-component-2", __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"})),
-            this.include("block-content-component-3", __template__+'footer', parentElement, [], (parentElement) => ({
+            this.include(`142a7e71`, __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"})),
+            this.include(`cf91f6e1`, __template__+'footer', parentElement, [], (parentElement) => ({
                     __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                    this.include("block-content-component-3-component-1", __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"}))
+                    this.include(`2084c3f0`, __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"}))
                 ]
                 }))
             ]);

@@ -161,6 +161,42 @@ class BladeTemplateCompiler:
         ssr_block_pattern = r'@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\b[\s\S]*?@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\b'
         content_no_ssr = re.sub(ssr_block_pattern, '', content, flags=re.IGNORECASE)
         
+        # Find level-0 wrappers first in content_no_ssr
+        wrappers = []
+        for tag in ['template', 'blade', 'sao:blade']:
+            open_tag = f"<{tag}>"
+            close_tag = f"</{tag}>"
+            pos = 0
+            while True:
+                open_pos = content_no_ssr.find(open_tag, pos)
+                if open_pos == -1:
+                    break
+                
+                # Find matching close tag tracking depth
+                depth = 1
+                search_pos = open_pos + len(open_tag)
+                close_pos = -1
+                while search_pos < len(content_no_ssr) and depth > 0:
+                    next_open = content_no_ssr.find(open_tag, search_pos)
+                    next_close = content_no_ssr.find(close_tag, search_pos)
+                    if next_close == -1:
+                        break
+                    
+                    if next_open != -1 and next_open < next_close:
+                        depth += 1
+                        search_pos = next_open + len(open_tag)
+                    else:
+                        depth -= 1
+                        if depth == 0:
+                            close_pos = next_close
+                        search_pos = next_close + len(close_tag)
+                
+                if close_pos != -1:
+                    wrappers.append((open_pos, close_pos + len(close_tag)))
+                    pos = close_pos + len(close_tag)
+                else:
+                    pos = open_pos + len(open_tag)
+
         # Extract declarations
         declaration_types = ['useState', 'states', 'const', 'let', 'var', 'vars', 'props']
         found_declarations = []
@@ -172,10 +208,19 @@ class BladeTemplateCompiler:
                 inner, end_pos = extract_balanced_parentheses(content_no_ssr, paren_start)
                 if inner is not None:
                     full_decl = content_no_ssr[match.start():end_pos]
-                    found_declarations.append({
-                        'text': full_decl,
-                        'index': match.start()
-                    })
+                    
+                    # Filter out declarations that are inside wrappers
+                    is_inside = False
+                    for w_start, w_end in wrappers:
+                        if w_start <= match.start() < w_end:
+                            is_inside = True
+                            break
+                    
+                    if not is_inside:
+                        found_declarations.append({
+                            'text': full_decl,
+                            'index': match.start()
+                        })
         
         found_declarations.sort(key=lambda x: x['index'])
         declarations = [d['text'] for d in found_declarations]

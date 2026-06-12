@@ -27,6 +27,42 @@ class DeclarationTracker:
         # Remove @verbatim blocks to avoid parsing declarations inside them
         blade_code_filtered = self._remove_verbatim_blocks(blade_code_filtered)
         
+        # Find level-0 wrappers first
+        wrappers = []
+        for tag in ['template', 'blade', 'sao:blade']:
+            open_tag = f"<{tag}>"
+            close_tag = f"</{tag}>"
+            pos = 0
+            while True:
+                open_pos = blade_code_filtered.find(open_tag, pos)
+                if open_pos == -1:
+                    break
+                
+                # Find matching close tag tracking depth
+                depth = 1
+                search_pos = open_pos + len(open_tag)
+                close_pos = -1
+                while search_pos < len(blade_code_filtered) and depth > 0:
+                    next_open = blade_code_filtered.find(open_tag, search_pos)
+                    next_close = blade_code_filtered.find(close_tag, search_pos)
+                    if next_close == -1:
+                        break
+                    
+                    if next_open != -1 and next_open < next_close:
+                        depth += 1
+                        search_pos = next_open + len(open_tag)
+                    else:
+                        depth -= 1
+                        if depth == 0:
+                            close_pos = next_close
+                        search_pos = next_close + len(close_tag)
+                
+                if close_pos != -1:
+                    wrappers.append((open_pos, close_pos + len(close_tag)))
+                    pos = close_pos + len(close_tag)
+                else:
+                    pos = open_pos + len(open_tag)
+
         # Find all @vars, @props, @let, @const, @useState with their positions
         self._find_vars_declarations(blade_code_filtered)
         self._find_props_declarations(blade_code_filtered)
@@ -35,6 +71,19 @@ class DeclarationTracker:
         self._find_usestate_declarations(blade_code_filtered)
         self._find_states_declarations(blade_code_filtered)
         
+        # Filter out declarations that are inside template wrappers
+        filtered_decls = []
+        for decl in self.declarations:
+            pos = decl['position']
+            is_inside = False
+            for w_start, w_end in wrappers:
+                if w_start <= pos < w_end:
+                    is_inside = True
+                    break
+            if not is_inside:
+                filtered_decls.append(decl)
+        self.declarations = filtered_decls
+
         # Sort by position
         self.declarations.sort(key=lambda x: x['position'])
         

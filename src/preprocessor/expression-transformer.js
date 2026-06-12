@@ -745,6 +745,16 @@ class ExpressionTransformer {
     _transformDirectives(template) {
         let result = template;
 
+        // Transform @let and @const
+        result = this._replaceDirectiveArgs(result, 'let', inner => {
+            const res = this._transformAssignmentDeclaration('', inner);
+            return res.slice(1, -1);
+        });
+        result = this._replaceDirectiveArgs(result, 'const', inner => {
+            const res = this._transformAssignmentDeclaration('', inner);
+            return res.slice(1, -1);
+        });
+
         // Transform @foreach — with scope management
         result = this._replaceDirectiveArgs(result, 'foreach', inner => this._transformForeachExpr(inner));
 

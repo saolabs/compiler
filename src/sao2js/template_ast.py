@@ -192,7 +192,7 @@ EVENT_NAMES = frozenset({
 
 # Directives to skip (handled in preprocessing or not relevant for AST)
 SKIP_DIRECTIVES = frozenset({
-    'extends', 'vars', 'useState', 'const', 'let', 'props', 'states',
+    'extends', 'vars', 'useState', 'props', 'states',
     'fetch', 'await', 'oninit', 'endoninit', 'register', 'endregister',
     'setup', 'endsetup', 'script', 'endscript', 'import',
     'pageStart', 'pageEnd', 'pageOpen', 'pageClose',
@@ -500,6 +500,26 @@ class TemplateASTParser:
                 from common.utils import split_top_level_commas
                 stmts = split_top_level_commas(expr)
                 js_expr = '; '.join(php_to_js(s) for s in stmts if s.strip())
+                node = ExecNode(js_expr)
+                self._add_child(stack, node)
+                return True
+
+        # @let(...)
+        if re.match(r'@let\s*\(', stripped):
+            expr = self._extract_directive_parens(stripped, '@let')
+            if expr is not None:
+                js_expr = php_to_js(expr)
+                js_expr = re.sub(r'\$(\w+)', r'\1', js_expr)
+                node = ExecNode(js_expr)
+                self._add_child(stack, node)
+                return True
+
+        # @const(...)
+        if re.match(r'@const\s*\(', stripped):
+            expr = self._extract_directive_parens(stripped, '@const')
+            if expr is not None:
+                js_expr = php_to_js(expr)
+                js_expr = re.sub(r'\$(\w+)', r'\1', js_expr)
                 node = ExecNode(js_expr)
                 self._add_child(stack, node)
                 return True
