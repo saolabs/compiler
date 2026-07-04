@@ -1150,7 +1150,12 @@ class Compiler {
     async setupWatcher(config, projectRoot, singleContext = null) {
         try {
             const chokidar = require('chokidar');
-            const saoFilesDir = path.resolve(projectRoot, config.root || 'resources/sao');
+            // Watch the actual .sao views directory. New-format config keeps it at
+            // paths.saoView (e.g. "resources/saola"); fall back to legacy config.root.
+            const saoViewDir = (config.paths && config.paths.saoView)
+                ? config.paths.saoView
+                : (config.root || 'resources/sao');
+            const saoFilesDir = path.resolve(projectRoot, saoViewDir);
 
             console.log(`\n👀 Watching for changes in ${saoFilesDir}...`);
 

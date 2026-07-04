@@ -40,6 +40,7 @@ class HtmlElement(Node):
         self.binding_classes = {}      # {'active': {'php': '$status', 'js': 'status', 'state_vars': {'status'}}}
         self.static_attrs = {}         # {'id': 'counter-value'}
         self.binding_attrs = {}        # {'data-count': {'php': 'count($demoList)', 'js': '...', 'state_vars': {...}}}
+        self.binding_props = {}        # {'checked': {'php': '$todo->completed', 'js': 'todo.completed', 'state_vars': {...}}} — DOM property, không phải attribute
         self.events = {}               # {'click': ['setStatus(!status)']}
         self.raw_attrs_remaining = ''  # Any unprocessed attribute fragments
 
@@ -161,6 +162,13 @@ class ImportIncludeNode(Node):
         self.children = []  # AST nodes for __ONE_CHILDREN_CONTENT__
 
 
+class ChildrenNode(Node):
+    """@children — slot placeholder: render __ONE_CHILDREN_CONTENT__ (element
+    factory từ parent qua @importInclude/custom tag, hoặc string SSR)."""
+    def __init__(self):
+        pass
+
+
 class ExecNode(Node):
     def __init__(self, js_expr):
         self.js_expr = js_expr
@@ -172,6 +180,13 @@ VOID_ELEMENTS = frozenset({
     'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
     'link', 'meta', 'param', 'source', 'track', 'wbr'
 })
+
+# Thẻ "rawtext": nội dung là TEXT thuần, KHÔNG parse tag con (giống HTML spec).
+# - RCDATA: vẫn nội suy {{ }} / {!! !!} (textarea/title là giá trị text có thể bind).
+# - RAWTEXT: text nguyên bản, không nội suy (script/style).
+RCDATA_ELEMENTS = frozenset({'textarea', 'title'})
+RAWTEXT_ELEMENTS = frozenset({'script', 'style'})
+RAW_CONTENT_ELEMENTS = RCDATA_ELEMENTS | RAWTEXT_ELEMENTS
 
 EVENT_NAMES = frozenset({
     'click', 'dblclick', 'mousedown', 'mouseup', 'mouseover', 'mouseout',
@@ -190,6 +205,16 @@ EVENT_NAMES = frozenset({
     'pointerenter', 'pointerleave', 'pointercancel',
 })
 
+# @checked(expr)... → DOM property binding (el.checked = !!expr), map tên directive
+# → tên property JS (readonly → readOnly).
+BOOL_PROP_DIRECTIVES = {
+    'checked': 'checked',
+    'disabled': 'disabled',
+    'selected': 'selected',
+    'readonly': 'readOnly',
+    'required': 'required',
+}
+
 # Directives to skip (handled in preprocessing or not relevant for AST)
 SKIP_DIRECTIVES = frozenset({
     'extends', 'vars', 'useState', 'props', 'states',
@@ -202,7 +227,6 @@ SKIP_DIRECTIVES = frozenset({
     'ssr', 'endssr', 'SSR', 'endSSR',
     'clientside', 'endclientside', 'ClientSide', 'endClientSide',
     'csr', 'endcsr', 'CSR', 'endCSR',
-    'children',
 })
 
 
@@ -219,10 +243,14 @@ class TemplateASTParser:
     def __init__(self, state_variables=None):
         self.state_variables = state_variables or set()
         self.event_processor = EventDirectiveProcessor(self.state_variables)
+        # Khi đang trong thẻ rawtext (textarea/script/style...) mở qua nhiều dòng:
+        # giữ tên thẻ để mọi dòng tiếp theo coi là TEXT cho tới khi gặp </tag>.
+        self._rawtext_tag = None
 
     def parse(self, template_content):
         """Parse template string into AST."""
         root = RootNode()
+        self._rawtext_tag = None
         lines = template_content.split('\n')
 
         # Unified stack: [(parent_node, type_str, extra_data)]
@@ -232,6 +260,14 @@ class TemplateASTParser:
         i = 0
         while i < len(lines):
             line = lines[i]
+
+            # Đang trong rawtext (textarea/script/style mở dòng trước): cả dòng là
+            # TEXT cho tới </tag>. KHÔNG strip (giữ nội dung), KHÔNG dò directive.
+            if self._rawtext_tag is not None:
+                self._process_content_line(line, stack)
+                i += 1
+                continue
+
             stripped = line.strip()
 
             if not stripped:
@@ -553,6 +589,11 @@ class TemplateASTParser:
             self._pop_to(stack, 'importInclude')
             return True
 
+        # @children — slot placeholder (render children từ parent include)
+        if re.match(r'@children\b', stripped, re.IGNORECASE):
+            self._add_child(stack, ChildrenNode())
+            return True
+
         # Skip known directives that don't produce AST nodes
         m = re.match(r'@(\w+)', stripped)
         if m and m.group(1) in SKIP_DIRECTIVES:
@@ -571,6 +612,11 @@ class TemplateASTParser:
         length = len(line)
 
         while pos < length:
+            # ── Rawtext mode (textarea/script/style): nuốt text tới </tag> ──
+            if self._rawtext_tag is not None:
+                pos = self._consume_rawtext(line, pos, stack)
+                continue
+
             # Skip whitespace at current position (but don't skip all leading)
             if pos == 0 and line[pos] in ' \t':
                 while pos < length and line[pos] in ' \t':
@@ -622,6 +668,10 @@ class TemplateASTParser:
 
                 if not is_void:
                     stack.append((element, 'html', tag_lower))
+                    # Thẻ rawtext → bật mode: phần còn lại (kể cả các dòng sau)
+                    # là TEXT cho tới </tag>, không parse tag con.
+                    if tag_lower in RAW_CONTENT_ELEMENTS:
+                        self._rawtext_tag = tag_lower
                 continue
 
             # ── Text / echo content ───────────────────────────────
@@ -636,6 +686,37 @@ class TemplateASTParser:
             if text_segment.strip():
                 self._parse_inline_content(text_segment, stack)
             pos = next_tag
+
+    def _consume_rawtext(self, line, pos, stack, length=None):
+        """Nuốt nội dung rawtext của thẻ self._rawtext_tag trong `line` từ `pos`.
+
+        Tìm </tag>: thấy → emit phần trước là text, pop thẻ, tắt mode, trả vị trí
+        sau </tag> (parse tiếp bình thường). Không thấy → cả phần còn lại là text,
+        giữ mode (dòng sau xử lý tiếp). KHÔNG parse tag con trong vùng này.
+        """
+        tag = self._rawtext_tag
+        close_re = re.compile(r'</\s*' + re.escape(tag) + r'\s*>', re.IGNORECASE)
+        m = close_re.search(line, pos)
+        if m:
+            self._emit_rawtext(line[pos:m.start()], stack, tag)
+            self._pop_html_tag(stack, tag)
+            self._rawtext_tag = None
+            return m.end()
+        # Chưa đóng trên dòng này → cả phần còn lại là text, giữ mode
+        self._emit_rawtext(line[pos:], stack, tag)
+        return len(line)
+
+    def _emit_rawtext(self, raw, stack, tag):
+        """Thêm nội dung rawtext vào con của thẻ hiện tại.
+        RCDATA (textarea/title): vẫn nội suy {{ }}/{!! !!} (tag là text).
+        RAWTEXT (script/style): text nguyên bản, không nội suy.
+        """
+        if not raw or not raw.strip():
+            return
+        if tag in RCDATA_ELEMENTS:
+            self._parse_inline_content(raw, stack)
+        else:
+            self._add_child(stack, TextNode(raw))
 
     def _parse_inline_content(self, content, stack):
         """Parse text that may contain {{ expr }} and {!! expr !!} echo expressions.
@@ -859,6 +940,37 @@ class TemplateASTParser:
                     pos = self._find_close_paren(attrs_str, paren_start) + 1
                     continue
 
+            # @bind(key) / @val(key) — two-way binding.
+            # Contract runtime (Html.setupTwoWayBinding): attrs { "bind":true, "<key>":true }.
+            m = re.match(r'@(?:bind|val)\s*\(', remaining)
+            if m:
+                paren_start = pos + m.end() - 1
+                content = self._extract_balanced(attrs_str, paren_start)
+                if content is not None:
+                    bind_key = php_to_js_advanced(content.strip())
+                    element.static_attrs['bind'] = True
+                    element.static_attrs[bind_key] = True
+                    pos = self._find_close_paren(attrs_str, paren_start) + 1
+                    continue
+
+            # Boolean DOM-property directives: @checked(expr), @disabled(expr)...
+            # Emit như PROP binding (el.checked = !!expr) — attribute 'checked' chỉ là
+            # giá trị khởi tạo của input, set attr không đổi state sau user tương tác.
+            m = re.match(r'@(checked|disabled|selected|readonly|required)\s*\(', remaining, re.IGNORECASE)
+            if m:
+                prop_name = BOOL_PROP_DIRECTIVES[m.group(1).lower()]
+                paren_start = pos + m.end() - 1
+                content = self._extract_balanced(attrs_str, paren_start)
+                if content is not None:
+                    expr = content.strip()
+                    element.binding_props[prop_name] = {
+                        'php': expr,
+                        'js': php_to_js_advanced(expr),
+                        'state_vars': self._get_state_vars(expr),
+                    }
+                    pos = self._find_close_paren(attrs_str, paren_start) + 1
+                    continue
+
             # Event directives: @click(...), @change(...), etc.
             m = re.match(r'@(\w+)\s*\(', remaining)
             if m:
@@ -903,6 +1015,21 @@ class TemplateASTParser:
             if m:
                 attr_name = m.group(1)
                 attr_value = m.group(2)
+                # Shorthand `:attr="expr"` — toàn bộ value là biểu thức JS reactive.
+                #   :data-name="user.first + ' ' + user.last"
+                #     ≡ data-name="{{ user.first + ' ' + user.last }}"
+                # Bỏ qua `::attr` (escape thành attr thường tên `:attr`).
+                if attr_name.startswith(':') and not attr_name.startswith('::'):
+                    real_name = attr_name[1:]
+                    js_expr = php_to_js_advanced(attr_value.strip())
+                    svars = self._get_state_vars(attr_value)
+                    element.binding_attrs[real_name] = {
+                        'php': attr_value, 'js': js_expr, 'state_vars': svars
+                    }
+                    pos += m.end()
+                    continue
+                if attr_name.startswith('::'):
+                    attr_name = attr_name[1:]  # ::foo → :foo (literal static)
                 # Check for @yield(...) in attribute value
                 yield_m = re.match(r'^@yield\s*\(\s*(.*?)\s*\)$', attr_value)
                 if yield_m:
@@ -946,32 +1073,57 @@ class TemplateASTParser:
             pos += 1
 
     def _parse_class_binding(self, content, element):
-        """Parse @class([...]) content and populate element classes."""
-        content = content.strip()
-        if content.startswith('['):
-            content = content[1:]
-        if content.endswith(']'):
-            content = content[:-1]
+        """Parse @class(...) → populate element static/binding classes.
 
-        entries = self._split_php_array(content)
+        Hỗ trợ 3 dạng (.sao):
+          @class(expr)                  → 1 class static ('foo' hoặc foo)
+          @class(['c' => cond, 'c2'])   → PHP array: '=>' cho điều kiện, bare = static
+          @class({"c", "c2": cond})     → JS object: ':' cho điều kiện, bare = static
+        Điều kiện nhận cả '=>' lẫn ':' (chỉ ngay sau key → ternary 'a ? b : c' trong
+        value KHÔNG bị nhầm). Runtime chỉ hỗ trợ static + conditional (Html.initializeClasses).
+        """
+        content = content.strip()
+        # Bóc wrapper [...] hoặc {...}; không có wrapper → @class(expr) đơn (1 entry)
+        if (content.startswith('[') and content.endswith(']')) or \
+           (content.startswith('{') and content.endswith('}')):
+            inner = content[1:-1].strip()
+            entries = self._split_php_array(inner)
+        else:
+            entries = [content]
+
         for entry in entries:
             entry = entry.strip()
             if not entry:
                 continue
-            if '=>' in entry:
-                parts = entry.split('=>', 1)
-                class_name = parts[0].strip().strip("'\"")
-                cond_php = parts[1].strip()
+            class_name, cond_php = self._split_class_entry(entry)
+            if cond_php is not None:
                 cond_js = php_to_js(cond_php)
                 svars = self._get_state_vars(cond_php)
                 element.binding_classes[class_name] = {
                     'php': cond_php, 'js': cond_js, 'state_vars': svars
                 }
             else:
-                # Static class in @class array
                 class_name = entry.strip().strip("'\"")
                 if class_name:
                     element.static_classes.append(class_name)
+
+    def _split_class_entry(self, entry):
+        """Tách một entry @class thành (class_name, condition).
+
+        Trả (name, cond_php) nếu là điều kiện; (entry, None) nếu static.
+        Separator chỉ tính khi nằm NGAY SAU key (chuỗi quote, hoặc identifier với '=>')
+        → tránh nhầm ':' của ternary trong value. ':(?!:)' tránh '::'.
+        """
+        # key có quote: 'c' / "c"  rồi  =>  hoặc  :
+        m = re.match(r"""^\s*(['"])(.*?)\1\s*(?:=>|:(?!:))\s*(.+)$""", entry, re.DOTALL)
+        if m:
+            return m.group(2).strip(), m.group(3).strip()
+        # key bare identifier:  my-class  =>|:  cond  (separator NGAY SAU key →
+        # ternary 'a ? b : c' không khớp vì sau 'a' là '?', không phải '=>'/':')
+        m = re.match(r"""^\s*([A-Za-z_][\w-]*)\s*(?:=>|:(?!:))\s*(.+)$""", entry, re.DOTALL)
+        if m:
+            return m.group(1).strip(), m.group(2).strip()
+        return entry, None
 
     def _parse_attr_binding(self, content, element):
         """Parse @attr([...]) content and populate element attrs."""
@@ -1072,10 +1224,16 @@ class TemplateASTParser:
     # ──────────────────────────────────────────────────────────────────
 
     def _get_state_vars(self, expr):
-        """Get state variable names referenced in a PHP expression."""
+        """Get state variable names referenced in an expression.
+
+        Khớp identifier có HOẶC không có '$' prefix: input .blade là PHP ($count),
+        input .sao là JS (count). Trước đây regex bắt buộc '$' nên expr .sao (không
+        có $) không khớp → mọi output mất stateKeys (không reactive). Giao với
+        self.state_variables nên identifier thừa (hàm, 'On'/'Off', keyword) bị lọc.
+        """
         if not expr:
             return set()
-        found = re.findall(r'\$([a-zA-Z_]\w*)', expr)
+        found = re.findall(r'\$?([a-zA-Z_]\w*)', expr)
         return set(v for v in found if v in self.state_variables)
 
     def _extract_directive_parens(self, line, directive):

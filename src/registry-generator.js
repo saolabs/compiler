@@ -55,7 +55,7 @@ class RegistryGenerator {
 
         // Add types for TypeScript
         const typeImport = hasTypeScript 
-            ? `import type { View } from 'saola';\n\n` 
+            ? `import type { View } from '@saolabs/client';\n\n` 
             : '';
         
         const registryType = hasTypeScript

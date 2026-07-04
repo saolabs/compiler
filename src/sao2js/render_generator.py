@@ -21,7 +21,7 @@ from template_ast import (
     Node, RootNode, HtmlElement, TextNode, EchoNode,
     IfBlock, ForeachBlock, WhileBlock, ForBlock, SwitchBlock,
     BlockSection, BlockOutlet, IncludeNode, ImportIncludeNode, ExecNode,
-    SectionNode, LongSectionNode, YieldNode
+    SectionNode, LongSectionNode, YieldNode, ChildrenNode
 )
 
 
@@ -269,6 +269,8 @@ class RenderGenerator:
             return self._gen_import_include(node, indent)
         elif isinstance(node, IncludeNode):
             return self._gen_include(node, indent)
+        elif isinstance(node, ChildrenNode):
+            return self._gen_children_slot(indent)
         elif isinstance(node, ExecNode):
             # ExecNode in a children array context - should only occur in while/for
             return None  # Handled specially in while/for generation
@@ -528,6 +530,16 @@ class RenderGenerator:
 
         self.id_gen.pop_scope()  # pop reactive
 
+        # @key(expr) → keyFn arg thứ 3 cho __foreach: field-keyed reconciliation
+        # (runtime ForeachSlotCache dùng giá trị này thay cho item ref).
+        if node.custom_key_js:
+            if self._is_ts:
+                key_fn_arg = f', ({node.value_var}: any) => {node.custom_key_js}'
+            else:
+                key_fn_arg = f', ({node.value_var}) => {node.custom_key_js}'
+        else:
+            key_fn_arg = ''
+
         if has_exec:
             arr_name = '__execArr'
             if state_keys:
@@ -538,7 +550,7 @@ class RenderGenerator:
                     f'{indent}        const {arr_name} = [];\n'
                     f'{children_code}\n'
                     f'{indent}        return {arr_name};\n'
-                    f'{indent}    }})\n'
+                    f'{indent}    }}{key_fn_arg})\n'
                     f'{indent}}})'
                 )
             else:
@@ -547,7 +559,7 @@ class RenderGenerator:
                     f'{indent}    const {arr_name} = [];\n'
                     f'{children_code}\n'
                     f'{indent}    return {arr_name};\n'
-                    f'{indent}}})'
+                    f'{indent}}}{key_fn_arg})'
                 )
         elif state_keys:
             return (
@@ -555,14 +567,14 @@ class RenderGenerator:
                 f'{keys_str}, {self._arrow_reactive()} {{\n'
                 f'{indent}    return this.__foreach({node.array_js}, {cb_params} => [\n'
                 f'{children_code}\n'
-                f'{indent}    ])\n'
+                f'{indent}    ]{key_fn_arg})\n'
                 f'{indent}}})'
             )
         else:
             return (
                 f'{indent}this.__foreach({node.array_js}, {cb_params} => [\n'
                 f'{children_code}\n'
-                f'{indent}])'
+                f'{indent}]{key_fn_arg})'
             )
 
     # ──────────────────────────────────────────────────────────────────
@@ -871,6 +883,16 @@ class RenderGenerator:
             f'{self._arrow_parent()} ({{}}))'
         )
 
+    def _gen_children_slot(self, indent):
+        """@children → spread render children từ parent.
+
+        __ONE_CHILDREN_CONTENT__ đến qua __data__ (auto-inject vào @vars khi có
+        @children): element factory `(parentElement) => [...]` từ @importInclude
+        phía parent, hoặc string (SSR/default ''). Runtime this.__children()
+        chuẩn hoá cả 2 dạng thành mảng elements.
+        """
+        return f'{indent}...this.__children(__ONE_CHILDREN_CONTENT__, parentElement)'
+
     def _gen_import_include(self, node, indent):
         """Generate this.include() with __ONE_CHILDREN_CONTENT__ for import components with children."""
         has_children = bool(node.children)
@@ -951,6 +973,11 @@ class RenderGenerator:
         if attrs_obj:
             parts.append(f'attrs: {attrs_obj}')
 
+        # DOM properties (@checked/@disabled/... — el.prop, không phải attribute)
+        props_obj = self._gen_props_obj(element)
+        if props_obj:
+            parts.append(f'props: {props_obj}')
+
         # Events
         events_obj = self._gen_events_obj(element)
         if events_obj:
@@ -1017,6 +1044,24 @@ class RenderGenerator:
                 + 'factory: ' + factory_expr + ', stateKeys: ' + keys_str + ' }'
             )
 
+        if not entries:
+            return None
+        return '{ ' + ', '.join(entries) + ' }'
+
+    def _gen_props_obj(self, element):
+        """Generate props configuration object (DOM properties, reactive).
+
+        Từ @checked(expr)/@disabled(expr)... — runtime Html.initializeAttributes
+        đọc config.props: set el[prop] = factory(), subscribe stateKeys để cập nhật.
+        """
+        entries = []
+        for prop_name, info in getattr(element, 'binding_props', {}).items():
+            svars = sorted(info.get('state_vars', set()))
+            keys_str = str(svars).replace("'", '"')
+            entries.append(
+                f'"{prop_name}": {{ type: \'binding\', '
+                f'factory: () => {info["js"]}, stateKeys: {keys_str} }}'
+            )
         if not entries:
             return None
         return '{ ' + ', '.join(entries) + ' }'

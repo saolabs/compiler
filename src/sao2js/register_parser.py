@@ -151,16 +151,22 @@ class RegisterParser:
                     'type': 'code',
                     'content': css_content
                 }
-                
-                # Parse attributes
-                attributes = self._parse_attributes(attrs_string)
+
+                # <style scoped> → style đi theo component (runtime AssetManager scope CSS).
+                # Mặc định (không scoped) = global.
+                is_scoped = re.search(r'\bscoped\b', attrs_string or '', re.IGNORECASE) is not None
+                if is_scoped:
+                    style_obj['scoped'] = True
+
+                # Parse attributes (loại 'scoped' để không lặp vào attributes)
+                attributes = self._parse_attributes(attrs_string, exclude_attrs=['scoped'])
                 if attributes.get('id'):
                     style_obj['id'] = attributes['id']
                 if attributes.get('className'):
                     style_obj['className'] = attributes['className']
                 if attributes.get('attributes'):
                     style_obj['attributes'] = attributes['attributes']
-                
+
                 self.styles.append(style_obj)
         
         # Parse external stylesheets with attributes

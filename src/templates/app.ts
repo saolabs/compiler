@@ -5,7 +5,7 @@
  * Import and use views from the auto-generated views.ts registry.
  */
 
-import { app, Application } from 'saola';
+import { app, Application } from '@saolabs/client';
 import views from './views.js';
 
 // Get Application instance

@@ -131,27 +131,24 @@ class DirectiveParsers:
                     if var_name:
                         var_parts.append(var_name)
         else:
-            # Standard format: same as @vars parsing
-            if props_content.startswith('{') and props_content.endswith('}'):
-                inner_content = props_content[1:-1]
-                parts = self._split_vars_content_correct(inner_content)
-            else:
-                parts = self._split_vars_content_correct(props_content)
-            
+            # Standard `$a = 0` hoặc object `{ a: 0, b }`. Object dùng ':' separator.
+            is_object = props_content.startswith('{') and props_content.endswith('}')
+            inner_content = props_content[1:-1] if is_object else props_content
+            parts = self._split_vars_content_correct(inner_content)
+
             for var in parts:
                 var = var.strip()
-                if '=' in var:
-                    equals_pos = self._find_first_equals(var)
-                    if equals_pos != -1:
-                        var_name = var[:equals_pos].strip().lstrip('$')
-                        var_value = var[equals_pos + 1:].strip()
-                        var_value = self._convert_php_to_js(var_value)
-                        var_parts.append(f"{var_name} = {var_value}")
-                    else:
-                        var_name = var.strip().lstrip('$')
-                        var_parts.append(var_name)
+                if not var:
+                    continue
+                sep_pos = self._find_first_colon(var) if is_object else -1
+                if sep_pos == -1 and '=' in var:
+                    sep_pos = self._find_first_equals(var)
+                if sep_pos != -1:
+                    var_name = var[:sep_pos].strip().strip("'\"").lstrip('$')
+                    var_value = self._convert_php_to_js(var[sep_pos + 1:].strip())
+                    var_parts.append(f"{var_name} = {var_value}")
                 else:
-                    var_name = var.strip().lstrip('$')
+                    var_name = var.strip().strip("'\"").lstrip('$')
                     var_parts.append(var_name)
         
         if not var_parts:
@@ -442,6 +439,26 @@ class DirectiveParsers:
                         key = part[:arrow_pos].strip().strip("'\"").lstrip('$')
                         value = part[arrow_pos + 2:].strip()
                         value_js = self._convert_php_expression_with_arrays(value)
+                        setter = f'set{key[0].upper()}{key[1:]}' if key else 'setValue'
+                        declarations.append(f'const [{key}, {setter}] = useState({value_js});')
+            elif states_content.startswith('{') and states_content.endswith('}'):
+                # Object format: { key: value, ... } (cú pháp JS — app/examples dùng)
+                inner = states_content[1:-1].strip()
+                parts = self._split_vars_content_correct(inner)
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    colon_pos = self._find_first_colon(part)
+                    if colon_pos != -1:
+                        key = part[:colon_pos].strip().strip("'\"").lstrip('$')
+                        value = part[colon_pos + 1:].strip()
+                        value_js = self._convert_php_expression_with_arrays(value)
+                    else:
+                        # Shorthand { foo } → useState(null)
+                        key = part.strip().strip("'\"").lstrip('$')
+                        value_js = 'null'
+                    if key:
                         setter = f'set{key[0].upper()}{key[1:]}' if key else 'setValue'
                         declarations.append(f'const [{key}, {setter}] = useState({value_js});')
             else:
@@ -1117,7 +1134,43 @@ class DirectiveParsers:
                     bracket_count -= 1
                 elif char == '=' and paren_count == 0 and bracket_count == 0:
                     return i
-        
+
+        return -1
+
+    def _find_first_colon(self, var):
+        """Find first top-level ':' not inside quotes/brackets/braces.
+        Dùng tách key:value của @states({ key: value }) — bỏ qua ':' trong
+        chuỗi (vd 'http://') hay ternary ở phần value (nằm sau colon đầu tiên).
+        """
+        paren_count = 0
+        bracket_count = 0
+        brace_count = 0
+        in_quotes = False
+        quote_char = ''
+
+        for i, char in enumerate(var):
+            if (char == '"' or char == "'") and not in_quotes:
+                in_quotes = True
+                quote_char = char
+            elif char == quote_char and in_quotes:
+                in_quotes = False
+                quote_char = ''
+            elif not in_quotes:
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                elif char == '[':
+                    bracket_count += 1
+                elif char == ']':
+                    bracket_count -= 1
+                elif char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                elif char == ':' and paren_count == 0 and bracket_count == 0 and brace_count == 0:
+                    return i
+
         return -1
     
     def parse_register(self, blade_code):

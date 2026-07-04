@@ -73,7 +73,12 @@ class BladeCompiler:
     def compile_blade_to_js(self, blade_code, view_name, function_name=None, factory_function_name=None):
         """Main compiler function"""
         blade_code = blade_code.strip()
-        
+
+        # Chuẩn hoá @state(...) (singular) → @states(...) để mọi machinery @states
+        # (parse + remove) xử lý đồng nhất. \b sau 'state' đảm bảo KHÔNG đụng @states
+        # (trong '@states' giữa 'e' và 's' không có ranh giới từ). Lookahead giữ '(...)'.
+        blade_code = re.sub(r'@state\b(?=\s*\()', '@states', blade_code, flags=re.IGNORECASE)
+
         # If function_name not provided, generate from view_name
         if function_name is None:
             function_name = self.convert_view_path_to_function_name(view_name)
@@ -233,7 +238,10 @@ class BladeCompiler:
         # If no @register directive, check for <script setup> tags
         if not register_data:
             setup_match = re.search(r'<script\s+setup[^>]*>(.*?)</script>', blade_code, re.DOTALL | re.IGNORECASE)
-            if setup_match:
+            # <style>/<link stylesheet> không kèm <script setup> vẫn phải vào mảng styles —
+            # template luôn strip <style> khỏi render nên bỏ qua ở đây là mất CSS.
+            has_style_assets = re.search(r'<style\b[^>]*>|<link\b[^>]*rel=["\']stylesheet["\']', blade_code, re.IGNORECASE)
+            if setup_match or has_style_assets:
                 # Parse the full template content so scripts/styles/userDefined are all collected.
                 # Parsing only the setup tag drops <style> blocks and other script metadata.
                 register_data = self.register_parser.parse_register_content(blade_code, view_name)
@@ -323,7 +331,13 @@ class BladeCompiler:
         
         # Extract usestate_variables for event processor
         usestate_variables = self._extract_usestate_variables(usestate_declarations, all_declarations)
-        
+
+        # Data vars (@vars/@props) cũng là reactive key: biểu thức tham chiếu
+        # chúng phải nhận stateKeys để client subscribe (trait notify qua
+        # updateStateByKey khi updateData từ ngoài vào). variable_list từ
+        # _generate_wrapper_declarations giờ CHỈ chứa @vars/@props.
+        usestate_variables |= set(variable_list)
+
         # Update template_processor with usestate_variables
         self.template_processor.state_variables = usestate_variables
         self.template_processor.conditional_handlers.state_variables = usestate_variables
@@ -1280,7 +1294,11 @@ class BladeCompiler:
             
             for style in styles_data:
                 style_parts = [f'"type":"{style["type"]}"']
-                
+
+                # scoped → style đi theo component (runtime scope CSS); mặc định global
+                if style.get('scoped'):
+                    style_parts.append('"scoped":true')
+
                 if style['type'] == 'code':
                     content_escaped = style["content"].replace('"', '\\"').replace('\n', '\\n')
                     style_parts.append(f'"content":"{content_escaped}"')
@@ -1471,8 +1489,8 @@ class BladeCompiler:
                     }
                 }
             }
-            // Then update states from data
-            """ + self._generate_state_updates(state_declarations) + """
+            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset
+            """ + self._generate_data_state_updates(state_declarations) + """
             // Finally lock state updates
             """ + ("lockUpdateRealState();" if state_declarations else "") + """
         },
@@ -1659,8 +1677,8 @@ class BladeCompiler:
             
         else:
             # Fallback to old hardcoded template
-            return_template = setup_script_line + script_registrations_line + """import { View } from 'saola';
-import { app } from 'saola';
+            return_template = setup_script_line + script_registrations_line + """import { View } from '@saolabs/client';
+import { app } from '@saolabs/client';
 
 // nều có code trước export default trong script setup thì thêm vào đây
 
@@ -1720,8 +1738,8 @@ class """ + class_name + """ extends View {
                     }
                 }
             }
-            // Then update states from data
-            """ + self._generate_state_updates(state_declarations) + """
+            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset
+            """ + self._generate_data_state_updates(state_declarations) + """
             // Finally lock state updates
             """ + ("lockUpdateRealState();" if state_declarations else "") + """
         },
@@ -2574,6 +2592,11 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             if decl_type in ('vars', 'props'):
                 # Process @vars/@props variables -> destructure from __data__
                 # Both @vars and @props produce the same JS output: let {...} = __data__;
+                #
+                # Data vars là REACTIVE KEY (contract data vs state — client
+                # data-state-contract.test.ts): trait cập nhật closure var VÀ
+                # notify qua updateStateByKey để biểu thức tham chiếu data var
+                # (stateKeys chứa tên nó) re-render khi updateData từ ngoài vào.
                 destructure_parts = []
                 for var in variables:
                     var_name = var['name']
@@ -2584,13 +2607,17 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                     # Add to __UPDATE_DATA_TRAIT__ and variable list
                     # Add type annotation for TypeScript
                     if self._is_typescript:
-                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = (value: any) => {var_name} = value;")
+                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = (value: any) => {{ {var_name} = value; updateStateByKey('{var_name}', value); }};")
                     else:
-                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = value => {var_name} = value;")
+                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = value => {{ {var_name} = value; updateStateByKey('{var_name}', value); }};")
                     variable_list.append(var_name)
                 # Emit single destructuring statement
                 if destructure_parts:
                     wrapper_lines.append(f"    let {{{', '.join(destructure_parts)}}} = __data__;")
+                # Register data key vào StateManager để subscribe được
+                # (updateStateByKey bỏ qua key chưa register)
+                for var in variables:
+                    wrapper_lines.append(f"    __STATE__.__.register('{var['name']}', {var['name']});")
             
             elif decl_type == 'let':
                 # Process @let variables
@@ -2615,11 +2642,9 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                             bracket_type = '[' if var['destructuringType'] == 'array' else '{'
                             close_bracket = ']' if var['destructuringType'] == 'array' else '}'
                             wrapper_lines.append(f"    let {bracket_type}{', '.join(names)}{close_bracket} = {value};")
-                            
-                            # Add each destructured variable to update trait and variable list
-                            for name in names:
-                                update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{name} = value => {name} = value;")
-                                variable_list.append(name)
+                            # @let là biến LOCAL của instance — KHÔNG vào
+                            # __UPDATE_DATA_TRAIT__/variable_list: updateData từ
+                            # ngoài không được ghi đè biến nội bộ (contract data vs state)
                     else:
                         # Regular variable
                         var_name = var['name']
@@ -2627,14 +2652,7 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                             wrapper_lines.append(f"    let {var_name} = {var['value']};")
                         else:
                             wrapper_lines.append(f"    let {var_name};")
-                        
-                        # Add to update trait and variable list
-                        # Add type annotation for TypeScript
-                        if self._is_typescript:
-                            update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = (value: any) => {var_name} = value;")
-                        else:
-                            update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = value => {var_name} = value;")
-                        variable_list.append(var_name)
+                        # @let local — không vào trait/variable_list (như trên)
             
             elif decl_type == 'const':
                 # Process @const variables
@@ -2688,7 +2706,11 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             wrapper_lines.append(f"    const __VARIABLE_LIST__ = [{variable_list_str}];")
         
         wrapper_code = '\n'.join(wrapper_lines)
-        
+
+        # Lưu tên data vars (@vars/@props — variable_list giờ CHỈ chứa chúng)
+        # cho _generate_data_state_updates ở bước emit updateVariableData.
+        self._data_var_names = set(variable_list)
+
         return wrapper_code, variable_list, state_declarations
 
     def _extract_declared_template_variables(self, variable_list, const_declarations, usestate_variables):
@@ -2749,10 +2771,10 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
         return result
 
     def _generate_state_updates(self, state_declarations):
-        """Generate state update calls for updateVariableData function"""
+        """Generate state update calls for commitConstructorData (init MỘT lần)"""
         if not state_declarations:
             return ""
-        
+
         update_lines = []
         for state in state_declarations:
             state_key = state['stateKey']
@@ -2761,6 +2783,40 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             # Generate: update$userState(user) - use update function instead of setter
             update_func_name = f"update${state_key}"
             update_lines.append(f"{update_func_name}({initial_value});")
-        
+
+        return "\n            ".join(update_lines)
+
+    def _expr_data_deps(self, expr, data_var_names):
+        """Tên data var (@vars/@props) mà một biểu thức initializer tham chiếu.
+
+        Bỏ string literal trước khi bắt identifier để không match tên nằm
+        trong chuỗi ('posts' trong "no posts")."""
+        if not expr or not data_var_names:
+            return set()
+        cleaned = re.sub(r"'[^']*'|\"[^\"]*\"|`[^`]*`", "", str(expr))
+        found = set(re.findall(r"[A-Za-z_$][\w$]*", cleaned))
+        return found & set(data_var_names)
+
+    def _generate_data_state_updates(self, state_declarations):
+        """State update calls cho updateVariableData — CHỈ state có initializer
+        PHỤ THUỘC data var (vd update$postList(posts)), guard theo key thực sự
+        có trong data (partial update không re-derive vô cớ).
+
+        Contract data vs state (client data-state-contract.test.ts): state init
+        bằng LITERAL là của riêng instance — updateData từ ngoài KHÔNG được
+        reset. Trước đây re-run TOÀN BỘ initializer → mọi state bị reset về
+        giá trị khởi tạo mỗi lần updateData."""
+        if not state_declarations:
+            return ""
+
+        data_var_names = getattr(self, '_data_var_names', set())
+        update_lines = []
+        for state in state_declarations:
+            deps = self._expr_data_deps(state['initialValue'], data_var_names)
+            if not deps:
+                continue  # literal/local-only initializer — không re-run
+            cond = " || ".join([f"data.hasOwnProperty('{d}')" for d in sorted(deps)])
+            update_lines.append(f"if ({cond}) {{ update${state['stateKey']}({state['initialValue']}); }}")
+
         return "\n            ".join(update_lines)
     

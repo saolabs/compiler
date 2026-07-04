@@ -232,40 +232,42 @@ class DeclarationTracker:
                     })
     
     def _parse_vars_content(self, content):
-        """Parse @vars content and extract variables"""
+        """Parse @vars/@props content and extract variables.
+
+        Hỗ trợ: standard `$a = 0`, object `{ a: 0, b }` (key:value JS), shorthand `{a, b}`.
+        Object dùng ':' làm separator → trước đây chỉ dò '=' nên `a: 0` bị coi là
+        nguyên tên biến (`let {a: 0}` sai cú pháp destructuring).
+        """
         variables = []
-        
-        # Handle object destructuring {var1, var2}
-        if content.startswith('{') and content.endswith('}'):
-            inner = content[1:-1]
-            parts = self._split_by_comma(inner)
-        else:
-            parts = self._split_by_comma(content)
-        
+
+        is_object = content.startswith('{') and content.endswith('}')
+        inner = content[1:-1] if is_object else content
+        parts = self._split_by_comma(inner)
+
         for part in parts:
             part = part.strip()
-            if '=' in part:
-                # Has default value: $user = ...
-                equals_pos = self._find_first_equals(part)
-                if equals_pos != -1:
-                    var_name = part[:equals_pos].strip().lstrip('$')
-                    var_value = part[equals_pos + 1:].strip()
-                    # Convert PHP to JS
-                    var_value_js = self._convert_php_to_js(var_value)
-                    variables.append({
-                        'name': var_name,
-                        'value': var_value_js,
-                        'hasDefault': True
-                    })
+            if not part:
+                continue
+            # object → ':'; standard → '='. Object cũng chấp nhận '=' (shorthand mặc định).
+            sep_pos = self._find_first_colon(part) if is_object else -1
+            if sep_pos == -1 and '=' in part:
+                sep_pos = self._find_first_equals(part)
+            if sep_pos != -1:
+                var_name = part[:sep_pos].strip().strip("'\"").lstrip('$')
+                var_value_js = self._convert_php_to_js(part[sep_pos + 1:].strip())
+                variables.append({
+                    'name': var_name,
+                    'value': var_value_js,
+                    'hasDefault': True
+                })
             else:
-                # No default value: $test
-                var_name = part.strip().lstrip('$')
+                var_name = part.strip().strip("'\"").lstrip('$')
                 variables.append({
                     'name': var_name,
                     'value': None,
                     'hasDefault': False
                 })
-        
+
         return variables
     
     def _parse_let_content(self, content):
@@ -569,14 +571,83 @@ class DeclarationTracker:
         Standard: @states($count = 0, $e = $b) — each var becomes useState
         """
         content = content.strip()
-        
+
         # Array format: ['key' => value, ...]
         if content.startswith('[') and content.endswith(']'):
             return self._parse_usestate_array_format(content)
-        
+
+        # Object format: { key: value, ... } (cú pháp JS — app/examples dùng)
+        if content.startswith('{') and content.endswith('}'):
+            return self._parse_states_object_format(content)
+
         # Standard format: $key1 = value1, $key2 = value2
         return self._parse_states_standard_format(content)
-    
+
+    def _parse_states_object_format(self, content):
+        """Parse object format: @states({ count: 0, e: b })
+        Mỗi cặp key: value thành một useState (key:value tách bằng colon top-level).
+        """
+        variables = []
+        inner = content[1:-1].strip()
+        parts = self._split_by_comma(inner)
+
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            colon_pos = self._find_first_colon(part)
+            if colon_pos != -1:
+                var_name = part[:colon_pos].strip().strip("'\"").lstrip('$')
+                value = part[colon_pos + 1:].strip()
+                value_js = self._convert_php_to_js(value)
+            else:
+                var_name = part.strip().strip("'\"").lstrip('$')
+                value_js = 'null'
+
+            if var_name:
+                setter_name = f'set{var_name[0].upper()}{var_name[1:]}' if var_name else 'setValue'
+                variables.append({
+                    'names': [var_name, setter_name],
+                    'value': f'useState({value_js})',
+                    'isDestructuring': True,
+                    'destructuringType': 'array',
+                    'isUseState': True
+                })
+
+        return variables
+
+    def _find_first_colon(self, var):
+        """Find first top-level ':' not inside quotes/brackets/braces.
+        Bỏ qua ':' trong chuỗi/ternary (nằm sau colon key:value đầu tiên)."""
+        paren_count = 0
+        bracket_count = 0
+        brace_count = 0
+        in_quotes = False
+        quote_char = ''
+        for i, char in enumerate(var):
+            if (char == '"' or char == "'") and not in_quotes:
+                in_quotes = True
+                quote_char = char
+            elif char == quote_char and in_quotes:
+                in_quotes = False
+                quote_char = ''
+            elif not in_quotes:
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                elif char == '[':
+                    bracket_count += 1
+                elif char == ']':
+                    bracket_count -= 1
+                elif char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                elif char == ':' and paren_count == 0 and bracket_count == 0 and brace_count == 0:
+                    return i
+        return -1
+
     def _parse_states_standard_format(self, content):
         """Parse standard format: @states($count = 0, $e = $b)
         Each variable becomes a useState with auto-generated setter.
