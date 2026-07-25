@@ -45,7 +45,9 @@ class RegisterParser:
         processed_scripts = set()  # Track processed scripts to avoid duplicates
         
         # Find all script tags with attributes - parse once
-        all_script_matches = re.finditer(r'<script([^>]*?)>(.*?)</script>', content, re.DOTALL)
+        all_script_matches = re.finditer(
+            r'<script\b([^>]*?)>(.*?)</script>', content, re.DOTALL | re.IGNORECASE
+        )
         
         for match in all_script_matches:
             attrs_string = match.group(1)
@@ -58,7 +60,7 @@ class RegisterParser:
             processed_scripts.add(full_match)
             
             # Check if this is <script setup> tag
-            is_setup_script = 'setup' in attrs_string
+            is_setup_script = re.search(r'(?:^|\s)setup(?:\s|=|$)', attrs_string, re.IGNORECASE) is not None
             
             # Extract lang attribute for script setup (case-insensitive)
             if is_setup_script:
@@ -70,26 +72,29 @@ class RegisterParser:
                         self.setup_lang = 'typescript'
             
             # Check if it's external script (has src)
-            if 'src=' in attrs_string:
+            src_match = re.search(
+                r'\bsrc\s*=\s*(["\'])([^"\']*?(?:\{\{[^}]*\}\}[^"\']*?)*[^"\']*?)\1',
+                attrs_string,
+                re.IGNORECASE,
+            )
+            if src_match:
                 # External script - handle both regular URLs and Blade syntax
-                src_match = re.search(r'src=(["\'])([^"\']*?(?:\{\{[^}]*\}\}[^"\']*?)*[^"\']*?)\1', attrs_string)
-                if src_match:
-                    src = src_match.group(2)
-                    script_obj = {
-                        'type': 'src',
-                        'src': src
-                    }
-                    
-                    # Parse attributes (exclude src to avoid duplication)
-                    attributes = self._parse_attributes(attrs_string, exclude_attrs=['src'])
-                    if attributes.get('id'):
-                        script_obj['id'] = attributes['id']
-                    if attributes.get('className'):
-                        script_obj['className'] = attributes['className']
-                    if attributes.get('attributes'):
-                        script_obj['attributes'] = attributes['attributes']
-                    
-                    self.scripts.append(script_obj)
+                src = src_match.group(2)
+                script_obj = {
+                    'type': 'src',
+                    'src': src
+                }
+
+                # Parse attributes (exclude src to avoid duplication)
+                attributes = self._parse_attributes(attrs_string, exclude_attrs=['src'])
+                if attributes.get('id'):
+                    script_obj['id'] = attributes['id']
+                if attributes.get('className'):
+                    script_obj['className'] = attributes['className']
+                if attributes.get('attributes'):
+                    script_obj['attributes'] = attributes['attributes']
+
+                self.scripts.append(script_obj)
             else:
                 # Inline script
                 if not script_content:
@@ -140,7 +145,7 @@ class RegisterParser:
     
     def _parse_styles(self, content):
         # Parse inline styles with attributes
-        style_matches = re.finditer(r'<style([^>]*?)>(.*?)</style>', content, re.DOTALL)
+        style_matches = re.finditer(r'<style\b([^>]*?)>(.*?)</style>', content, re.DOTALL | re.IGNORECASE)
         
         for match in style_matches:
             attrs_string = match.group(1)
@@ -169,17 +174,22 @@ class RegisterParser:
 
                 self.styles.append(style_obj)
         
-        # Parse external stylesheets with attributes
-        # Use a more flexible pattern that handles Blade syntax better
-        link_pattern = r'<link([^>]*?)rel=["\']stylesheet["\']([^>]*?)>'
-        link_matches = re.finditer(link_pattern, content)
-        
+        # Parse external stylesheets. `rel` là token-list và HTML không phân biệt
+        # hoa/thường, nên hỗ trợ cả "preload stylesheet" và mọi thứ tự attrs.
+        link_matches = re.finditer(r'<link\b([^>]*)>', content, re.IGNORECASE)
         for match in link_matches:
             full_tag = match.group(0)
-            attrs_combined = match.group(1) + match.group(2)
+            attrs_combined = match.group(1)
+            rel_match = re.search(r'\brel\s*=\s*(["\'])([^"\']*)\1', attrs_combined, re.IGNORECASE)
+            if not rel_match or 'stylesheet' not in rel_match.group(2).lower().split():
+                continue
             
             # Extract href - handle both regular URLs and Blade syntax
-            href_match = re.search(r'href=(["\'])([^"\']*?(?:\{\{[^}]*\}\}[^"\']*?)*[^"\']*?)\1', full_tag)
+            href_match = re.search(
+                r'\bhref\s*=\s*(["\'])([^"\']*?(?:\{\{[^}]*\}\}[^"\']*?)*[^"\']*?)\1',
+                full_tag,
+                re.IGNORECASE,
+            )
             if href_match:
                 href = href_match.group(2)
                 
@@ -203,6 +213,7 @@ class RegisterParser:
         """Parse HTML attributes from string and extract id, class, and other attributes"""
         if exclude_attrs is None:
             exclude_attrs = []
+        excluded = {name.lower() for name in exclude_attrs}
         
         result = {
             'id': '',
@@ -218,11 +229,11 @@ class RegisterParser:
         matches = re.findall(attr_pattern, attrs_string)
         
         for match in matches:
-            attr_name = match[0].strip()
+            attr_name = match[0].strip().lower()
             attr_value = match[2] if len(match) > 2 else None
             
             # Skip excluded attributes
-            if attr_name in exclude_attrs:
+            if attr_name in excluded:
                 continue
             
             if attr_name == 'id':

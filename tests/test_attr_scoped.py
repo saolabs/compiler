@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Regression test (standalone, không cần pytest) cho 2 tính năng compiler:
+Regression test (standalone, không cần pytest) cho compiler attributes/assets:
 
   1. Shorthand `:attr="expr"` trên thẻ HTML → binding attr reactive
      (tương đương `attr="{{ expr }}"`).
@@ -76,6 +76,22 @@ js_global = compile_sao(
     "<style>.c{color:red}</style>\n"
 )
 check("<style> global → KHÔNG có scoped", '"scoped":true' not in js_global and 'styles:' in js_global)
+
+# ── 3. Runtime assets: collect một lần, không render lặp trong View DOM ──
+js_assets = compile_sao(
+    '<div>x</div>\n'
+    '<script>window.__assetInline = "ok";</script>\n'
+    '<script SRC="/shared.js" defer></script>\n'
+    '<link REL="preload stylesheet" href="/shared.css" media="screen">\n'
+)
+check("inline <script> emit content trực tiếp", '"content":"window.__assetInline = \\"ok\\";"' in js_assets)
+check("không emit View.registerScript không tồn tại", 'View.registerScript' not in js_assets)
+check("<script src> vào scripts config", '"type":"src","src":"/shared.js"' in js_assets)
+check("<link stylesheet> vào styles config", '"type":"href","href":"/shared.css"' in js_assets)
+check("asset <script> không render lần hai trong subtree",
+      re.search(r'this\.html\([^\n]*,\s*["\']script["\']', js_assets) is None)
+check("asset <link> không render lần hai trong subtree",
+      re.search(r'this\.html\([^\n]*,\s*["\']link["\']', js_assets) is None)
 
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)

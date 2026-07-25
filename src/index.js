@@ -221,6 +221,14 @@ class Compiler {
         
         // Tách các phần của .sao file
         const parts = this.parseSaoFile(fileContent, saoFilePath);
+
+        // Assets khai báo ngoài <template> vẫn phải có trong HTML SSR.
+        // JS compiler cũng nhận cùng danh sách này để quản lý lifecycle sau hydrate.
+        const scriptTags = parts.cleanedContent.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [];
+        const styleTags = parts.cleanedContent.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
+        const linkStyleTags = parts.cleanedContent.match(
+            /<link\b(?=[^>]*\brel\s*=\s*["'][^"']*\bstylesheet\b[^"']*["'])[^>]*>/gi
+        ) || [];
         
         // Preprocessor: chuyển Saola Syntax mới → PHP/Blade Syntax (cho blade output)
         // Parts gốc (Saola Syntax) được giữ nguyên cho JS output vì syntax mới đã gần JS
@@ -283,12 +291,15 @@ class Compiler {
         
         // Gọi Python sao2blade compiler để xử lý reactive wrapping
         try {
-            const processedBlade = await this.compileBladeTemplate(bladeContent);
+            // Chèn SSR assets SAU hydrate processor: <link> không thuộc View
+            // tree nên không được làm tăng element counter / đổi hydrate IDs.
+            const compiledBlade = await this.compileBladeTemplate(bladeContent);
+            const processedBlade = this.injectSsrStylesheets(compiledBlade, linkStyleTags);
             fs.writeFileSync(bladePath, processedBlade, 'utf-8');
         } catch (error) {
             // Fallback: ghi blade raw nếu compiler lỗi
             console.warn(`  ⚠ Blade reactive processing failed, writing raw: ${error.message}`);
-            fs.writeFileSync(bladePath, bladeContent, 'utf-8');
+            fs.writeFileSync(bladePath, this.injectSsrStylesheets(bladeContent, linkStyleTags), 'utf-8');
         }
         
         // Compile JS: Gửi FULL content cho Python compiler (bao gồm script/style/link)
@@ -305,10 +316,6 @@ class Compiler {
         
         // Collect script/style/link tags from cleaned content (after @ssr removal)
         // so Python compiler can extract lifecycle + assets correctly.
-        const scriptTags = parts.cleanedContent.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [];
-        const styleTags = parts.cleanedContent.match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
-        const linkStyleTags = parts.cleanedContent.match(/<link[^>]*rel=["']stylesheet["'][^>]*>/gi) || [];
-
         const scriptSetupTag = scriptTags.find(tag => /<script\s+setup\b/i.test(tag));
 
         if (scriptTags.length > 0 || styleTags.length > 0 || linkStyleTags.length > 0) {
@@ -367,6 +374,44 @@ class Compiler {
             // Blade đã được ghi, chỉ JS bị lỗi
             console.error(`  ⚠ ${viewPath} → Blade ✓, JS ✗: ${error.message}`);
         }
+    }
+
+    /**
+     * Giữ external stylesheet trong HTML Blade để SSR không bị FOUC khi JS
+     * chưa boot. @once với identity ổn định chặn layout lồng nhau phát
+     * cùng một <link> nhiều lần.
+     */
+    injectSsrStylesheets(templateContent, linkTags) {
+        if (!Array.isArray(linkTags) || linkTags.length === 0) return templateContent;
+
+        const seen = new Set();
+        const blocks = [];
+        for (const originalTag of linkTags) {
+            const tag = originalTag.trim().replace(/\s+/g, ' ');
+            if (!tag || seen.has(tag)) continue;
+            seen.add(tag);
+            const id = `saola-css-${this.stableHash(tag)}`;
+            blocks.push(`@once('${id}')\n${originalTag.trim()}\n@endonce`);
+        }
+        if (blocks.length === 0) return templateContent;
+
+        const assetBlock = blocks.join('\n');
+        // @extends nên đứng đầu view; @pageStart nên bao ngoài page markers.
+        const anchor = templateContent.match(/^\s*@(extends|pageStart)\b[^\n]*(?:\n|$)/im);
+        if (anchor && anchor.index !== undefined) {
+            const position = anchor.index + anchor[0].length;
+            return `${templateContent.slice(0, position)}${assetBlock}\n${templateContent.slice(position)}`;
+        }
+        return `${assetBlock}\n${templateContent}`;
+    }
+
+    /** Hash DJB2 ngắn, chỉ dùng làm Blade @once identity. */
+    stableHash(value) {
+        let hash = 5381;
+        for (let i = 0; i < value.length; i++) {
+            hash = ((hash << 5) + hash + value.charCodeAt(i)) >>> 0;
+        }
+        return hash.toString(36);
     }
 
     /**

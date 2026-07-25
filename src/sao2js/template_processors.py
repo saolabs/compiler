@@ -386,68 +386,15 @@ class TemplateProcessors:
         # Handle @include directive with string literals without variables
         processed_line = re.sub(r'@include\s*\(\s*[\'"]([^\'"]*)[\'"]\s*\)', r'${' + APP_VIEW_NAMESPACE + r'.renderView(this.__include("\1", {}))}', processed_line)
         
-        # Handle @includeif/@includeFf directive with path and data (2 parameters)
-        def replace_includeif_2params_directive(match):
-            view_path = match.group(1).strip()
-            data = match.group(2).strip()
-            
-            # Convert view path to JavaScript
-            if view_path.startswith('"') and view_path.endswith('"'):
-                view_path_js = view_path
-            elif view_path.startswith("'") and view_path.endswith("'"):
-                view_path_js = f'"{view_path[1:-1]}"'
-            else:
-                view_path_js = php_to_js(view_path)
-            
-            # Convert data to JavaScript
-            data_js = convert_php_array_to_json(data)
-            data_js = re.sub(r'\$(\w+)', r'\1', data_js)
-            
-            return "${" + APP_VIEW_NAMESPACE + ".renderView(this.__includeif(" + view_path_js + ", " + data_js + "))}"
-        
-        # Handle @includeif directive with variables
-        def replace_includeif_directive(match):
-            view_name = match.group(1).strip()
-            variables = match.group(2).strip() if match.group(2) else '{}'
-            variables_js = convert_php_array_to_json(variables)
-            # Remove $ prefix from variables
-            variables_js = re.sub(r'\$(\w+)', r'\1', variables_js)
-            return "${" + APP_VIEW_NAMESPACE + ".renderView(this.__includeif('" + view_name + "', " + variables_js + "))}"
-        
-        # Handle @includeif with PHP expressions (must be before string literal patterns)
-        processed_line = re.sub(r'@includeif\s*\(\s*([^,]+?)\s*,\s*(\[.*?\])\s*\)', replace_includeif_2params_directive, processed_line, flags=re.IGNORECASE)
-        
-        processed_line = re.sub(r'@includeif\s*\(\s*[\'"]([^\'"]*)[\'"]\s*,\s*(.*?)\s*\)', replace_includeif_directive, processed_line, flags=re.DOTALL | re.IGNORECASE)
-        
-        # Handle @includeIf directive without variables (case insensitive)
-        processed_line = re.sub(r'@includeif\s*\(\s*[\'"]([^\'"]*)[\'"]\s*\)', r'${' + APP_VIEW_NAMESPACE + r'.renderView(this.__includeif("\1", {}))}', processed_line, flags=re.IGNORECASE)
-        
-        # Handle @includeWhen/@includewhen directive with condition, path, and data
-        def replace_includewhen_directive(match):
-            condition = match.group(1).strip()
-            view_path = match.group(2).strip()
-            data = match.group(3).strip() if match.group(3) else '{}'
-            
-            # Convert condition to JavaScript
-            condition_js = php_to_js(condition)
-            
-            # Convert view path to JavaScript
-            if view_path.startswith('"') and view_path.endswith('"'):
-                view_path_js = view_path
-            elif view_path.startswith("'") and view_path.endswith("'"):
-                view_path_js = f'"{view_path[1:-1]}"'
-            else:
-                view_path_js = php_to_js(view_path)
-            
-            # Convert data to JavaScript
-            data_js = convert_php_array_to_json(data)
-            data_js = re.sub(r'\$(\w+)', r'\1', data_js)
-            
-            return "${" + APP_VIEW_NAMESPACE + ".renderView(this.__includewhen(" + condition_js + ", " + view_path_js + ", " + data_js + "))}"
-        
-        # Handle @includeWhen/@includewhen with 3 parameters
-        processed_line = re.sub(r'@includewhen\s*\(\s*([^,]+?)\s*,\s*([^,]+?)\s*,\s*([^)]+?)\s*\)', replace_includewhen_directive, processed_line, flags=re.IGNORECASE)
-        
+        # NOTE: @includeif / @includewhen legacy string-path REMOVED 2026-07-25.
+        # It compiled to `App.View.renderView(this.__includeif(...))` /
+        # `this.__includewhen(...)` — client runtime has no such methods (only
+        # include/includeIf/includeWhen, and only `this.include(...)` is emitted by
+        # the AST render_generator), and it passed no hydrate id → no marker → no
+        # hydration. Dead + broken, no .sao/test used it. If conditional includes
+        # are wanted, wire @includeif/@includewhen through the AST to the existing
+        # client ViewController.includeIf/includeWhen (id + @startMarker('component')).
+
         # Handle @template/@view directive - alias of @wrap with enhanced parameter syntax
         # Process this FIRST before @wrap/@wrapper to support template-style syntax
         def replace_template_directive(match):

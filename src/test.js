@@ -42,6 +42,7 @@ class CompilerTests {
         this.testConfigManager();
         this.testPythonCompilerPath();
         this.testFileDiscovery();
+        this.testSsrStylesheets();
 
         console.log('\n📊 Test Results:');
         console.log(`   Passed: ${this.testsPassed}`);
@@ -189,6 +190,37 @@ class CompilerTests {
             const files = compiler.findSaoFiles('/non/existent/path/12345');
             if (!Array.isArray(files)) throw new Error('Result is not an array');
             if (files.length !== 0) throw new Error('Should return empty array for non-existent directory');
+        });
+    }
+
+    testSsrStylesheets() {
+        console.log('\n4. SSR Stylesheets:');
+
+        this.test('Injects stylesheet after @extends with stable @once key', () => {
+            const compiler = new Compiler();
+            const link = '<link rel="preload stylesheet" href="/shared.css" media="screen">';
+            const output = compiler.injectSsrStylesheets('@extends("layout")\n<div>Page</div>', [link, link]);
+            if (!output.startsWith('@extends("layout")\n@once(\'saola-css-')) {
+                throw new Error('Stylesheet was not inserted after @extends');
+            }
+            if ((output.match(/<link\b/g) || []).length !== 1) {
+                throw new Error('Duplicate stylesheet was not removed');
+            }
+            if (!output.includes('@endonce')) throw new Error('@once block is incomplete');
+        });
+
+        this.test('SSR stylesheet does not mutate compiled hydration marker IDs', () => {
+            const compiler = new Compiler();
+            const compiled = "@pageStart\n@startMarker('blockoutlet', 'd9c86768')\n@useBlock('shell')\n@endMarker('blockoutlet', 'd9c86768')\n@pageEnd";
+            const output = compiler.injectSsrStylesheets(compiled, [
+                '<link rel="stylesheet" href="/shared.css">',
+            ]);
+            if ((output.match(/d9c86768/g) || []).length !== 2) {
+                throw new Error('Existing hydration IDs changed while inserting SSR assets');
+            }
+            if (output.includes('<link @class(')) {
+                throw new Error('SSR asset was incorrectly converted into a hydrated View node');
+            }
         });
     }
 }

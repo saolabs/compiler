@@ -119,6 +119,17 @@ function saolaPlugin(options = {}) {
                         }
                     }
                 }
+                // Also watch app sources (helpers/services) — same saoView base as
+                // views. copyAppFiles resolves these via paths.saoView too, so
+                // editing them must trigger a recompile just like a view change.
+                if (Array.isArray(ctxConfig?.app)) {
+                    for (const appPath of ctxConfig.app) {
+                        const fullPath = path.join(saolaViewPath, appPath);
+                        if (fs.existsSync(fullPath)) {
+                            watchDirs.push(fullPath);
+                        }
+                    }
+                }
             }
 
             if (watchDirs.length === 0) return;

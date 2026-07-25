@@ -235,13 +235,17 @@ class BladeCompiler:
         elif register_content:
             register_data = self.register_parser.parse_register_content(register_content, view_name)
         
-        # If no @register directive, check for <script setup> tags
+        # Không có @register vẫn phải collect runtime assets đặt trực tiếp trong
+        # .sao. Nếu bỏ qua, chúng sẽ lọt vào render tree và bị chèn sai vị trí.
         if not register_data:
             setup_match = re.search(r'<script\s+setup[^>]*>(.*?)</script>', blade_code, re.DOTALL | re.IGNORECASE)
-            # <style>/<link stylesheet> không kèm <script setup> vẫn phải vào mảng styles —
-            # template luôn strip <style> khỏi render nên bỏ qua ở đây là mất CSS.
-            has_style_assets = re.search(r'<style\b[^>]*>|<link\b[^>]*rel=["\']stylesheet["\']', blade_code, re.IGNORECASE)
-            if setup_match or has_style_assets:
+            has_runtime_assets = re.search(
+                r'<script\b[^>]*>|<style\b[^>]*>|'
+                r'<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>',
+                blade_code,
+                re.IGNORECASE,
+            )
+            if setup_match or has_runtime_assets:
                 # Parse the full template content so scripts/styles/userDefined are all collected.
                 # Parsing only the setup tag drops <style> blocks and other script metadata.
                 register_data = self.register_parser.parse_register_content(blade_code, view_name)
@@ -347,6 +351,18 @@ class BladeCompiler:
         self.template_processor.class_binding_handler.state_variables = usestate_variables
         
         # ========================================================================
+        # Runtime assets đã được collect vào config; tuyệt đối không để chúng đi
+        # tiếp vào render tree (nếu không <script src>/<link> bị chèn cả subtree
+        # lẫn <head>). Xử lý trước snapshot AST để cả V1/V2 cùng một contract.
+        blade_code = re.sub(r'<script\b[^>]*>.*?</script>', '', blade_code,
+                            flags=re.DOTALL | re.IGNORECASE)
+        blade_code = re.sub(r'<style\b[^>]*>.*?</style>', '', blade_code,
+                            flags=re.DOTALL | re.IGNORECASE)
+        blade_code = re.sub(
+            r'<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>',
+            '', blade_code, flags=re.IGNORECASE,
+        )
+
         # Save blade_code for AST-based structured render generation (V2)
         # This must happen BEFORE useBlock/onBlock transforms modify directives
         # ========================================================================
@@ -1107,33 +1123,9 @@ class BladeCompiler:
         # They are already in scripts array and will be inserted into DOM when mounted
         # Adding them here causes duplicate execution (file-level + DOM insertion)
         
-        # Generate View.registerScript() calls for inline scripts
-        # This ensures scripts are registered and can be retrieved by view name and key
+        # Inline runtime script được giữ trực tiếp dưới dạng JSON string trong
+        # config. Client không có/không cần registry View.registerScript riêng.
         script_registrations_line = ""
-        script_registrations = []
-        script_function_map = {}  # Map script index to function name
-        
-        if register_data and register_data.get('scripts'):
-            scripts_data = register_data['scripts']
-            for index, script in enumerate(scripts_data):
-                if script['type'] == 'code' and script.get('content', '').strip():
-                    # Generate unique function name/key for script wrapper
-                    script_function_name = f"__script_{view_name.replace('.', '_')}_{index}"
-                    script_function_map[index] = script_function_name
-                    
-                    # Wrap script content in View.registerScript() call
-                    script_content = script['content']
-                    # Indent script content for better readability
-                    indented_content = '\n'.join('    ' + line if line.strip() else line 
-                                                 for line in script_content.split('\n'))
-                    
-                    script_registration = f"""View.registerScript('{view_name}', '{script_function_name}', function () {{
-{indented_content}
-}});"""
-                    script_registrations.append(script_registration)
-        
-        if script_registrations:
-            script_registrations_line = '\n\n'.join(script_registrations) + "\n\n"
         
         if setup_scripts:
             setup_script_line = '\n\n'.join(setup_scripts) + "\n\n"
@@ -1235,8 +1227,8 @@ class BladeCompiler:
         else:
             resources_line = "\n        resources: []"
         
-        # Add scripts array từ register_data
-        # Use function wrapper for inline scripts to avoid JSON escaping issues
+        # Add scripts array từ register_data; json.dumps giữ inline code thành
+        # JavaScript string hợp lệ mà không cần registry/function wrapper riêng.
         scripts_line = ""
         if register_data and register_data.get('scripts'):
             scripts_data = register_data['scripts']
@@ -1246,14 +1238,7 @@ class BladeCompiler:
                 script_parts = [f'"type":"{script["type"]}"']
                 
                 if script['type'] == 'code':
-                    # Use function wrapper instead of content string
-                    if index in script_function_map:
-                        script_function_name = script_function_map[index]
-                        script_parts.append(f'"function":"{script_function_name}"')
-                    else:
-                        # Fallback: use content if function not generated
-                        content_escaped = script["content"].replace('"', '\\"').replace('\n', '\\n')
-                        script_parts.append(f'"content":"{content_escaped}"')
+                    script_parts.append('"content":' + json.dumps(script["content"], ensure_ascii=False))
                 elif script['type'] == 'src':
                     # Process Blade syntax in src
                     src_value = script["src"]
@@ -2819,4 +2804,3 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             update_lines.append(f"if ({cond}) {{ update${state['stateKey']}({state['initialValue']}); }}")
 
         return "\n            ".join(update_lines)
-    
