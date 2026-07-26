@@ -508,7 +508,15 @@ class BladeHydrateProcessor:
                 expr = raw_m.group(1)
                 full = raw_m.group(0)
                 skeys = self._get_state_keys(expr)
-                if skeys:
+                # Emit an output marker when the expression is reactive (state keys)
+                # OR when we're inside a loop. sao2js ALWAYS compiles a {{ }}/{!! !!}
+                # inside a @foreach into a this.output() element (marker-based), so SSR
+                # must emit matching markers for it to claim during hydration. Without
+                # this, the hydrating Output can't find its markers, creates fresh ones
+                # and re-appends the value next to the SSR text → duplicated content.
+                # next_output() must advance in lockstep with sao2js so the per-scope
+                # output ids stay aligned even when a scope mixes state and loop outputs.
+                if skeys or loop_scopes:
                     oid = self.id_gen.next_output()
                     id_val = self._blade_id_value(oid, loop_scopes)
                     parts.append(f"@startMarker('output', {id_val}){full}@endMarker('output', {id_val})")
@@ -530,7 +538,10 @@ class BladeHydrateProcessor:
                 expr = echo_m.group(1)
                 full = echo_m.group(0)
                 skeys = self._get_state_keys(expr)
-                if skeys:
+                # See {!! !!} branch above: inside a loop sao2js always emits a
+                # this.output() element, so SSR must emit matching markers (with a
+                # loop-dynamic id) for hydration to claim instead of duplicating.
+                if skeys or loop_scopes:
                     oid = self.id_gen.next_output()
                     id_val = self._blade_id_value(oid, loop_scopes)
                     parts.append(f"@startMarker('output', {id_val}){full}@endMarker('output', {id_val})")
