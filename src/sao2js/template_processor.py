@@ -3,6 +3,7 @@ Template processor chính xử lý template content
 """
 
 import re
+from common.children_slot import replace_children_for_legacy_js
 from common.utils import extract_balanced_parentheses
 from conditional_handlers import ConditionalHandlers
 from loop_handlers import LoopHandlers
@@ -331,9 +332,8 @@ class TemplateProcessor:
         # Process @importInclude blocks (custom component tags with children)
         blade_code = self._resolve_import_includes(blade_code)
 
-        # Process @children directive → ${__ONE_CHILDREN_CONTENT__??''}
-        # Use [^\S\n]* instead of \s* to avoid consuming newlines
-        blade_code = re.sub(r'@children[^\S\n]*(?:\([^\S\n]*\))?', "${__ONE_CHILDREN_CONTENT__??''}", blade_code, flags=re.IGNORECASE)
+        # Legacy renderer follows the same placeholder aliases as the AST path.
+        blade_code = replace_children_for_legacy_js(blade_code)
 
         # Process @include directives (multiline support) BEFORE processing line by line
         blade_code = self._process_multiline_include_directives(blade_code)

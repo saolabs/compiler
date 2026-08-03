@@ -16,6 +16,11 @@ if _parent_dir not in sys.path:
 
 from common.php_converter import php_to_js, php_to_js_advanced
 from common.utils import extract_balanced_parentheses
+from common.children_slot import (
+    CHILDREN_DIRECTIVE_RE,
+    ChildrenSlotError,
+    is_children_expression,
+)
 from event_directive_processor import EventDirectiveProcessor
 
 
@@ -146,25 +151,30 @@ class YieldNode(Node):
 
 
 class IncludeNode(Node):
-    def __init__(self, path_php, path_js, data_php=None, data_js=None):
+    def __init__(self, path_php, path_js, data_php=None, data_js=None, state_vars=None):
         self.path_php = path_php
         self.path_js = path_js
         self.data_php = data_php
         self.data_js = data_js
+        self.state_vars = state_vars or set()
 
 
 class ImportIncludeNode(Node):
     """@importInclude with children content — component with slot children."""
-    def __init__(self, path_php, path_js, data_pairs=None):
+    def __init__(self, path_php, path_js, data_pairs=None, state_vars=None):
         self.path_php = path_php
         self.path_js = path_js
         self.data_pairs = data_pairs or []  # list of (key, value_js) tuples
         self.children = []  # AST nodes for __ONE_CHILDREN_CONTENT__
+        self.state_vars = state_vars or set()
 
 
 class ChildrenNode(Node):
-    """@children — slot placeholder: render __ONE_CHILDREN_CONTENT__ (element
-    factory từ parent qua @importInclude/custom tag, hoặc string SSR)."""
+    """@children / {{ $children }} lazy slot insertion point.
+
+    This node never owns children. The parent component owns the slot AST and
+    passes a factory that is materialized only when this node is rendered.
+    """
     def __init__(self):
         pass
 
@@ -246,11 +256,13 @@ class TemplateASTParser:
         # Khi đang trong thẻ rawtext (textarea/script/style...) mở qua nhiều dòng:
         # giữ tên thẻ để mọi dòng tiếp theo coi là TEXT cho tới khi gặp </tag>.
         self._rawtext_tag = None
+        self._children_placeholder_count = 0
 
     def parse(self, template_content):
         """Parse template string into AST."""
         root = RootNode()
         self._rawtext_tag = None
+        self._children_placeholder_count = 0
         lines = template_content.split('\n')
 
         # Unified stack: [(parent_node, type_str, extra_data)]
@@ -570,7 +582,8 @@ class TemplateASTParser:
                 else:
                     path_js = "''"
                 data_js = php_to_js(data_php) if data_php else None
-                node = IncludeNode(path_php, path_js, data_php, data_js)
+                state_vars = self._get_state_vars(data_php) if data_php else set()
+                node = IncludeNode(path_php, path_js, data_php, data_js, state_vars)
                 self._add_child(stack, node)
                 return True
 
@@ -578,8 +591,8 @@ class TemplateASTParser:
         if re.match(r'@importInclude\s*\(', stripped):
             expr = self._extract_directive_parens(stripped, '@importInclude')
             if expr is not None:
-                path_php, path_js, data_pairs = self._parse_import_include_params(expr)
-                node = ImportIncludeNode(path_php, path_js, data_pairs)
+                path_php, path_js, data_pairs, state_vars = self._parse_import_include_params(expr)
+                node = ImportIncludeNode(path_php, path_js, data_pairs, state_vars)
                 self._add_child(stack, node)
                 stack.append((node, 'importInclude', None))
                 return True
@@ -590,8 +603,8 @@ class TemplateASTParser:
             return True
 
         # @children — slot placeholder (render children từ parent include)
-        if re.match(r'@children\b', stripped, re.IGNORECASE):
-            self._add_child(stack, ChildrenNode())
+        if CHILDREN_DIRECTIVE_RE.fullmatch(stripped):
+            self._add_children_placeholder(stack)
             return True
 
         # Skip known directives that don't produce AST nodes
@@ -743,9 +756,12 @@ class TemplateASTParser:
                         self._add_child(stack, TextNode(text_buf))
                         text_buf = ''
                     expr = m.group(1)
-                    js_expr = php_to_js_advanced(expr)
-                    svars = self._get_state_vars(expr)
-                    self._add_child(stack, EchoNode(expr, js_expr, escaped=False, state_vars=svars))
+                    if is_children_expression(expr):
+                        self._add_children_placeholder(stack)
+                    else:
+                        js_expr = php_to_js_advanced(expr)
+                        svars = self._get_state_vars(expr)
+                        self._add_child(stack, EchoNode(expr, js_expr, escaped=False, state_vars=svars))
                     pos += m.end()
                     continue
 
@@ -757,11 +773,24 @@ class TemplateASTParser:
                         self._add_child(stack, TextNode(text_buf))
                         text_buf = ''
                     expr = m.group(1)
-                    js_expr = php_to_js_advanced(expr)
-                    svars = self._get_state_vars(expr)
-                    self._add_child(stack, EchoNode(expr, js_expr, escaped=True, state_vars=svars))
+                    if is_children_expression(expr):
+                        self._add_children_placeholder(stack)
+                    else:
+                        js_expr = php_to_js_advanced(expr)
+                        svars = self._get_state_vars(expr)
+                        self._add_child(stack, EchoNode(expr, js_expr, escaped=True, state_vars=svars))
                     pos += m.end()
                     continue
+
+            # Inline @children (for example: <div>@children</div>).
+            directive_m = CHILDREN_DIRECTIVE_RE.match(content, pos)
+            if directive_m:
+                if text_buf:
+                    self._add_child(stack, TextNode(text_buf))
+                    text_buf = ''
+                self._add_children_placeholder(stack)
+                pos = directive_m.end()
+                continue
 
             # Same-line @if ... @else ... @endif inside text content.
             # This is still parsed as a normal block IfBlock, not an attribute-inline directive.
@@ -779,6 +808,16 @@ class TemplateASTParser:
 
         if text_buf:
             self._add_child(stack, TextNode(text_buf))
+
+    def _add_children_placeholder(self, stack):
+        """Add the single lazy slot insertion point to the current AST parent."""
+        self._children_placeholder_count += 1
+        if self._children_placeholder_count > 1:
+            raise ChildrenSlotError(
+                'A component template may contain only one children placeholder '
+                '(@children or {{ $children }}).'
+            )
+        self._add_child(stack, ChildrenNode())
 
     def _parse_block_if_in_text_content(self, content, start_pos, stack):
         """Parse same-line @if ... @else ... @endif in text content as an IfBlock.
@@ -1415,11 +1454,12 @@ class TemplateASTParser:
 
     def _parse_import_include_params(self, expr):
         """Parse @importInclude parameters: tagName, path [, data].
-        Returns (path_php, path_js, data_pairs) where data_pairs is list of (key, value_js)."""
+        Returns (path_php, path_js, data_pairs, state_vars) where data_pairs is
+        list of (key, value_js)."""
         parts = self._split_php_array(expr)
         
         if len(parts) == 0:
-            return expr.strip(), "''", []
+            return expr.strip(), "''", [], set()
         
         # First part is tagName (ignored for JS output)
         if len(parts) == 1:
@@ -1432,6 +1472,7 @@ class TemplateASTParser:
         
         # Parse data pairs if present
         data_pairs = []
+        state_vars = set()
         if len(parts) >= 3:
             data_str = parts[2].strip()
             # Remove outer [ ]
@@ -1450,8 +1491,9 @@ class TemplateASTParser:
                         value_php = kv_match.group(2).strip()
                         value_js = php_to_js(value_php)
                         data_pairs.append((key, value_js))
+                        state_vars |= self._get_state_vars(value_php)
         
-        return path_php, path_js, data_pairs
+        return path_php, path_js, data_pairs, state_vars
 
     def _extract_while_var(self, expr):
         """Extract loop variable from while condition like '$i < 5'."""

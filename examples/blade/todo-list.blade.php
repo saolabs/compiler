@@ -33,7 +33,7 @@
                             @foreach($todos as $todo)
                                 <li @class([$__VIEW_ID__ . "-cfcc0d01-{$loop->index}", 'todo-item', '{{', '$todo->completed', '?', ''completed'', ':', '''', '}}'])>
                                     <input @class([$__VIEW_ID__ . "-1c9bd3d5-{$loop->index}"]) @attr(['type' => 'checkbox']) @checked($todo->completed)>
-                                    {{ $todo->text }}
+                                    @startMarker('output', "a5cbb2ad-{$loop->index}"){{ $todo->text }}@endMarker('output', "a5cbb2ad-{$loop->index}")
                                     <button @class([$__VIEW_ID__ . "-57d15225-{$loop->index}", 'btn', 'btn-sm', 'btn-outline-danger'])>×</button>
                                 </li>
                             @endforeach

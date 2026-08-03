@@ -19,9 +19,9 @@
             @startMarker('reactive', '93adb396', ['stateKey' => ['users'], 'type' => 'foreach'])
             @foreach($users as $user)
                 <div @class([$__VIEW_ID__ . "-0ca9f865-{$loop->index}", 'user-card', 'mb-3', 'p-3', 'border', 'rounded'])>
-                    <h6 @class([$__VIEW_ID__ . "-6f51958c-{$loop->index}"])>{{ $user->name }}</h6>
-                    <p @class([$__VIEW_ID__ . "-fc55c64f-{$loop->index}", 'mb-1'])>{{ $user->email }}</p>
-                    <small @class([$__VIEW_ID__ . "-ca9dc9a1-{$loop->index}", 'text-muted'])>{{ $user->company->name }}</small>
+                    <h6 @class([$__VIEW_ID__ . "-6f51958c-{$loop->index}"])>@startMarker('output', "a25a5270-{$loop->index}"){{ $user->name }}@endMarker('output', "a25a5270-{$loop->index}")</h6>
+                    <p @class([$__VIEW_ID__ . "-fc55c64f-{$loop->index}", 'mb-1'])>@startMarker('output', "b266bc52-{$loop->index}"){{ $user->email }}@endMarker('output', "b266bc52-{$loop->index}")</p>
+                    <small @class([$__VIEW_ID__ . "-ca9dc9a1-{$loop->index}", 'text-muted'])>@startMarker('output', "4ab011e3-{$loop->index}"){{ $user->company->name }}@endMarker('output', "4ab011e3-{$loop->index}")</small>
                 </div>
             @endforeach
             @endMarker('reactive', '93adb396')

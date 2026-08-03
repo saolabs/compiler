@@ -21,6 +21,8 @@ from common.compiler_utils import CompilerUtils
 from common.declaration_tracker import DeclarationTracker
 from common.import_parser import ImportParser
 from common.import_tag_resolver import ImportTagResolver
+from common.template_structure import TemplateStructureError, validate_imported_tag_structure
+from common.children_slot import ChildrenSlotError, has_children_placeholder
 from parsers import DirectiveParsers
 from template_processor import TemplateProcessor
 from template_analyzer import TemplateAnalyzer
@@ -264,8 +266,8 @@ class BladeCompiler:
         # NEW: Use DeclarationTracker to parse all declarations in order
         all_declarations = self.declaration_tracker.parse_all_declarations(blade_code)
         
-        # Auto-inject __ONE_CHILDREN_CONTENT__ into @vars if @children is used in template
-        has_children_directive = bool(re.search(r'@children\b', blade_code, re.IGNORECASE))
+        # Both @children and {{ $children }} compile to one lazy ChildrenNode.
+        has_children_directive = has_children_placeholder(blade_code)
         if has_children_directive:
             children_var = {
                 'name': '__ONE_CHILDREN_CONTENT__',
@@ -414,6 +416,10 @@ class BladeCompiler:
         # Step 1: Parse @import directives to build tag-to-path mapping
         import_parser = ImportParser()
         component_imports = import_parser.parse_imports(blade_code)
+
+        # Fail malformed imported component trees before either legacy or AST
+        # target rewrites them. This keeps Blade and JS DOM contracts identical.
+        validate_imported_tag_structure(blade_code, component_imports)
         
         # Step 2: Remove @import directives from blade code
         blade_code = import_parser.remove_imports(blade_code)
@@ -939,6 +945,10 @@ class BladeCompiler:
             indent = '    '
             indented_body = '\n'.join(indent + line if line.strip() else '' for line in structured_body.split('\n'))
             render_function = f"function () {{\n{indented_body}\n}}"
+        except (ChildrenSlotError, TemplateStructureError):
+            # Contract errors must fail compilation; falling back would silently
+            # turn duplicate placeholders into invalid/duplicated hydrate trees.
+            raise
         except Exception as e:
             # Fallback to legacy render on AST errors - log for debugging
             import sys as _sys

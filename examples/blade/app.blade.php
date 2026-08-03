@@ -30,7 +30,7 @@
                         @foreach($posts as $post)
                             <li @class([$__VIEW_ID__ . "-1bb2ea1b-{$loop->index}", 'menu-item', 'nav-item'])>
                                 <a @class([$__VIEW_ID__ . "-2c9814f7-{$loop->index}", 'nav-link']) @attr(['href' => webPostUrl($post)])>
-                                    {{ $post->title }}
+                                    @startMarker('output', "728bab78-{$loop->index}"){{ $post->title }}@endMarker('output', "728bab78-{$loop->index}")
                                 </a>
                             </li>
                         @endforeach

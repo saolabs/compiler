@@ -865,6 +865,8 @@ class RenderGenerator:
         """Generate this.include(id, path, parentElement, stateKeys, dataFactory) call."""
         comp_id = self.id_gen.next_component()
         id_str = self._format_id(comp_id)
+        state_keys = sorted(node.state_vars)
+        keys_str = str(state_keys).replace("'", '"') if state_keys else '[]'
 
         # Parse data_js (PHP array converted to JS object) into key-value pairs
         data_parts = []
@@ -874,22 +876,23 @@ class RenderGenerator:
         if data_parts:
             data_inner = ', '.join(data_parts)
             return (
-                f'{indent}this.include({id_str}, {node.path_js}, parentElement, [], '
+                f'{indent}this.include({id_str}, {node.path_js}, parentElement, {keys_str}, '
                 f'{self._arrow_parent()} ({{{data_inner}}})'
                 f')'
             )
         return (
-            f'{indent}this.include({id_str}, {node.path_js}, parentElement, [], '
+            f'{indent}this.include({id_str}, {node.path_js}, parentElement, {keys_str}, '
             f'{self._arrow_parent()} ({{}}))'
         )
 
     def _gen_children_slot(self, indent):
-        """@children → spread render children từ parent.
+        """ChildrenNode → materialize the lazy parent-owned slot at this point.
 
         __ONE_CHILDREN_CONTENT__ đến qua __data__ (auto-inject vào @vars khi có
         @children): element factory `(parentElement) => [...]` từ @importInclude
         phía parent, hoặc string (SSR/default ''). Runtime this.__children()
-        chuẩn hoá cả 2 dạng thành mảng elements.
+        chuẩn hoá cả 2 dạng thành mảng elements. Không gọi factory ở include;
+        lời gọi chỉ xuất hiện tại đúng placeholder này.
         """
         return f'{indent}...this.__children(__ONE_CHILDREN_CONTENT__, parentElement)'
 
@@ -902,6 +905,8 @@ class RenderGenerator:
         else:
             comp_id = self.id_gen.next_component()
         id_str = self._format_id(comp_id)
+        state_keys = sorted(node.state_vars)
+        keys_str = str(state_keys).replace("'", '"') if state_keys else '[]'
 
         # Build data factory parts from explicit data pairs
         data_parts = []
@@ -936,13 +941,13 @@ class RenderGenerator:
         if data_parts:
             data_inner = ',\n'.join(f'{indent}        {p}' for p in data_parts)
             return (
-                f'{indent}this.include({id_str}, {node.path_js}, parentElement, [], '
+                f'{indent}this.include({id_str}, {node.path_js}, parentElement, {keys_str}, '
                 f'{self._arrow_parent()} ({{\n'
                 f'{data_inner}\n'
                 f'{indent}    }}))'
             )
         return (
-            f'{indent}this.include({id_str}, {node.path_js}, parentElement, [], '
+            f'{indent}this.include({id_str}, {node.path_js}, parentElement, {keys_str}, '
             f'{self._arrow_parent()} ({{}}))'
         )
 

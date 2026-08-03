@@ -507,7 +507,7 @@ class InputView extends View {
                     );
                     return __execArr;
                 }),
-            this.include(`68594f9a`, esamples/partial.sao, parentElement, [], (parentElement: any) => ({"data": products}))
+            this.include(`68594f9a`, esamples/partial.sao, parentElement, ["products"], (parentElement: any) => ({"data": products}))
             ]);
             }
         });

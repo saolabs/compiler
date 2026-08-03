@@ -19,7 +19,7 @@
     @endMarker('reactive', '8304c314')
     
     @foreach([1, 2, 3] as $item)
-        <div @class([$__VIEW_ID__ . "-9f765099-{$loop->index}"])>Item: {{ $item }}</div>
+        <div @class([$__VIEW_ID__ . "-9f765099-{$loop->index}"])>Item: @startMarker('output', "c2080d34-{$loop->index}"){{ $item }}@endMarker('output', "c2080d34-{$loop->index}")</div>
     @endforeach
     
     <button @class([$__VIEW_ID__ . '-55484cc3'])>Increment</button>

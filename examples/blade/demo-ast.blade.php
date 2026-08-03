@@ -46,9 +46,9 @@
                 <p @class([$__VIEW_ID__ . '-87be49e9'])>{{ $content }}</p>
                 @exec($test = 'Hello World')
                 @foreach($posts as $post)
-                    <p @class([$__VIEW_ID__ . "-95b8e5df-{$loop->index}"])>{{ $content }}</p>
+                    <p @class([$__VIEW_ID__ . "-95b8e5df-{$loop->index}"])>@startMarker('output', "fdc458ea-{$loop->index}"){{ $content }}@endMarker('output', "fdc458ea-{$loop->index}")</p>
                     @exec($content = 'This is a test')
-                    <p @class([$__VIEW_ID__ . "-b36f132d-{$loop->index}"])>{{ $post->title }}: {{ $post->content }} {{ $content }}</p>
+                    <p @class([$__VIEW_ID__ . "-b36f132d-{$loop->index}"])>@startMarker('output', "a3056b3f-{$loop->index}"){{ $post->title }}@endMarker('output', "a3056b3f-{$loop->index}"): @startMarker('output', "1425822f-{$loop->index}"){{ $post->content }}@endMarker('output', "1425822f-{$loop->index}") @startMarker('output', "6bc4e3ef-{$loop->index}"){{ $content }}@endMarker('output', "6bc4e3ef-{$loop->index}")</p>
                 @endforeach
             </div>
             <p @class([$__VIEW_ID__ . '-7cbd68c8'])>{{ $content }}</p>

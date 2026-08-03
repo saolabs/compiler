@@ -36,7 +36,7 @@
             <h3 @class([$__VIEW_ID__ . '-bb95914d'])>Users</h3>
             <ul @class([$__VIEW_ID__ . '-fabeb0e6'])>
                 @foreach($users as $user)
-                    <li @class([$__VIEW_ID__ . "-51785291-{$loop->index}"])>{{ $user->name }} ({{ $user->email }})</li>
+                    <li @class([$__VIEW_ID__ . "-51785291-{$loop->index}"])>@startMarker('output', "2eba362a-{$loop->index}"){{ $user->name }}@endMarker('output', "2eba362a-{$loop->index}") (@startMarker('output', "158fdf32-{$loop->index}"){{ $user->email }}@endMarker('output', "158fdf32-{$loop->index}"))</li>
                 @endforeach
             </ul>
         </div>
@@ -44,7 +44,7 @@
             <h3 @class([$__VIEW_ID__ . '-3c11cc9f'])>Posts</h3>
             <ul @class([$__VIEW_ID__ . '-03a5e96a'])>
                 @foreach($posts as $post)
-                    <li @class([$__VIEW_ID__ . "-4f286c4f-{$loop->index}"])><strong @class([$__VIEW_ID__ . "-b2511220-{$loop->index}"])>{{ $post->title }}</strong>: {{ $post->content }}</li>
+                    <li @class([$__VIEW_ID__ . "-4f286c4f-{$loop->index}"])><strong @class([$__VIEW_ID__ . "-b2511220-{$loop->index}"])>@startMarker('output', "134a7ae9-{$loop->index}"){{ $post->title }}@endMarker('output', "134a7ae9-{$loop->index}")</strong>: @startMarker('output', "90ab339b-{$loop->index}"){{ $post->content }}@endMarker('output', "90ab339b-{$loop->index}")</li>
                 @endforeach
             </ul>
         </div>
@@ -57,7 +57,7 @@
                 <li @class([$__VIEW_ID__ . "-d8484f9d-{$loop->index}"])>
                     <label @class([$__VIEW_ID__ . "-9d96460a-{$loop->index}"])>
                         <input @class([$__VIEW_ID__ . "-f73b73c3-{$loop->index}"]) @attr(['type' => 'checkbox']) @bind($todo->completed) @checked($todo->completed) />
-                        {{ $todo->task }}
+                        @startMarker('output', "22697e74-{$loop->index}"){{ $todo->task }}@endMarker('output', "22697e74-{$loop->index}")
                     </label>
 
                 </li>
@@ -79,12 +79,12 @@
                 @startMarker('reactive', 'cbf33dd6', ['stateKey' => ['products'], 'type' => 'foreach'])
                 @foreach($products as $product)
                     <li @class([$__VIEW_ID__ . "-f5bde316-{$loop->index}"])>
-                        {{ $product->name }} - ${{ $product->price }}
+                        @startMarker('output', "459e9ee4-{$loop->index}"){{ $product->name }}@endMarker('output', "459e9ee4-{$loop->index}") - $@startMarker('output', "783a24e9-{$loop->index}"){{ $product->price }}@endMarker('output', "783a24e9-{$loop->index}")
                         @startMarker('reactive', "5c1d8559-{$loop->index}", ['stateKey' => [], 'type' => 'if'])
                         @if($product->tags && count($product->tags) > 0)
                             <div @class([$__VIEW_ID__ . "-8b2a29e5-{$loop->index}", 'tags'])>
                                 @foreach($product->tags as $tag)
-                                    <span @class([$__VIEW_ID__ . "-b82d8442-{$loop->index}-{$loop->index}", 'tag'])>{{ $tag }}</span>
+                                    <span @class([$__VIEW_ID__ . "-b82d8442-{$loop->index}-{$loop->index}", 'tag'])>@startMarker('output', "3ffbaf01-{$loop->index}-{$loop->index}"){{ $tag }}@endMarker('output', "3ffbaf01-{$loop->index}-{$loop->index}")</span>
                                 @endforeach
                             </div>
                         @endif
@@ -152,7 +152,7 @@
             @startMarker('while', '292d3fbb', ['start' => $n])
             @while($n < $MAX_COUNT)
                 <li @class([$__VIEW_ID__ . "-62fd1c37-{$n}"])>
-                    Item #{{ $n + 1 }}
+                    Item #@startMarker('output', "effacc62-{$n}"){{ $n + 1 }}@endMarker('output', "effacc62-{$n}")
                 </li>
                 @exec($n++)
             @endwhile

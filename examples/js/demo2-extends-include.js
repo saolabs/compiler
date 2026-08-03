@@ -237,10 +237,10 @@ class Demo2ExtendsIncludeView extends View {
                     }, 5)
                     ])
                 ]),
-            this.include(`142a7e71`, __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"})),
+            this.include(`142a7e71`, __template__+'post-list', parentElement, ["posts"], (parentElement) => ({"posts": posts, "name": "test"})),
             this.include(`cf91f6e1`, __template__+'footer', parentElement, [], (parentElement) => ({
                     __ONE_CHILDREN_CONTENT__: (parentElement) => [
-                    this.include(`2084c3f0`, __template__+'post-list', parentElement, [], (parentElement) => ({"posts": posts, "name": "test"}))
+                    this.include(`2084c3f0`, __template__+'post-list', parentElement, ["posts"], (parentElement) => ({"posts": posts, "name": "test"}))
                 ]
                 }))
             ]);

@@ -23,7 +23,7 @@
             @startMarker('reactive', '902f863d', ['stateKey' => ['items'], 'type' => 'foreach'])
             @foreach($items as $item)
                 <div @class([$__VIEW_ID__ . "-b694ec4d-{$loop->index}", 'item-card']) @attr(['data-id' => $item->id])>
-                    <strong @class([$__VIEW_ID__ . "-09a1f0cb-{$loop->index}"])>{{ $item->name }}</strong> - ${{ $item->price }}
+                    <strong @class([$__VIEW_ID__ . "-09a1f0cb-{$loop->index}"])>@startMarker('output', "1bbdf8ed-{$loop->index}"){{ $item->name }}@endMarker('output', "1bbdf8ed-{$loop->index}")</strong> - $@startMarker('output', "02ce1872-{$loop->index}"){{ $item->price }}@endMarker('output', "02ce1872-{$loop->index}")
 
                     {{-- Level 3: nested @if inside @foreach inside @if --}}
                     @startMarker('reactive', "cd817d05-{$loop->index}", ['stateKey' => [], 'type' => 'if'])
@@ -37,7 +37,7 @@
                     {{-- Level 3: nested @foreach inside @foreach (tags) --}}
                     <div @class([$__VIEW_ID__ . "-096ac143-{$loop->index}", 'tags'])>
                         @foreach($item->tags as $tag)
-                            <span @class([$__VIEW_ID__ . "-69ab6ad3-{$loop->index}-{$loop->index}", 'tag'])>{{ $tag }}</span>
+                            <span @class([$__VIEW_ID__ . "-69ab6ad3-{$loop->index}-{$loop->index}", 'tag'])>@startMarker('output', "95cfba3f-{$loop->index}-{$loop->index}"){{ $tag }}@endMarker('output', "95cfba3f-{$loop->index}-{$loop->index}")</span>
                         @endforeach
                     </div>
                 </div>
@@ -59,7 +59,7 @@
                 @startMarker('reactive', 'fecf94b7', ['stateKey' => ['count'], 'type' => 'for'])
                 @for($i = 0; $i < $count; $i++)
                     <div @class([$__VIEW_ID__ . "-c89d0a72-{$i}", 'counter-item'])>
-                        Item #{{ $i + 1 }}
+                        Item #@startMarker('output', "2cbe2f68-{$i}"){{ $i + 1 }}@endMarker('output', "2cbe2f68-{$i}")
                         @startMarker('reactive', "308be5af-{$i}", ['stateKey' => [], 'type' => 'if'])
                         @if($i % 2 === 0)
                             <span @class([$__VIEW_ID__ . "-2dbe1b86-{$i}"])>(even)</span>
@@ -89,7 +89,7 @@
         @startMarker('reactive', '9e7541ab', ['stateKey' => ['items'], 'type' => 'foreach'])
         @foreach($items as $key => $item)
             <div @class([$__VIEW_ID__ . "-a5dc4800-{$loop->index}", 'group'])>
-                <h4 @class([$__VIEW_ID__ . "-257a304c-{$loop->index}"])>[{{ $key }}] {{ $item->name }} ({{ $item->category }})</h4>
+                <h4 @class([$__VIEW_ID__ . "-257a304c-{$loop->index}"])>[@startMarker('output', "9358af9a-{$loop->index}"){{ $key }}@endMarker('output', "9358af9a-{$loop->index}")] @startMarker('output', "20fe2a71-{$loop->index}"){{ $item->name }}@endMarker('output', "20fe2a71-{$loop->index}") (@startMarker('output', "5b06d485-{$loop->index}"){{ $item->category }}@endMarker('output', "5b06d485-{$loop->index}"))</h4>
 
                 {{-- Level 2: @switch inside @foreach --}}
                 @startMarker('reactive', "be70c31c-{$loop->index}", ['stateKey' => [], 'type' => 'switch'])
@@ -109,7 +109,7 @@
                     <ul @class([$__VIEW_ID__ . "-887408bb-{$loop->index}"])>
                         @foreach($item->tags as $idx => $tag)
                             <li @class([$__VIEW_ID__ . "-51b02d05-{$loop->index}-{$loop->index}"])>
-                                Tag {{ $idx }}: {{ $tag }}
+                                Tag @startMarker('output', "0d1cbbf5-{$loop->index}-{$loop->index}"){{ $idx }}@endMarker('output', "0d1cbbf5-{$loop->index}-{$loop->index}"): @startMarker('output', "455eb528-{$loop->index}-{$loop->index}"){{ $tag }}@endMarker('output', "455eb528-{$loop->index}-{$loop->index}")
                                 @startMarker('reactive', "809bb5e9-{$loop->index}-{$loop->index}", ['stateKey' => [], 'type' => 'if'])
                                 @if($tag === 'sweet')
                                     <em @class([$__VIEW_ID__ . "-27607e6e-{$loop->index}-{$loop->index}"])> ← popular!</em>
@@ -119,7 +119,7 @@
                         @endforeach
                     </ul>
                 @else
-                    <p @class([$__VIEW_ID__ . "-89200765-{$loop->index}"])>Only one tag: {{ $item->tags[0] }}</p>
+                    <p @class([$__VIEW_ID__ . "-89200765-{$loop->index}"])>Only one tag: @startMarker('output', "07a1cb6f-{$loop->index}"){{ $item->tags[0] }}@endMarker('output', "07a1cb6f-{$loop->index}")</p>
                 @endif
                 @endMarker('reactive', "6600da4e-{$loop->index}")
             </div>

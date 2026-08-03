@@ -36,8 +36,8 @@
                 @startMarker('reactive', 'f47cbfd6', ['stateKey' => ['posts'], 'type' => 'foreach'])
                 @foreach($posts as $post)
                     <li @class([$__VIEW_ID__ . "-bce9cd15-{$loop->index}"])>
-                        <h3 @class([$__VIEW_ID__ . "-54dc212f-{$loop->index}"])>{{ $post->title }}</h3>
-                        <p @class([$__VIEW_ID__ . "-a90ddb5d-{$loop->index}"])>{{ $post->content }}</p>
+                        <h3 @class([$__VIEW_ID__ . "-54dc212f-{$loop->index}"])>@startMarker('output', "b2ad0128-{$loop->index}"){{ $post->title }}@endMarker('output', "b2ad0128-{$loop->index}")</h3>
+                        <p @class([$__VIEW_ID__ . "-a90ddb5d-{$loop->index}"])>@startMarker('output', "f628c635-{$loop->index}"){{ $post->content }}@endMarker('output', "f628c635-{$loop->index}")</p>
                     </li>
                 @endforeach
                 @endMarker('reactive', 'f47cbfd6')
@@ -47,7 +47,7 @@
         <div @class([$__VIEW_ID__ . '-0158164e', 'while-loop-demo'])>
             @startMarker('while', 'c8bde4a7', ['start' => $i, 'end' => 5])
             @while($i < 5)
-                <p @class([$__VIEW_ID__ . "-03ca1bcb-{$i}"])>Counter: {{ $i }}</p>
+                <p @class([$__VIEW_ID__ . "-03ca1bcb-{$i}"])>Counter: @startMarker('output', "2a2319d8-{$i}"){{ $i }}@endMarker('output', "2a2319d8-{$i}")</p>
                 @exec($i++)
             @endwhile
             @endMarker('while', 'c8bde4a7')

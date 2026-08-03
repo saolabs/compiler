@@ -19,6 +19,12 @@ from common.declaration_tracker import DeclarationTracker
 from common.utils import extract_balanced_parentheses
 from common.import_parser import ImportParser
 from common.import_tag_resolver import ImportTagResolver
+from common.template_structure import validate_imported_tag_structure
+from common.children_slot import (
+    has_children_placeholder,
+    replace_children_for_blade,
+    validate_children_placeholders,
+)
 from reactive_wrapper import ReactiveWrapper
 from hydrate_processor import BladeHydrateProcessor
 
@@ -74,6 +80,10 @@ class BladeTemplateCompiler:
         # Step 0: Parse @import directives and resolve custom tags
         import_parser = ImportParser()
         component_imports = import_parser.parse_imports(one_content)
+
+        # Imported component tags are lifecycle boundaries. Validate their
+        # nesting once, before Blade/JS-specific rewriting can diverge.
+        validate_imported_tag_structure(blade_content, component_imports)
         
         # Remove @import directives from blade content
         blade_content = import_parser.remove_imports(blade_content)
@@ -81,9 +91,10 @@ class BladeTemplateCompiler:
         # Also remove @import from declarations list
         decl_list = [d for d in decl_list if not d.strip().startswith('@import')]
         
-        # Auto-inject $__ONE_CHILDREN_CONTENT__ declaration if @children is used
-        has_children_directive = bool(re.search(r'@children\b', blade_content, re.IGNORECASE)) or \
-                                 bool(re.search(r'@children\b', one_content, re.IGNORECASE))
+        # ChildrenNode is a placeholder only. The parent component captures the
+        # actual slot HTML; Blade emits it only where this placeholder appears.
+        validate_children_placeholders(blade_content)
+        has_children_directive = has_children_placeholder(blade_content)
         if has_children_directive:
             # Check if already present in any declaration
             has_children_var = any('__ONE_CHILDREN_CONTENT__' in d for d in decl_list)
@@ -103,14 +114,8 @@ class BladeTemplateCompiler:
                         pass
                 if not merged:
                     decl_list.insert(0, "@vars($__ONE_CHILDREN_CONTENT__ = '')")
-            # Replace @children directive with Blade echo
-            # Use [^\S\n]* instead of \s* to avoid consuming newlines
-            blade_content = re.sub(
-                r'@children[^\S\n]*(?:\([^\S\n]*\))?',
-                "{!! $__ONE_CHILDREN_CONTENT__ ?? '' !!}",
-                blade_content,
-                flags=re.IGNORECASE
-            )
+            # @children / {{ $children }} are raw aliases of the same slot.
+            blade_content = replace_children_for_blade(blade_content)
         
         # Resolve custom tags to @include directives (blade target)
         if component_imports:

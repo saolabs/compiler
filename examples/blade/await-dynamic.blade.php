@@ -8,7 +8,7 @@
     @if($user)
         <h1 @class([$__VIEW_ID__ . '-3a671613'])>Welcome {{ $user->name }}</h1>
         @foreach($postList as $post)
-            <div @class([$__VIEW_ID__ . "-ac013aeb-{$loop->index}"])>{{ $post->title }}</div>
+            <div @class([$__VIEW_ID__ . "-ac013aeb-{$loop->index}"])>@startMarker('output', "33b75e1c-{$loop->index}"){{ $post->title }}@endMarker('output', "33b75e1c-{$loop->index}")</div>
         @endforeach
     @else
         <p @class([$__VIEW_ID__ . '-f08cfbae'])>Please login first</p>
