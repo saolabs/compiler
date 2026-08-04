@@ -70,6 +70,7 @@ class DeclarationTracker:
         self._find_const_declarations(blade_code_filtered)
         self._find_usestate_declarations(blade_code_filtered)
         self._find_states_declarations(blade_code_filtered)
+        self._find_computed_declarations(blade_code_filtered)
         
         # Filter out declarations that are inside template wrappers
         filtered_decls = []
@@ -231,6 +232,43 @@ class DeclarationTracker:
                         'variables': variables
                     })
     
+    def _find_computed_declarations(self, blade_code):
+        """Find all @computed(name = expr) — state dẫn xuất có memo hoá (GAP-04b)."""
+        pattern = r'@computed\s*\('
+        for match in re.finditer(pattern, blade_code):
+            start_pos = match.end() - 1
+            content, end_pos = extract_balanced_parentheses(blade_code, start_pos)
+            if content is not None and content.strip():
+                variables = self._parse_computed_content(content.strip())
+                if variables:
+                    self.declarations.append({
+                        'type': 'computed',
+                        'position': match.start(),
+                        'content': content.strip(),
+                        'variables': variables
+                    })
+
+    def _parse_computed_content(self, content):
+        """Parse @computed content — chỉ `name = expr`, không hỗ trợ destructuring."""
+        variables = []
+        for part in self._split_by_comma(content):
+            part = part.strip().lstrip('$')
+            if '=' not in part:
+                continue
+            equals_pos = self._find_first_equals(part)
+            if equals_pos == -1:
+                continue
+            var_name = part[:equals_pos].strip().lstrip('$')
+            if not var_name or not re.match(r'^[A-Za-z_]\w*$', var_name):
+                continue
+            var_value_php = part[equals_pos + 1:].strip()
+            variables.append({
+                'name': var_name,
+                'value': self._convert_php_to_js(var_value_php),
+                'valuePhp': var_value_php,
+            })
+        return variables
+
     def _parse_vars_content(self, content):
         """Parse @vars/@props content and extract variables.
 

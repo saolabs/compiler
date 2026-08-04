@@ -265,6 +265,10 @@ class BladeCompiler:
         
         # NEW: Use DeclarationTracker to parse all declarations in order
         all_declarations = self.declaration_tracker.parse_all_declarations(blade_code)
+        # Giữ bản gốc: `all_declarations` bị GÁN LẠI thành list khác (chỉ
+        # @let/@const, dạng string) ở giữa method này, nên chỗ sinh interface
+        # phía dưới không dùng lại được nó.
+        data_declarations = all_declarations
         
         # Both @children and {{ $children }} compile to one lazy ChildrenNode.
         has_children_directive = has_children_placeholder(blade_code)
@@ -343,6 +347,15 @@ class BladeCompiler:
         # updateStateByKey khi updateData từ ngoài vào). variable_list từ
         # _generate_wrapper_declarations giờ CHỈ chứa @vars/@props.
         usestate_variables |= set(variable_list)
+
+        # @computed(name = expr) — tên đã được DeclarationTracker gom vào
+        # all_declarations (type='computed'); đăng ký vào usestate_variables
+        # để output/attr/class binding coi computed như state thường (mọi
+        # nơi trích stateKeys dùng chung set này). Codegen thật nằm trong
+        # _generate_wrapper_declarations — xem client GAPS_AND_ROADMAP.md §2.7.
+        for decl in all_declarations:
+            if decl['type'] == 'computed':
+                usestate_variables |= {v['name'] for v in decl['variables']}
 
         # Update template_processor with usestate_variables
         self.template_processor.state_variables = usestate_variables
@@ -565,7 +578,7 @@ class BladeCompiler:
         # Thêm usestate_declarations vào render function để xử lý updateStateByKey
         if usestate_declarations:
             all_declarations.append(usestate_declarations)
-        
+
         directives_line = ""
         if all_declarations:
             # Replace useState declarations with updateRealState calls
@@ -850,7 +863,7 @@ class BladeCompiler:
 
             # Find declaration directives to remove
             decls_to_remove = []
-            for directive in ['@vars', '@data', '@props', '@let', '@const', '@useState', '@states']:
+            for directive in ['@vars', '@data', '@props', '@let', '@const', '@useState', '@states', '@computed']:
                 pattern = re.compile(rf'{re.escape(directive)}\s*\(')
                 pos = 0
                 while True:
@@ -1559,6 +1572,13 @@ class BladeCompiler:
             # Replace placeholders in template
             # The template already has the correct structure, just fill in the placeholders
             return_template = return_template.replace('[COMPONENT_DECLARE_VARIABLES_AND_STATES]', wrapper_content)
+            # TS: interface cho __data__. JS: bỏ hẳn dòng placeholder.
+            props_interface = self._generate_props_interface(data_declarations, function_name)
+            if props_interface:
+                return_template = return_template.replace('[COMPONENT_PROPS_INTERFACE]', props_interface)
+            else:
+                return_template = return_template.replace('[COMPONENT_PROPS_INTERFACE]\n', '')
+                return_template = return_template.replace('[COMPONENT_PROPS_INTERFACE]', '')
             return_template = return_template.replace('[USER_DEFINED_PROPERTIES_PLACEHOLDER]', user_defined_properties)
             return_template = return_template.replace('[VIEW_SETUP_CONFIG_PLACEHOLDER]', setup_config_content)
             
@@ -2254,9 +2274,17 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
         match = re.search(pattern, vars_declaration)
         if match:
             vars_str = match.group(1)
-            # Split by comma and clean up
-            return [var.strip().replace('$', '') for var in vars_str.split(',') if var.strip()]
-        
+            # Split by comma; each item may be "name" or "name = default" —
+            # only the identifier before '=' is the var name (destructuring
+            # default value, e.g. `pageTitle = "User Profile"`, is not part of it).
+            names = []
+            for var in vars_str.split(','):
+                var = var.strip().replace('$', '')
+                name = var.split('=', 1)[0].strip()
+                if name:
+                    names.append(name)
+            return names
+
         return []
 
     def _strip_declaration_directives(self, content):
@@ -2272,21 +2300,30 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
         stripped = re.sub(r'@let\s*\([^)]*\)', '', stripped, flags=re.IGNORECASE)
         stripped = re.sub(r'@const\s*\([^)]*\)', '', stripped, flags=re.IGNORECASE)
         stripped = re.sub(r'@props\s*\([^)]*\)', '', stripped, flags=re.IGNORECASE)
+        stripped = re.sub(r'@computed\s*\([^)]*\)', '', stripped, flags=re.IGNORECASE)
         return stripped
 
     def _template_uses_vars(self, template_content, vars_names):
-        """Check if template content uses any of the vars"""
+        """Check if template content uses any of the vars.
+
+        Matches both bare identifiers (.sao — `pageTitle`) and PHP-style
+        `$pageTitle` / `${pageTitle}` (.blade legacy) — same fix as
+        template_ast.py::_get_state_vars: an earlier version required the '$'
+        prefix, so any .sao var without one was silently never detected.
+        """
         if not template_content or not vars_names:
             return False
-        
-        # Detect direct PHP-style variable references ($name, ${$name}, etc.)
+
         for var_name in vars_names:
             escaped = re.escape(var_name)
+            bare_pattern = rf'\b{escaped}\b'
             php_var_pattern = rf'\${escaped}(\b|[^a-zA-Z0-9_])'
             js_template_pattern = rf'\$\{{\$?{escaped}\b'
-            if re.search(php_var_pattern, template_content) or re.search(js_template_pattern, template_content):
+            if (re.search(bare_pattern, template_content)
+                    or re.search(php_var_pattern, template_content)
+                    or re.search(js_template_pattern, template_content)):
                 return True
-        
+
         return False
 
     def _declarations_use_vars(self, usestate_declarations, let_declarations, const_declarations, vars_names):
@@ -2561,6 +2598,92 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             }
         return None
 
+    def _collect_declared_names(self, declarations):
+        """Mọi tên biến đã khai báo qua @vars/@props/@let/@const/@useState/@states/@computed —
+        dùng để lọc deps của @computed (chỉ nhận identifier THẬT SỰ là biến đã khai báo)."""
+        names = set()
+        for decl in declarations:
+            for var in decl.get('variables', []):
+                if var.get('isDestructuring'):
+                    if var.get('isUseState'):
+                        info = self._extract_state_info(var)
+                        if info:
+                            names.add(info['stateKey'])
+                    else:
+                        names.update(var.get('names', []))
+                elif var.get('name'):
+                    names.add(var['name'])
+        return names
+
+    # Literal default -> kiểu TS. Không nhận ra → 'any' (không đoán bừa).
+    _PROP_TYPE_LITERALS = {
+        'true': 'boolean', 'false': 'boolean',
+        'null': 'any', 'undefined': 'any',
+    }
+
+    def _infer_prop_type(self, value_js):
+        """Suy kiểu TS từ default value của @props/@vars.
+
+        Chỉ suy từ literal — biểu thức (gọi hàm, biến, toán tử) trả 'any' vì
+        đoán sai còn tệ hơn không đoán: nó khiến tsc báo lỗi ở chỗ code đúng.
+        """
+        if not value_js:
+            return 'any'
+        v = value_js.strip()
+        if not v:
+            return 'any'
+        if v in self._PROP_TYPE_LITERALS:
+            return self._PROP_TYPE_LITERALS[v]
+        if v.startswith('['):
+            return 'any[]'
+        if v.startswith('{'):
+            return 'Record<string, any>'
+        if re.fullmatch(r'-?\d+(?:\.\d+)?', v):
+            return 'number'
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'", '`'):
+            return 'string'
+        return 'any'
+
+    def _generate_props_interface(self, declarations, component_name):
+        """Interface cho `__data__` — data vars (@props/@vars) đều destructure
+        từ đó, nên trước đây toàn bộ là `any`: `{{ $count.toUpperCase() }}` với
+        `count = 0` không hề bị tsc bắt.
+
+        Index signature là BẮT BUỘC, không phải cho tiện: data thật luôn mang
+        thêm key ngoài khai báo (route params, systemData, `__SSR_VIEW_ID__`),
+        interface đóng sẽ làm mọi view không compile được.
+        Field đều optional vì gọi `View()` không truyền gì là hợp lệ.
+        """
+        if not self._is_typescript:
+            return ''
+
+        fields = []
+        seen = set()
+        for decl in declarations:
+            if decl.get('type') not in ('vars', 'props'):
+                continue
+            for var in decl.get('variables', []) or []:
+                name = var.get('name')
+                if not name or name in seen:
+                    continue
+                seen.add(name)
+                type_js = self._infer_prop_type(var.get('value')) if var.get('hasDefault') else 'any'
+                fields.append(f"    {name}?: {type_js};")
+
+        body = ('\n'.join(fields) + '\n') if fields else ''
+        return (
+            f"/**\n"
+            f" * Props của view — sinh tự động từ @props/@vars, không sửa tay.\n"
+            f" * Optional hết vì khai báo nào cũng có default.\n"
+            f" */\n"
+            f"export interface {component_name}Props {{\n"
+            f"{body}"
+            f"    /** viewId server gán khi hydrate */\n"
+            f"    __SSR_VIEW_ID__?: string;\n"
+            f"    [key: string]: any;\n"
+            f"}}\n"
+        )
+
     def _generate_wrapper_declarations(self, declarations):
         """
         Generate wrapper function declarations from DeclarationTracker
@@ -2572,7 +2695,8 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
         variable_list = []
         update_trait_items = []
         state_declarations = []  # Collect for return value (used by _generate_state_updates)
-        
+        known_names = self._collect_declared_names(declarations)  # cho @computed deps extraction
+
         # First, generate __UPDATE_DATA_TRAIT__ with conditional type annotation
         if self._is_typescript:
             wrapper_lines.append("    const __UPDATE_DATA_TRAIT__: any = {};")
@@ -2689,6 +2813,32 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                             wrapper_lines.extend(self._generate_state_registration_lines(
                                 state_info['stateKey'], state_info['setterName'], state_info['initialValue']
                             ))
+
+            elif decl_type == 'computed':
+                # @computed(name = expr) — state dẫn xuất có memo hoá (GAP-04b).
+                # `name` là `let` mirror trong closure: mọi output/attr/reactive
+                # dùng `name` y hệt state thường, memo hoá thật nằm trong
+                # StateManager.computed(). Subscribe theo CHÍNH key 'name'
+                # (không phải từng dep) — computed() đã tự enqueue 'name' khi
+                # bất kỳ dep nào đổi, nên chỉ cần 1 listener thêm ở đây.
+                for var in variables:
+                    name = var['name']
+                    deps = sorted({
+                        v for v in re.findall(r'\$?([a-zA-Z_]\w*)', var['valuePhp'])
+                        if v in known_names and v != name
+                    })
+                    deps_js = str(deps).replace("'", '"')
+                    wrapper_lines.append(f"    let {name};")
+                    wrapper_lines.append(
+                        f"    const get${name} = __STATE__.__.computed('{name}', () => {var['value']}, {deps_js});"
+                    )
+                    wrapper_lines.append(f"    {name} = get${name}();")
+                    if deps:
+                        wrapper_lines.append(
+                            f"    __STATE__.__.subscribe(['{name}'], () => {{ {name} = get${name}(); }});"
+                        )
+                    # @computed local như @let — không vào trait/variable_list
+                    # (updateData từ ngoài không ghi đè giá trị dẫn xuất).
         
         # Add update trait assignments after all variable declarations
         wrapper_lines.extend(update_trait_items)

@@ -47,6 +47,9 @@ class HtmlElement(Node):
         self.binding_attrs = {}        # {'data-count': {'php': 'count($demoList)', 'js': '...', 'state_vars': {...}}}
         self.binding_props = {}        # {'checked': {'php': '$todo->completed', 'js': 'todo.completed', 'state_vars': {...}}} — DOM property, không phải attribute
         self.events = {}               # {'click': ['setStatus(!status)']}
+        self.event_modifiers = {}      # {'click': ['prevent', 'stop']} — từ @click.prevent.stop(...)
+        self.transition_name = None    # @transition('fade') — tiền tố class enter/leave, bucket riêng
+        self.bind_key = None           # @bind(username)/@val(username) — two-way binding state key, own config bucket (sibling of attrs/props/events), not smuggled through attrs
         self.raw_attrs_remaining = ''  # Any unprocessed attribute fragments
 
 
@@ -214,6 +217,13 @@ EVENT_NAMES = frozenset({
     'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
     'pointerenter', 'pointerleave', 'pointercancel',
 })
+
+# @click.prevent.stop(...) — modifier áp ở runtime (ViewController.addEventListener).
+#   prevent → event.preventDefault()
+#   stop    → event.stopPropagation()
+#   self    → chỉ chạy khi event.target === event.currentTarget (kiểm TRƯỚC prevent/stop)
+#   once    → addEventListener({ once: true })
+EVENT_MODIFIERS = frozenset({'prevent', 'stop', 'self', 'once'})
 
 # @checked(expr)... → DOM property binding (el.checked = !!expr), map tên directive
 # → tên property JS (readonly → readOnly).
@@ -980,15 +990,34 @@ class TemplateASTParser:
                     continue
 
             # @bind(key) / @val(key) — two-way binding.
-            # Contract runtime (Html.setupTwoWayBinding): attrs { "bind":true, "<key>":true }.
+            # Contract runtime (Html.initializeBinding): config.bind = { key: "<key>" },
+            # its own top-level config bucket — sibling of attrs/props/events, same
+            # shape/spirit as events (not smuggled through attrs as boolean markers).
             m = re.match(r'@(?:bind|val)\s*\(', remaining)
             if m:
                 paren_start = pos + m.end() - 1
                 content = self._extract_balanced(attrs_str, paren_start)
                 if content is not None:
-                    bind_key = php_to_js_advanced(content.strip())
-                    element.static_attrs['bind'] = True
-                    element.static_attrs[bind_key] = True
+                    element.bind_key = php_to_js_advanced(content.strip())
+                    pos = self._find_close_paren(attrs_str, paren_start) + 1
+                    continue
+
+            # @transition('fade') — tiền tố class enter/leave. Bucket riêng
+            # config.transition = { name: "fade" } (như @bind), runtime
+            # Html.maybeRunEnter/destroy đọc trực tiếp.
+            # Tên là HẰNG chuỗi, không phải biểu thức: nó sinh ra tên class CSS,
+            # đổi theo state thì class chẳng khớp gì cả.
+            m = re.match(r"@transition\s*\(", remaining)
+            if m:
+                paren_start = pos + m.end() - 1
+                content = self._extract_balanced(attrs_str, paren_start)
+                if content is not None:
+                    name = content.strip().strip('\'"')
+                    if re.fullmatch(r'[A-Za-z_][\w-]*', name):
+                        element.transition_name = name
+                    else:
+                        print(f"Warning: @transition('{content.strip()}') — tên phải là "
+                              f"hằng chuỗi hợp lệ cho class CSS. Bỏ qua.")
                     pos = self._find_close_paren(attrs_str, paren_start) + 1
                     continue
 
@@ -1010,30 +1039,37 @@ class TemplateASTParser:
                     pos = self._find_close_paren(attrs_str, paren_start) + 1
                     continue
 
-            # Event directives: @click(...), @change(...), etc.
-            m = re.match(r'@(\w+)\s*\(', remaining)
+            # Event directives: @click(...), @change(...), @click.prevent.stop(...)
+            m = re.match(r'@(\w+)((?:\.\w+)*)\s*\(', remaining)
             if m:
                 directive_name = m.group(1).lower()
+                # Modifier chỉ nhận tên hợp lệ; tên lạ bị bỏ qua + cảnh báo thay
+                # vì im lặng — gõ sai `.prevet` mà không báo là bug khó thấy.
+                raw_mods = [x for x in m.group(2).split('.') if x]
+                modifiers = []
+                for mod in raw_mods:
+                    if mod.lower() in EVENT_MODIFIERS:
+                        modifiers.append(mod.lower())
+                    else:
+                        print(f"Warning: modifier '@{directive_name}.{mod}' không hợp lệ — "
+                              f"bỏ qua. Hợp lệ: {', '.join(sorted(EVENT_MODIFIERS))}")
+
+                actual_event = None
                 if directive_name in EVENT_NAMES:
-                    paren_start = pos + m.end() - 1
-                    content = self._extract_balanced(attrs_str, paren_start)
-                    if content is not None:
-                        handler_items = self.event_processor.process_event_items(content)
-                        if directive_name not in element.events:
-                            element.events[directive_name] = []
-                        element.events[directive_name].extend(handler_items)
-                        pos = self._find_close_paren(attrs_str, paren_start) + 1
-                        continue
-                # Also handle @onEventName pattern
+                    actual_event = directive_name
                 elif directive_name.startswith('on') and directive_name[2:].lower() in EVENT_NAMES:
                     actual_event = directive_name[2:].lower()
+
+                if actual_event is not None:
                     paren_start = pos + m.end() - 1
                     content = self._extract_balanced(attrs_str, paren_start)
                     if content is not None:
                         handler_items = self.event_processor.process_event_items(content)
-                        if actual_event not in element.events:
-                            element.events[actual_event] = []
-                        element.events[actual_event].extend(handler_items)
+                        element.events.setdefault(actual_event, []).extend(handler_items)
+                        if modifiers:
+                            existing = element.event_modifiers.setdefault(actual_event, [])
+                            # Cùng event khai báo nhiều lần → hợp modifier, không trùng.
+                            existing.extend(m2 for m2 in modifiers if m2 not in existing)
                         pos = self._find_close_paren(attrs_str, paren_start) + 1
                         continue
 
@@ -1083,6 +1119,7 @@ class TemplateASTParser:
                         'js': f"this.yieldContent('{yield_name}', {yield_default_js})",
                         'state_vars': set(),
                         'is_yield': True,
+                        'yield_name': yield_name,
                     }
                     pos += m.end()
                     continue

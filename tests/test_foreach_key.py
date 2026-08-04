@@ -72,8 +72,11 @@ js = compile_sao(
 )
 check("không @key → __foreach chỉ 2 args",
       re.search(r'=> it\.', js) is None or '=> it.id)' not in js)
-check("element ID fallback __loopIndex",
-      '${__loopIndex + 1}`' in js)
+# Fallback là CHỈ SỐ VÒNG LẶP, 0-based để khớp `$loop->index` phía sao2blade.
+# Trước đây dòng này khẳng định '${__loopIndex + 1}' — tức khoá đúng cái bug
+# lệch-1 làm mọi @foreach không @key hydrate sai. Xem test_loop_index_sync.py.
+check("element ID fallback dùng __loopIndex (0-based, khớp SSR)",
+      '${__loopIndex}`' in js and '__loopIndex + 1' not in js)
 
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)

@@ -2,8 +2,10 @@
 """
 Regression test (standalone, không cần pytest) cho form-binding directives:
 
-  1. `@bind(key)` / `@val(key)` → contract attrs { "bind":true, "<key>":true }
-     (parse CHỦ ĐÍCH — trước đây dựa vào fall-through boolean-attr tình cờ).
+  1. `@bind(key)` / `@val(key)` → own top-level config bucket
+     `bind: { key: "<key>" }` — sibling of attrs/props/events (KHÔNG smuggle
+     qua attrs bằng 2 boolean marker như trước, vốn có thể lẫn với 1 static
+     boolean attr thật tình cờ đứng trước state-key marker trong object).
   2. `@checked(expr)` / `@disabled(expr)` / `@readonly(expr)`... → DOM property
      binding: props: { "<prop>": { type:'binding', factory: () => expr,
      stateKeys:[...] } } — KHÔNG còn emit garbage static attrs từ tên biến.
@@ -45,15 +47,15 @@ def check(name: str, cond: bool, detail: str = ''):
         failed += 1
 
 
-# ── 1. @bind(key) → contract bind:true + key:true ────────────────
+# ── 1. @bind(key) → own top-level bind: { key: '...' } bucket ────
 js = compile_sao(
     "@states({ userName: '' })\n"
     "<input type=\"text\" @bind(userName)>\n"
 )
-check("@bind → \"bind\": static true",
-      re.search(r'"bind":\s*\{\s*type:\s*\'static\',\s*value:\s*true\s*\}', js) is not None)
-check("@bind → \"userName\": static true (state key marker)",
-      re.search(r'"userName":\s*\{\s*type:\s*\'static\',\s*value:\s*true\s*\}', js) is not None)
+check("@bind → bind: { key: 'userName' } (own config bucket, not inside attrs)",
+      re.search(r"bind:\s*\{\s*key:\s*'userName'\s*\}", js) is not None)
+check("@bind → không rò rỉ 'bind'/'userName' vào attrs",
+      re.search(r'"bind":\s*\{', js) is None and re.search(r'"userName":\s*\{', js) is None)
 
 # ── 2. @checked(state) → props binding ───────────────────────────
 js = compile_sao(

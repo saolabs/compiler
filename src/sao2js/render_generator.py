@@ -497,7 +497,12 @@ class RenderGenerator:
         keys_str = str(state_keys).replace("'", '"')
 
         # Push loop scope for dynamic IDs
-        loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex + 1'
+        # Không @key → hậu tố id là CHỈ SỐ VÒNG LẶP, và phải khớp phía SSR:
+        # sao2blade dùng `$loop->index` (Laravel, 0-based). Trước đây chỗ này là
+        # `__loopIndex + 1` (1-based) → SSR emit marker -0,-1,-2 còn CSR đi tìm
+        # -1,-2,-3: item đầu claim nhầm marker của item sau, item cuối không thấy
+        # marker nên tạo mới → NHÂN ĐÔI DOM. Mọi @foreach không key đều dính.
+        loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex'
         self._loop_scopes.append((rc_id, loop_id_expr))
 
         # Callback parameters
@@ -988,6 +993,30 @@ class RenderGenerator:
         if events_obj:
             parts.append(f'events: {events_obj}')
 
+        # Modifier đi trong bucket RIÊNG, không nhét vào `events` — shape
+        # `events: {click: [...]}` là contract sẵn có với Html.addEventListeners;
+        # view compile từ trước không có key này và vẫn chạy y nguyên.
+        mods = getattr(element, 'event_modifiers', None)
+        if mods:
+            mods_obj = ', '.join(
+                f'{name}: [{", ".join(chr(34) + m + chr(34) for m in mod_list)}]'
+                for name, mod_list in mods.items() if mod_list
+            )
+            if mods_obj:
+                parts.append(f'eventModifiers: {{ {mods_obj} }}')
+
+        # Two-way binding (@bind/@val) — own top-level bucket, sibling of
+        # attrs/props/events (Html.initializeBinding reads config.bind directly,
+        # not smuggled through attrs as boolean markers).
+        bind_key = getattr(element, 'bind_key', None)
+        if bind_key:
+            parts.append(f"bind: {{ key: '{bind_key}' }}")
+
+        # @transition('fade') — bucket riêng; vắng mặt = hành vi cũ y nguyên.
+        transition_name = getattr(element, 'transition_name', None)
+        if transition_name:
+            parts.append(f"transition: {{ name: '{transition_name}' }}")
+
         if not parts:
             return '{}'
         return '{ ' + ', '.join(parts) + ' }'
@@ -1044,9 +1073,13 @@ class RenderGenerator:
                 value_expr = js_val
                 factory_expr = f'() => {js_val}'
             
+            # @yield(...) trong attribute value không có stateKeys tĩnh (section nào
+            # đang active chỉ biết được lúc runtime) — thay vào đó client subscribe
+            # theo tên qua SectionManager (xem yieldName trong Html.ts).
+            yield_name_part = f", yieldName: '{info['yield_name']}'" if info.get('is_yield') else ''
             entries.append(
                 f'"{attr_name}": ' + '{ type: \'binding\', value: ' + value_expr + ', '
-                + 'factory: ' + factory_expr + ', stateKeys: ' + keys_str + ' }'
+                + 'factory: ' + factory_expr + ', stateKeys: ' + keys_str + yield_name_part + ' }'
             )
 
         if not entries:

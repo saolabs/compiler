@@ -1090,15 +1090,21 @@ class Compiler {
         const registryFullPath = ConfigManager.resolveCompiledPath(projectRoot, paths, registryPath);
         const viewsDir = ConfigManager.resolveCompiledPath(projectRoot, paths, viewsPath);
 
-        // Generate registry using RegistryGenerator
+        // Code-splitting: bật qua `registry.lazy` trong context config.
+        // `registry.eager` liệt kê view giữ eager (dot-path hoặc tiền tố) —
+        // nên gồm view entry của route hay được truy cập nhất, vì view entry
+        // lazy làm hydrate phải chờ tải chunk mới tương tác được.
+        const registryOptions = contextConfig.registry || {};
         RegistryGenerator.generate(
             contextName,
             compiledViews,
             registryFullPath,
-            viewsDir
+            viewsDir,
+            registryOptions
         );
 
-        console.log(`   ✅ Registry: ${compiledViews.length} views registered`);
+        console.log(`   ✅ Registry: ${compiledViews.length} views registered`
+            + (registryOptions.lazy ? ' (lazy code-splitting: ON)' : ''));
     }
 
     /**
