@@ -754,10 +754,23 @@ class BladeHydrateProcessor:
     # ──────────────────────────────────────────────────────────────────
     
     def _get_state_keys(self, expr):
-        """Get state variable names from expression."""
+        """Tên state variable mà biểu thức tham chiếu.
+
+        Khớp identifier CÓ HOẶC KHÔNG có '$': input .blade là PHP ($count) còn
+        input .sao là JS (count). Regex cũ bắt buộc '$' nên với .sao KHÔNG BAO
+        GIỜ khớp → `skeys` luôn rỗng → mọi `{{ state }}` NGOÀI loop không được
+        emit marker output, trong khi sao2js luôn compile nó thành this.output()
+        cần marker ⇒ hydrate không claim được, client chèn text lần nữa cạnh
+        text server ⇒ NHÂN ĐÔI nội dung.
+        (Trong loop trước đây vẫn chạy nhờ mệnh đề `or loop_scopes` — chính nó
+        che mất nửa còn lại của lỗi.)
+
+        Đây là bản sao của `sao2js/template_ast.py::_get_state_vars`; hai hàm
+        PHẢI cùng ngữ nghĩa, xem docs/GAPS_AND_ROADMAP.md §2.21.
+        """
         if not expr:
             return []
-        found = re.findall(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', expr)
+        found = re.findall(r'\$?([a-zA-Z_]\w*)', expr)
         return sorted(set(v for v in found if v in self.state_variables))
     
     def _php_array(self, items):

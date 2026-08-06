@@ -269,6 +269,29 @@ class BladeTemplateCompiler:
         all_decls = self.declaration_tracker.parse_all_declarations(one_content)
         
         for decl in all_decls:
+            # 'computed' cũng là state key: slot của nó nằm chung `states` ở
+            # runtime, và sao2js đưa tên computed vào stateKeys của output. Thiếu
+            # ở đây thì blade không emit marker cho `{{ computedName }}` ⇒ lệch
+            # với sao2js ⇒ hydrate nhân đôi.
+            if decl.get('type') == 'computed':
+                for var in decl.get('variables', []) or []:
+                    name = var if isinstance(var, str) else var.get('name')
+                    if name:
+                        state_variables.add(name)
+                continue
+
+            # @props/@vars là DATA VAR, và phía runtime chúng cũng là reactive key
+            # (__UPDATE_DATA_TRAIT__ gọi updateStateByKey khi cha truyền props mới),
+            # nên sao2js đưa tên chúng vào stateKeys của output. Blade phải coi
+            # chúng là state key thì mới emit marker tương ứng — thiếu thì mọi
+            # `{{ prop }}` trong component đều nhân đôi khi hydrate.
+            if decl.get('type') in ('vars', 'props'):
+                for var in decl.get('variables', []) or []:
+                    name = var if isinstance(var, str) else var.get('name')
+                    if name:
+                        state_variables.add(name)
+                continue
+
             if decl.get('type') in ('useState', 'states'):
                 variables = decl.get('variables', [])
                 for var in variables:

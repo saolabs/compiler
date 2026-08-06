@@ -559,8 +559,13 @@ class RenderGenerator:
                     f'{indent}}})'
                 )
             else:
+                # `...`: __foreach trả MẢNG. Không spread thì nó thành một phần tử
+                # mảng-lồng trong children list ⇒ mountElementList không nhận ra
+                # ⇒ toàn bộ item của loop biến mất im lặng. Chỉ nhánh KHÔNG state
+                # key mới cần: có state key thì đã bọc trong this.reactive(...),
+                # bản thân nó là một element hợp lệ.
                 return (
-                    f'{indent}this.__foreach({node.array_js}, {cb_params} => {{\n'
+                    f'{indent}...this.__foreach({node.array_js}, {cb_params} => {{\n'
                     f'{indent}    const {arr_name} = [];\n'
                     f'{children_code}\n'
                     f'{indent}    return {arr_name};\n'
@@ -576,8 +581,9 @@ class RenderGenerator:
                 f'{indent}}})'
             )
         else:
+            # Xem chú thích spread ở nhánh has_exec phía trên.
             return (
-                f'{indent}this.__foreach({node.array_js}, {cb_params} => [\n'
+                f'{indent}...this.__foreach({node.array_js}, {cb_params} => [\n'
                 f'{children_code}\n'
                 f'{indent}]{key_fn_arg})'
             )

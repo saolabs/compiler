@@ -2547,11 +2547,21 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
         
         internal_register = f"set${state_key}"
         lines.append(f"    const {internal_register} = __STATE__.__.register('{state_key}');")
-        # Add type annotation for state variable in TypeScript
+        # Seed closure var bằng CHÍNH giá trị khởi tạo, không phải null.
+        #
+        # Luồng CSR là render() → mount() → commitView(), tức contentFactory của
+        # Output (`() => items.length`) CHẠY TRƯỚC commitConstructorData — nơi
+        # `update$items(...)` mới gán giá trị. Để `null` ở đây thì mọi
+        # `{{ state.thuộcTính }}` ném TypeError ngay lần mount đầu và error
+        # boundary nuốt trọn trang. (Đường hydrate không lộ vì nó commit TRƯỚC
+        # render — nên lỗi chỉ xuất hiện khi điều hướng client-side.)
+        # `update$` trong commitConstructorData vẫn giữ nguyên: nó là chỗ đưa giá
+        # trị vào StateManager, còn dòng này chỉ lo closure var.
+        seed = initial_value if (initial_value not in (None, '')) else 'null'
         if self._is_typescript:
-            lines.append(f"    let {state_key}: any = null;")
+            lines.append(f"    let {state_key}: any = {seed};")
         else:
-            lines.append(f"    let {state_key} = null;")
+            lines.append(f"    let {state_key} = {seed};")
         # Add type annotation for TypeScript
         if self._is_typescript:
             lines.append(f"    const {setter_name} = (state: any) => {{")
@@ -2832,6 +2842,10 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                     wrapper_lines.append(
                         f"    const get${name} = __STATE__.__.computed('{name}', () => {var['value']}, {deps_js});"
                     )
+                    # Seed ngay được vì MỌI dep đã có giá trị tại constructor:
+                    # @props/@vars destructure từ __data__, @states/@let/@const
+                    # cũng được seed thẳng (xem _generate_state_registration_lines).
+                    # Trước khi state được seed, dòng này ném lỗi trên dep null.
                     wrapper_lines.append(f"    {name} = get${name}();")
                     if deps:
                         wrapper_lines.append(
