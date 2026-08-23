@@ -15,6 +15,16 @@
 
 const { isPHPBuiltin } = require('./php-builtins');
 
+/**
+ * Tên LoopContext mà `.sao` dùng → đều map sang `$loop` của Laravel ở Blade.
+ *
+ * `__loop` là tên tham số callback do sao2js sinh ra
+ * (`(item, __loopKey, __loopIndex, __loop) => ...`) nên đó là tên người dùng
+ * viết trong template. `loop` nhận kèm cho quen tay/tương thích Blade thuần.
+ * PHẢI khớp 1-1 với `_gen_foreach` trong sao2js/render_generator.py.
+ */
+const LOOP_ALIASES = new Set(['__loop', 'loop']);
+
 class ExpressionTransformer {
     /**
      * @param {import('./symbol-collector')} symbolCollector
@@ -489,6 +499,17 @@ class ExpressionTransformer {
                 // If preceded by . (dot operator — property access), don't add $
                 if (prevNonWs && prevNonWs.value === '.') {
                     result += name;
+                    continue;
+                }
+
+                // LoopContext: `.sao` viết `__loop` (tên tham số callback mà
+                // sao2js sinh ra), nhưng Blade chỉ có `$loop` do Laravel cấp
+                // trong @foreach. Không map thì `{{ __loop.index }}` thành
+                // `$__loop->index` — BIẾN KHÔNG TỒN TẠI phía SSR, trong khi CSR
+                // chạy đúng ⇒ lệch SSR/CSR. Hai tên phải khớp 1-1 với
+                // `cb_params` trong sao2js/render_generator.py::_gen_foreach.
+                if (LOOP_ALIASES.has(name)) {
+                    result += '$loop';
                     continue;
                 }
 

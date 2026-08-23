@@ -27,7 +27,8 @@
 | `@state(var = val)` | Khai báo reactive state (gán) | `@state(count = 0)` |
 | `@states({k: v})` | Khai báo reactive state (object) | `@states({isOpen: false})` |
 | `@props(...)` | Khai báo component properties | `@props(title, theme='dark')` |
-| `@let(var = val)` | Biến local có thể thay đổi | `@let(total = price * qty)` |
+| `@let(var = val)` | Biến local — **KHÔNG reactive** | `@let(label = 'Tổng cộng')` |
+| `@computed(var = expr)` | Giá trị dẫn xuất — **reactive**, có memo | `@computed(total = price * qty)` |
 | `@const(var = val)` | Hằng số hoặc destructured state | `@const([x, setX] = useState(0))` |
 | `@vars(a, b)` | Khai báo biến non-reactive | `@vars(users, posts)` |
 | `@import(path as N)`| Import component khác | `@import('btn' as Button)` |
@@ -93,6 +94,48 @@ Sử dụng pattern `useState` quen thuộc của React/Hooks.
 @const([message, setMessage] = useState('Hello'))
 ```
 
+### `@let` vs `@computed` — biến LOCAL và giá trị DẪN XUẤT
+
+`@let` khai báo một biến JS thường (`let`), tính **MỘT LẦN** lúc khởi tạo.
+Nó **KHÔNG reactive** — nếu giá trị phụ thuộc vào state, nó sẽ **đứng im**
+khi state đó đổi, dù nhìn cú pháp rất giống một giá trị dẫn xuất:
+
+```saola
+@states({ count: 0 })
+@let(double = count * 2)     {{-- SAI Ý ĐỊNH nếu muốn double cập nhật theo count --}}
+<template>
+    <p>{{ count }}</p>   {{-- cập nhật đúng khi count đổi --}}
+    <p>{{ double }}</p>  {{-- đứng im ở giá trị lúc khởi tạo, KHÔNG đổi theo count --}}
+</template>
+```
+
+Compiler sẽ **cảnh báo lúc compile** khi phát hiện `@let(x = expr)` mà
+`expr` đọc một state đã khai báo — nhưng vẫn compile bình thường (đây là
+cảnh báo, không phải lỗi: `@let` phụ thuộc state đôi khi là chủ ý, ví dụ
+snapshot giá trị tại thời điểm mount).
+
+Cần giá trị **cập nhật theo state** → dùng `@computed`:
+
+```saola
+@states({ count: 0 })
+@computed(double = count * 2)   {{-- ĐÚNG — reactive, có memo hoá --}}
+<template><p>{{ double }}</p></template>
+```
+
+| Directive | Reactive | Tính lại khi nào | Dùng khi |
+|---|---|---|---|
+| `@let` | ❌ | Một lần, lúc khởi tạo | Hằng, chuỗi tĩnh, giá trị tính một lần (không phụ thuộc state) |
+| `@computed` | ✅ (có memo, lazy) | Khi một dep trong `deps` đổi, VÀ có ai đọc | Giá trị dẫn xuất từ state |
+| `@state` / `@states` | ✅ | Khi gọi setter | State của instance |
+| `@props` / `@vars` | ✅ (qua trait cập nhật) | Khi cha truyền data mới | Dữ liệu từ ngoài truyền vào |
+
+> **Giới hạn còn lại:** dependency của `{{ }}`/`@if`/`@foreach`... được phát
+> hiện bằng cách quét định danh NGAY TRONG biểu thức — đọc state **gián
+> tiếp qua lời gọi hàm** (`{{ label() }}` với `label()` đọc state trong thân
+> hàm) sẽ KHÔNG được theo dõi, dù lời gọi vẫn chạy đúng. Xem
+> `client/docs/GAPS_AND_ROADMAP.md` mục N1/D1 và
+> `docs/FIX_PLAN_2026-08-14.md` §F3 "Giới hạn còn lại".
+
 ---
 
 ## Xử lý Sự kiện
@@ -146,6 +189,49 @@ Saola hỗ trợ cú pháp JS-like trong `@foreach`.
     <li>{{ key }}: {{ item.name }}</li>
 @endforeach
 ```
+
+#### `__loop` — metadata của vòng lặp
+
+Bên trong `@foreach`, biến `__loop` cho biết trạng thái vòng lặp (tương đương
+`$loop` của Blade — compiler tự map sang `$loop` ở nhánh SSR):
+
+| Thuộc tính | Ý nghĩa |
+|---|---|
+| `__loop.index` | chỉ số, tính từ 0 |
+| `__loop.iteration` | lần lặp, tính từ 1 |
+| `__loop.count` | tổng số phần tử |
+| `__loop.remaining` | số phần tử còn lại |
+| `__loop.first` / `__loop.last` | có phải phần tử đầu / cuối |
+| `__loop.odd` / `__loop.even` | lần lặp lẻ / chẵn (theo `iteration`) |
+| `__loop.depth` | độ sâu lồng nhau (bắt đầu từ 1) |
+| `__loop.parent` | `__loop` của vòng ngoài (khi lồng nhau) |
+
+```saola
+@foreach(items as item)
+    <li @class(['first': __loop.first])>{{ __loop.iteration }}. {{ item.name }}</li>
+@endforeach
+```
+
+> **`__loop` là bản chụp CHỈ ĐỌC theo từng vòng.** Không gán vào nó, và đừng
+> giữ lại để dùng sau vòng lặp.
+
+> ⚠️ **Đừng dùng `__loop.index` làm định danh để xoá/sửa phần tử.**
+> `@foreach` TÁI DÙNG element khi phần tử không đổi, mà tham số của event được
+> tính MỘT LẦN lúc tạo element — nên sau khi danh sách thay đổi, chỉ số đã
+> "nướng" vào handler là chỉ số CŨ. Truyền chính phần tử (hoặc `item.id`):
+>
+> ```saola
+> {{-- SAI: xoá nhầm phần tử sau lần xoá đầu tiên --}}
+> <a @click(remove(__loop.index))>Xóa</a>
+>
+> {{-- ĐÚNG --}}
+> <a @click(remove(item))>Xóa</a>
+> ```
+> ```js
+> remove(value){ setItems(items.filter(x => x !== value)); }
+> ```
+> `__loop.index` vẫn hoàn toàn dùng tốt để HIỂN THỊ (số thứ tự, `first`/`last`,
+> class chẵn/lẻ) — chỉ tránh dùng nó làm khoá định danh.
 
 ### Condition: `@if` / `@elseif` / `@else`
 ```saola

@@ -4,6 +4,16 @@ Parser cho directive @register với format mới
 
 import re
 from common.config import JS_FUNCTION_PREFIX
+from common.utils import split_top_level_commas
+
+# Đầu một method-shorthand: `name() {`, `async name() {`, `*name() {`.
+_METHOD_SHORTHAND_RE = re.compile(r'^(?:async\s+)?(?:\*\s*)?([a-zA-Z_$][\w$]*)\s*\(')
+# Đầu một property có giá trị là function: `name: function() {`, `name: () => `,
+# `name: (x) => `, `name: x => `, `name: async () => `.
+_METHOD_PROPERTY_RE = re.compile(
+    r'^([a-zA-Z_$][\w$]*)\s*:\s*(?:async\s*)?'
+    r'(?:function\b|\([^()]*\)\s*=>|[a-zA-Z_$][\w$]*\s*=>)'
+)
 
 class RegisterParser:
     def __init__(self):
@@ -414,6 +424,36 @@ class RegisterParser:
     
     def get_user_defined(self):
         return self.userDefined
+
+    def get_user_method_names(self):
+        """
+        FIX(F3, docs/FIX_PLAN_2026-08-14.md): tên các member CALLABLE ở cấp
+        cao nhất của `export default {...}` trong <script setup> — dùng để
+        phân biệt `{{ label() }}` (method của component) với `{{ count(x) }}`
+        (PHP helper thật) khi compile. Bắt cả method-shorthand lẫn
+        `name: function/arrow`; bỏ qua property dữ liệu thường (không thể
+        xuất hiện dạng `name()` trong template nên không cần track).
+        """
+        raw = self.get_lifecycle_obj()
+        if not raw:
+            return set()
+        text = raw.strip()
+        if text.startswith('{') and text.endswith('}'):
+            text = text[1:-1]
+
+        names = set()
+        for chunk in split_top_level_commas(text):
+            chunk = chunk.strip()
+            if not chunk:
+                continue
+            m = _METHOD_SHORTHAND_RE.match(chunk)
+            if m:
+                names.add(m.group(1))
+                continue
+            m = _METHOD_PROPERTY_RE.match(chunk)
+            if m:
+                names.add(m.group(1))
+        return names
     
     def get_all_data(self):
         # Get merged lifecycle object

@@ -3,6 +3,7 @@ Các hàm tiện ích chung cho compiler
 """
 
 import re
+import html
 import json
 import string
 import random
@@ -17,6 +18,23 @@ def generate_uid(length=8):
         if uid not in _uid_used:
             _uid_used.add(uid)
             return uid
+
+def js_text_literal(text):
+    """Nội dung tĩnh cho `this.text(...)` ở đầu ra JS.
+
+    Entity PHẢI giải mã trước: đầu ra client là `document.createTextNode()`, nó
+    không giải mã entity, nên `&amp;` sẽ hiện nguyên chữ. Đầu ra Blade thì ngược
+    lại — giữ entity cho trình duyệt tự giải. Không giải mã ở đây thì SSR và CSR
+    lệch nhau: server hiện `@states`, client hiện `&#64;states`.
+
+    Giải mã xong mới escape cho string literal JS (thứ tự ngược lại sẽ hỏng).
+    """
+    decoded = html.unescape(text)
+    return (decoded.replace('\\', '\\\\')
+                   .replace("'", "\\'")
+                   .replace('\n', ' ')
+                   .replace('\r', ''))
+
 
 def reset_uid():
     """Reset UID set (call between compilations)"""

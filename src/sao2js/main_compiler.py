@@ -17,6 +17,7 @@ if _current_dir not in sys.path:
 
 from common.utils import extract_balanced_parentheses
 from common.config import JS_FUNCTION_PREFIX, HTML_ATTR_PREFIX, APP_HELPER_NAMESPACE, ViewConfig
+from common.php_js_converter import set_user_methods as _set_converter_user_methods
 from common.compiler_utils import CompilerUtils
 from common.declaration_tracker import DeclarationTracker
 from common.import_parser import ImportParser
@@ -251,7 +252,15 @@ class BladeCompiler:
                 # Parse the full template content so scripts/styles/userDefined are all collected.
                 # Parsing only the setup tag drops <style> blocks and other script metadata.
                 register_data = self.register_parser.parse_register_content(blade_code, view_name)
-        
+
+        # FIX(F3, docs/FIX_PLAN_2026-08-14.md): nạp tên method của
+        # <script setup> vào converter DÙNG CHUNG cho `{{ method() }}` (echo)
+        # VÀ event params — gọi VÔ ĐIỀU KIỆN (kể cả rỗng) để reset đúng khi
+        # view này không có <script setup>, tránh rò method của view compile
+        # trước đó (converter là singleton module-level, sống qua nhiều lần
+        # compile trong cùng 1 tiến trình Python).
+        _set_converter_user_methods(self.register_parser.get_user_method_names(), view_name)
+
         # Set TypeScript flag based on register_data
         setup_lang = register_data.get('setupLang') if register_data else None
         self._is_typescript = (setup_lang == 'typescript')
@@ -364,7 +373,9 @@ class BladeCompiler:
         self.template_processor.event_processor.state_variables = usestate_variables
         self.template_processor.echo_processor.state_variables = usestate_variables
         self.template_processor.class_binding_handler.state_variables = usestate_variables
-        
+
+        self._warn_non_reactive_let(all_declarations, usestate_variables, view_name)
+
         # ========================================================================
         # Runtime assets đã được collect vào config; tuyệt đối không để chúng đi
         # tiếp vào render tree (nếu không <script src>/<link> bị chèn cả subtree
@@ -2057,9 +2068,41 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                                 setter_var = names[1]
                                 if setter_var and setter_var.isalnum():
                                     usestate_variables.add(setter_var)
-        
+
         return usestate_variables
-    
+
+    def _warn_non_reactive_let(self, declarations, usestate_variables, view_name):
+        """
+        FIX(F7, docs/FIX_PLAN_2026-08-14.md): `@let(x = expr)` là biến LOCAL
+        thường — KHÔNG reactive (khác `@computed`, có memo + subscribe deps).
+        Nếu `expr` đọc state, `x` được tính MỘT LẦN lúc khởi tạo rồi đứng im
+        vĩnh viễn khi state đổi — không lỗi, không log, nhìn y hệt
+        `@computed` cho tới khi test tương tác thật mới lộ ra (đo được:
+        `{{ count }}` đổi đúng, `{{ double }}` = count*2 đứng im).
+        Chỉ cảnh báo nhánh "regular variable" (`@let(x = expr)`) — bỏ qua
+        destructuring/`useState(...)` (đó là state thật, không phải @let dẫn xuất).
+        """
+        if not usestate_variables:
+            return
+        for decl in declarations:
+            if decl.get('type') != 'let':
+                continue
+            for var in decl.get('variables', []):
+                if var.get('isDestructuring') or var.get('isUseState'):
+                    continue
+                name = var.get('name')
+                value = var.get('value')
+                if not name or not value:
+                    continue
+                deps = sorted(set(re.findall(r'\$?([a-zA-Z_]\w*)', value)) & usestate_variables)
+                if deps:
+                    print(
+                        f'[sao2js] Cảnh báo trong "{view_name}": @let({name} = {value}) phụ '
+                        f'thuộc state {deps} nhưng @let KHÔNG reactive — {{{{ {name} }}}} sẽ '
+                        f'đứng im khi {"/".join(deps)} đổi. Dùng @computed({name} = {value}) '
+                        f'nếu cần giá trị dẫn xuất cập nhật theo state.'
+                    )
+
     def _detect_state_keys(self, blade_code, let_declarations, const_declarations, usestate_declarations):
         """Detect state keys from directives that use useState or destructuring"""
         state_keys = set()
@@ -2734,11 +2777,14 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
                     else:
                         destructure_parts.append(f"{var_name}")
                     # Add to __UPDATE_DATA_TRAIT__ and variable list
+                    # Tham số phải là __next chứ không phải `value`: prop tên `value`
+                    # sẽ bị chính tham số che mất, biến `value = value` thành no-op nên
+                    # closure của render factory không bao giờ nhận prop mới.
                     # Add type annotation for TypeScript
                     if self._is_typescript:
-                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = (value: any) => {{ {var_name} = value; updateStateByKey('{var_name}', value); }};")
+                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = (__next: any) => {{ {var_name} = __next; updateStateByKey('{var_name}', __next); }};")
                     else:
-                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = value => {{ {var_name} = value; updateStateByKey('{var_name}', value); }};")
+                        update_trait_items.append(f"    __UPDATE_DATA_TRAIT__.{var_name} = __next => {{ {var_name} = __next; updateStateByKey('{var_name}', __next); }};")
                     variable_list.append(var_name)
                 # Emit single destructuring statement
                 if destructure_parts:

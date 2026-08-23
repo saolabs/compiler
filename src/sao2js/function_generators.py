@@ -4,6 +4,7 @@ Generators cho các functions (render, prerender, init, etc.)
 
 from common.config import JS_FUNCTION_PREFIX, HTML_ATTR_PREFIX
 from common.hydrate_id import HydrateIdGenerator
+from common.utils import js_text_literal
 import re
 
 class FunctionGenerators:
@@ -69,7 +70,7 @@ class FunctionGenerators:
                 inner_js = self._html_to_js_calls(inner_content, base_id_prefix, id_gen)
             else:
                 if inner_content:
-                    escaped = inner_content.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ').replace('\r', '')
+                    escaped = js_text_literal(inner_content)
                     inner_js = f"this.text('{escaped}')"
                 else:
                     inner_js = ""
@@ -93,7 +94,7 @@ class FunctionGenerators:
             else:
                 # Plain text - escape and wrap in this.text()
                 if inner_content:
-                    escaped = inner_content.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ').replace('\r', '')
+                    escaped = js_text_literal(inner_content)
                     inner_js = f"this.text('{escaped}')"
                 else:
                     inner_js = ""

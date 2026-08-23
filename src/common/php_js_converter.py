@@ -7,10 +7,28 @@ from typing import List, Dict, Any, Tuple
 
 class PHPToJSConverter:
     """Advanced PHP to JavaScript converter for complex data structures"""
-    
+
     def __init__(self):
         self.js_function_prefix = "App.View"
-        
+        # FIX(F3, docs/FIX_PLAN_2026-08-14.md): tên method định nghĩa trong
+        # <script setup> của VIEW ĐANG COMPILE — set qua set_user_methods()
+        # trước mỗi lần compile. Instance này là SINGLETON module-level
+        # (_php_js_converter) dùng chung qua nhiều lần compile trong CÙNG một
+        # tiến trình Python, nên PHẢI reset (set_user_methods(None)/set()) khi
+        # bắt đầu compile một view KHÔNG có <script setup> — nếu không, method
+        # của view TRƯỚC ĐÓ rò sang view sau.
+        self._user_methods: set = set()
+        self._current_view_path: str = ''
+        # 1 dòng cảnh báo / (view, tên hàm) — tránh spam khi cùng hàm lạ xuất
+        # hiện nhiều lần trong 1 template.
+        self._warned_unknown: set = set()
+
+    def set_user_methods(self, names, view_path: str = '') -> None:
+        """Nạp tập tên method của view đang compile — gọi lại cho MỖI view
+        (kể cả rỗng) để không rò trạng thái giữa các lần compile."""
+        self._user_methods = set(names or ())
+        self._current_view_path = view_path or ''
+
     def convert_php_expression_to_js(self, expr: str) -> str:
         """Convert PHP expression to JavaScript"""
         # print(f"DEBUG_CONVERT: {expr}")
@@ -633,10 +651,82 @@ class PHPToJSConverter:
             name = m.group(1)
             if name in _JS_BUILTINS:
                 return m.group(0)
+            # FIX(F3): method định nghĩa trong <script setup> của CHÍNH view
+            # này → gọi qua this.view (compiled output đã setUserDefinedConfig
+            # bind method lên view), KHÔNG rơi vào App.Helper (không tồn tại
+            # → TypeError lúc runtime, giết cả view — xem docs/FIX_PLAN_2026-08-14.md §F3).
+            if name in self._user_methods:
+                return f'this.view.{name}('
+            # Tên lạ: không phải helper đã biết (loop `all_functions` ở trên
+            # đã lookbehind-loại các tên đó), không phải method của view,
+            # không phải JS builtin → fallback App.Helper.<name> như cũ, NHƯNG
+            # cảnh báo lúc compile thay vì im lặng tới khi chạy mới nổ.
+            warn_key = (self._current_view_path, name)
+            if warn_key not in self._warned_unknown:
+                self._warned_unknown.add(warn_key)
+                where = f' trong "{self._current_view_path}"' if self._current_view_path else ''
+                print(
+                    f'[sao2js] Cảnh báo{where}: `{name}(...)` không khớp method nào '
+                    f'trong <script setup> lẫn danh sách helper đã biết — sẽ compile '
+                    f'thành `{APP_HELPER_NAMESPACE}.{name}(...)`. Nếu đây là method của '
+                    f'component, kiểm tra chính tả / đã export trong <script setup> chưa.'
+                )
             return f'{APP_HELPER_NAMESPACE}.{name}('
         expr = re.sub(r'(?<![\w.])([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', _prefix_bare_function, expr)
 
         return expr
+
+
+# Tên LoopContext trong JS output là `__loop` — đúng tham số callback mà
+# sao2js sinh ra: `(item, __loopKey, __loopIndex, __loop) => ...`.
+#
+# Nhưng biểu thức đi vào đây ĐÃ QUA preprocessor, nơi mọi bí danh loop được
+# gom về `$loop` (tên Laravel dùng ở nhánh Blade — xem LOOP_ALIASES trong
+# src/preprocessor/expression-transformer.js). Sau khi bỏ `$`, ta còn `loop`
+# — ĐỊNH DANH KHÔNG TỒN TẠI trong callback JS.
+#
+# Không map thì: SSR chạy đúng (Laravel cấp `$loop`), CSR ném
+# `ReferenceError: loop is not defined` GIẾT CẢ VIEW ngay lúc mount — đúng lớp
+# lệch SSR/CSR của F1/F3/F4. Đo được với `@click(remove(__loop.index))`.
+#
+# CHỈ đổi định danh `loop` đứng độc lập: không đụng `__loop` (đã đúng),
+# không đụng property sau dấu chấm (`x.loop`), không đụng `loopFoo`/`myloop`.
+_LOOP_IDENT_RE = re.compile(r'(?<![\w.$])loop(?![\w$])')
+
+
+def _rename_loop_identifier(expr: str) -> str:
+    """`loop` (do preprocessor sinh từ `$loop`) → `__loop` (tham số callback JS).
+
+    Bỏ qua nội dung TRONG chuỗi: `{{ 'loop' }}` là dữ liệu người dùng, đổi thành
+    `'__loop'` là sửa sai nội dung hiển thị.
+    """
+    if 'loop' not in expr:
+        return expr
+    out = []
+    i = 0
+    n = len(expr)
+    while i < n:
+        ch = expr[i]
+        if ch in ('"', "'", '`'):
+            quote = ch
+            j = i + 1
+            while j < n:
+                if expr[j] == '\\':
+                    j += 2
+                    continue
+                if expr[j] == quote:
+                    j += 1
+                    break
+                j += 1
+            out.append(expr[i:j])   # nguyên văn, không đụng
+            i = j
+            continue
+        j = i
+        while j < n and expr[j] not in ('"', "'", '`'):
+            j += 1
+        out.append(_LOOP_IDENT_RE.sub('__loop', expr[i:j]))
+        i = j
+    return ''.join(out)
 
 
 # Global instance for backward compatibility
@@ -644,4 +734,21 @@ _php_js_converter = PHPToJSConverter()
 
 def php_to_js_advanced(expr: str) -> str:
     """Advanced PHP to JavaScript conversion function"""
-    return _php_js_converter.convert_php_expression_to_js(expr)
+    # Rename ở ENTRY POINT: convert_php_expression_to_js có nhiều nhánh return
+    # sớm, vá từng nhánh sẽ sót. Đây là cửa duy nhất mà template_ast/php_converter
+    # đi qua nên phủ trọn.
+    return _rename_loop_identifier(_php_js_converter.convert_php_expression_to_js(expr))
+
+
+def set_user_methods(names, view_path: str = '') -> None:
+    """
+    Nạp tên method của <script setup> view đang compile vào converter dùng
+    chung — gọi lại cho MỖI view (kể cả names rỗng) TRƯỚC khi compile phần
+    render/echo của view đó. Xem docs/FIX_PLAN_2026-08-14.md §F3.
+    """
+    _php_js_converter.set_user_methods(names, view_path)
+
+
+def get_user_methods() -> set:
+    """Tập tên method của view đang compile — nạp qua set_user_methods()."""
+    return set(_php_js_converter._user_methods)

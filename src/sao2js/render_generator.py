@@ -17,6 +17,7 @@ if _parent_dir not in sys.path:
     sys.path.insert(0, _parent_dir)
 
 from common.hydrate_id import HydrateIdGenerator
+from common.utils import js_text_literal
 from template_ast import (
     Node, RootNode, HtmlElement, TextNode, EchoNode,
     IfBlock, ForeachBlock, WhileBlock, ForBlock, SwitchBlock,
@@ -364,12 +365,50 @@ class RenderGenerator:
 
     def _gen_text(self, node, indent):
         """Generate this.text() call."""
-        text = node.text.replace('\\', '\\\\').replace("'", "\\'")
+        text = js_text_literal(node.text)
         return f"{indent}this.text('{text}')"
 
     def _gen_echo(self, node, indent):
-        """Generate this.output() call — always wrapped."""
-        _, state_keys = self._should_use_output(node)
+        """
+        Generate this.output() (marker-based, reactive/trong loop) hoặc
+        this.text() (text tĩnh, không tiêu marker id) tuỳ ngữ cảnh.
+
+        FIX(F4, docs/FIX_PLAN_2026-08-14.md): trước đây MỌI `{{ }}` đều
+        this.output() vô điều kiện — tiêu một marker id kể cả khi KHÔNG có
+        state key và KHÔNG trong loop (`{{ 'chuỗi tĩnh' }}`, `@let` không
+        reactive...). sao2blade chỉ emit marker khi `skeys or loop_scopes`
+        (hydrate_processor.py) — hai bên tiêu id LỆCH NHAU trong CÙNG MỘT
+        SCOPE (bộ đếm next_output() tuần tự, xem common/hydrate_id.py). Hậu
+        quả không chỉ nhân đôi: output SAU trong scope claim NHẦM marker của
+        output KHÁC lúc hydrate → hoán đổi + nhân bản nội dung (không chỉ
+        riêng ca hằng — mọi cặp `{{ A }}: {{ B }}` cùng scope có A không-
+        reactive đứng trước B đều dính).
+
+        CHỈ áp dụng nhánh nhanh cho echo ESCAPED (`{{ }}`). Raw (`{!! !!}`)
+        không có primitive tương đương this.text() cho HTML thô KHÔNG qua
+        marker — giữ NGUYÊN hành vi cũ (luôn this.output()) cho raw dù static;
+        đây là một khoảng lệch hẹp CÒN LẠI đã biết (raw+static+ngoài loop —
+        hiếm gặp, thường viết thẳng HTML trong template thay vì {!! 'chuỗi' !!}).
+        """
+        should_wrap, state_keys = self._should_use_output(node)
+
+        if node.escaped:
+            # sao2blade coi MỌI loại loop (@foreach/@for/@while) là lý do emit
+            # marker — không riêng @for/@while như _should_use_output() đang
+            # kiểm (self._in_while_or_for). self._loop_scopes (push bởi cả 3
+            # loại loop, xem _gen_foreach/_gen_for/_gen_while) là bản đối
+            # xứng đúng của `loop_scopes` phía blade.
+            should_wrap = should_wrap or bool(self._loop_scopes)
+            if not should_wrap:
+                # `?? ''` là BẮT BUỘC để khớp cả hai phía:
+                #   - đường Output cũ đã luôn có (`String(contentFactory() ?? '')`,
+                #     Output.ts) — bỏ đi là đổi hành vi so với trước F4;
+                #   - Blade `{{ $x }}` với null → `e(null)` → chuỗi RỖNG.
+                # Thiếu nó thì `null`/`undefined` hiện chữ "null"/"undefined" ở
+                # CSR trong khi SSR hiện rỗng — đúng lớp lệch SSR/CSR mà F4
+                # sinh ra để diệt.
+                return f"{indent}this.text(String({node.js_expr} ?? ''))"
+
         oid = self.id_gen.next_output()
         id_str = self._format_id(oid)
         keys_str = str(sorted(state_keys)).replace("'", '"') if state_keys else '[]'
@@ -505,7 +544,13 @@ class RenderGenerator:
         loop_id_expr = node.custom_key_js if node.custom_key_js else '__loopIndex'
         self._loop_scopes.append((rc_id, loop_id_expr))
 
-        # Callback parameters
+        # Callback parameters.
+        # `__loop` là TÊN NGƯỜI DÙNG VIẾT trong `.sao` (`{{ __loop.index }}`,
+        # `@click(f(__loop.index))`). Preprocessor map nó sang `$loop` của
+        # Laravel cho nhánh Blade — xem `_LOOP_ALIASES` trong
+        # src/preprocessor/expression-transformer.js; hai bên phải khớp.
+        # Giá trị truyền vào là BẢN CHỤP bất biến theo từng vòng, KHÔNG phải
+        # LoopContext dùng chung — xem LoopContext.snapshot() phía client.
         if node.key_var:
             if self._is_ts:
                 cb_params = f'({node.value_var}: any, {node.key_var}: any, __loopIndex: any, __loop: any)'

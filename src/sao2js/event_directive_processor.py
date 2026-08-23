@@ -181,7 +181,7 @@ class EventDirectiveProcessor:
                 nested_js = self.process_event_in_string(nested_js)
                 nested_js = self.convert_php_array_to_js_object(nested_js)
                 nested_js = re.sub(r'(?<!")@EVENT(?!")', '"@EVENT"', nested_js)
-                processed_params.append(f'() => {nested_js}')
+                processed_params.append(f'() => {self._arrow_body(nested_js)}')
                 continue
             
             # Không phải function call → xử lý như bình thường
@@ -307,7 +307,7 @@ class EventDirectiveProcessor:
         result = self.convert_php_array_to_js_object(result)
         
         # Wrap trong arrow function
-        return f'(event) => {result}'
+        return f'(event) => {self._arrow_body(result)}'
     
     def process_parameter(self, param, in_params_context=False):
         """
@@ -380,11 +380,11 @@ class EventDirectiveProcessor:
             is_simple_var = self._is_valid_js_identifier(param) and not is_string and not is_directive
             
             if is_simple_var:
-                return f'() => {param}'
+                return f'() => {self._arrow_body(param)}'
         
         # Nếu là biểu thức → wrap trong arrow function
         if self._looks_like_expression(param):
-            return f'(event) => {param}'
+            return f'(event) => {self._arrow_body(param)}'
         
         return param
     
@@ -417,29 +417,140 @@ class EventDirectiveProcessor:
         # Nếu là string thì wrap trong quotes
         return f'"{param}"'
     
+    @staticmethod
+    def _arrow_body(body):
+        """
+        Bọc ngoặc cho thân arrow function khi nó là OBJECT LITERAL.
+
+        `(event) => {"a": 1}` KHÔNG phải arrow trả object — JS đọc `{` là BLOCK,
+        và `"a": 1` bên trong block là SyntaxError (label phải là định danh)
+        ⇒ CẢ FILE compiled không parse được, view không load nổi. Phải là
+        `(event) => ({"a": 1})`.
+
+        Gặp khi param là PHP array: `@click(send(['a' => 1]))` — array được
+        convert sang object literal RỒI mới bị bọc arrow ở các nhánh bên dưới.
+        Lỗi này CÓ TỪ TRƯỚC (đã đối chiếu bản gốc), chỉ là trước đây ít chạm
+        tới hơn vì nhiều ca khác còn hỏng sớm hơn ở bước convert.
+        """
+        return f'({body})' if body.lstrip().startswith('{') else body
+
+    def _is_php_array_literal(self, expr):
+        """
+        True khi `expr` là PHP array literal khép kín: `['k' => v, ...]`.
+
+        Kiểm CẤU TRÚC, không so chuỗi — hai ca từng sai khi dùng `' => ' in expr`:
+          - `['a'=>1]` (không khoảng trắng quanh `=>`) → BỎ SÓT, rơi sang nhánh
+            biểu thức thường và ở lại dạng PHP → JS không parse được.
+          - `[1,2].filter(x => x > 1)` (JS thật) → NHẬN NHẦM là PHP array, bị
+            `convert_php_to_js` đổi `.` thành `+` → `[1,2]+filter(...)`.
+
+        Điều kiện: mở `[`, đóng `]` ở CUỐI (khép kín — loại `[...].method(...)`),
+        và có `=>` ở ĐỘ SÂU 0 bên trong cặp ngoặc ngoài cùng (loại `=>` của arrow
+        function nằm trong `(...)`/`[...]` lồng bên trong).
+        """
+        if not (expr.startswith('[') and expr.endswith(']')) or len(expr) < 2:
+            return False
+        depth = 0
+        in_str = False
+        quote = ''
+        i = 1
+        end = len(expr) - 1  # bỏ `]` ngoài cùng
+        while i < end:
+            ch = expr[i]
+            if in_str:
+                if ch == '\\':
+                    i += 2
+                    continue
+                if ch == quote:
+                    in_str = False
+            elif ch in ('"', "'"):
+                in_str = True
+                quote = ch
+            elif ch in '([{':
+                depth += 1
+            elif ch in ')]}':
+                depth -= 1
+                if depth < 0:
+                    return False  # `]` ngoài cùng đóng sớm → không khép kín
+            elif ch == '=' and depth == 0 and expr[i + 1:i + 2] == '>':
+                return True
+            i += 1
+        return False
+
     def convert_php_array_to_js_object(self, param):
         """
         Convert PHP array syntax to JavaScript object syntax
         ['key' => 'value'] -> {"key": "value"}
+
+        FIX(F1, docs/FIX_PLAN_2026-08-14.md): trước đây MỌI param — kể cả biểu
+        thức thường như `item.id` — đều chạy qua `convert_php_to_js()`, hàm này
+        đổi VÔ ĐIỀU KIỆN mọi `.` giữa hai định danh thành `+` (nối chuỗi kiểu
+        PHP). `.sao` viết cú pháp JS (không `$`) nên `.` ở đây luôn là property
+        access — `@click(remove(item.id))` bị biến thành `remove(item+id)`,
+        `.length`/`.concat()`/dot-path lồng đều hỏng theo. Đường `{{ }}`/`@if`
+        không dính vì dùng converter khác (`php_js_converter.php_to_js_advanced`)
+        có guard bỏ qua nối chuỗi khi thấy property access.
+
+        Không đổi sang dùng thẳng `php_to_js_advanced` cho MỌI expression: nó
+        còn tự prefix `App.Helper.` cho MỌI lời gọi hàm trần (`_add_function_
+        prefixes`) — sẽ biến `setCount(count + 1)` (state setter, là biến
+        closure) thành `App.Helper.setCount(...)` không tồn tại. Xác nhận bằng
+        cách chạy thật, xem lịch sử phiên làm việc.
+
+        Phân biệt 2 nhánh: PHP array literal là biểu thức `[...]` KHÉP KÍN có
+        `=>` ở NGAY trong cặp ngoặc vuông ngoài cùng (xem
+        `_is_php_array_literal` — kiểm cấu trúc, không so chuỗi).
         """
-        # Use the new PHP to JS converter with proper precedence
-        from common.php_converter import convert_php_to_js
-        param = convert_php_to_js(param)
-        
-        # If it's already a JavaScript object/array, return as is
-        if param.startswith('{') and param.endswith('}'):
-            return param
-        if param.startswith('[') and param.endswith(']') and ' => ' not in param:
-            return param
-            
-        # If it's a PHP array, convert to JavaScript object
-        if param.startswith('[') and param.endswith(']'):
-            # Use advanced converter for complex structures
+        trimmed = param.strip()
+        if self._is_php_array_literal(trimmed):
+            # `php_to_js_advanced` tự xử lý trọn vẹn `['k' => v]` → `{"k": v}`
+            # (mọi dạng khoảng trắng, lồng nhau, chuỗi chứa `=>`) VÀ có guard
+            # property-access nên không dính lỗi `.` → `+`. Đường cũ gọi
+            # `convert_php_to_js` trước — hàm đó KHÔNG đụng gì tới cấu trúc
+            # array (đã đo: trả về nguyên văn) nhưng LẠI đổi `.` thành `+`
+            # trong các GIÁ TRỊ (`['url' => item.href]` → `item+href`), tức là
+            # chỉ có hại. Bỏ hẳn.
             from common.php_js_converter import php_to_js_advanced
-            param = php_to_js_advanced(param)
-        
+            return php_to_js_advanced(trimmed)
+
+        # Biểu thức thường (property access, gọi hàm, số học, arrow function,
+        # setter...) — CHỈ đổi cú pháp Blade cũ `->`/`::` sang `.`, không đụng
+        # gì khác. Không nối chuỗi, không prefix App.Helper.
+        param = re.sub(r'->', '.', param)
+        param = re.sub(r'::', '.', param)
+
+        # `loop` (preprocessor gom mọi bí danh loop về `$loop` cho nhánh Blade)
+        # → `__loop`, đúng tên tham số callback sao2js sinh ra. Không map thì
+        # `@click(f(__loop.index))` chạy đúng ở SSR nhưng ném
+        # `ReferenceError: loop is not defined` ở CSR. Dùng CHUNG hàm với đường
+        # `{{ }}` để hai đường không lệch nhau (bài học F1).
+        from common.php_js_converter import _rename_loop_identifier
+        param = _rename_loop_identifier(param)
+
+        # FIX(N7, docs/FIX_PLAN_2026-08-14.md §F1 "Phát hiện quan trọng nhất"):
+        # method của component gọi TRONG arrow function viết tay
+        # (`@click(() => componentMethod(x))`) đi qua đúng nhánh này cho TOÀN
+        # BỘ expr — không qua đường object-handler dispatch (`{"handler":...}`)
+        # như `@click(componentMethod(x))` không-bọc-arrow (đã đúng từ trước,
+        # runtime tra `view[name]`). Thiếu bước này thì `componentMethod` ở
+        # lại làm định danh trần trong closure → ReferenceError lúc click,
+        # không throw lúc compile nên rất khó phát hiện.
+        # CHỈ resolve tên đã biết chắc chắn là method của CHÍNH view này
+        # (nạp bởi common.php_js_converter.set_user_methods() — cùng nguồn
+        # F3 dùng cho `{{ method() }}`) — không đụng state setter
+        # (`setCount(...)`) hay tên lạ khác, giữ nguyên hành vi cũ cho chúng.
+        from common.php_js_converter import get_user_methods
+        user_methods = get_user_methods()
+        if user_methods:
+            def _resolve_view_method(m):
+                name = m.group(1)
+                if name in user_methods:
+                    return f'this.view.{name}('
+                return m.group(0)
+            param = re.sub(r'(?<![\w.])([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', _resolve_view_method, param)
+
         return param
-    
+
     def _fix_nested_arrays(self, param):
         """
         Fix nested arrays in converted object
@@ -810,7 +921,25 @@ class EventDirectiveProcessor:
         # JavaScript identifier pattern
         js_identifier_pattern = r'^[a-zA-Z_$][a-zA-Z0-9_$]*$'
         return bool(re.match(js_identifier_pattern, param))
-    
+
+    # Đầu một arrow function: `()`, `(a)`, `(a, b)`, hoặc 1 định danh trần —
+    # NGAY ĐẦU chuỗi (sau khoảng trắng). Params trong DSL này chỉ là định danh
+    # trần (không destructuring/default) nên không cần đếm độ sâu đầy đủ.
+    _ARROW_HEAD_RE = re.compile(
+        r'^\s*(?:\(\s*(?:[a-zA-Z_]\w*\s*(?:,\s*[a-zA-Z_]\w*\s*)*)?\)|[a-zA-Z_]\w*)\s*=>'
+    )
+
+    def _is_top_level_arrow(self, expr):
+        """
+        True nếu `expr` LÀ một arrow function ở cấp cao nhất — `=>` xuất hiện
+        NGAY ĐẦU (sau param list), không phải lồng bên trong một lời gọi hàm.
+
+        `remove(x => x.id)` → False (arrow nằm TRONG params của `remove`, còn
+        bản thân expr là một function call).
+        `() => remove(item.id)` → True (chính expr là arrow function).
+        """
+        return bool(self._ARROW_HEAD_RE.match(expr.strip()))
+
     def convert_php_variable_to_js(self, param):
         """
         Convert PHP variable syntax to JavaScript
@@ -905,7 +1034,18 @@ class EventDirectiveProcessor:
         
         # Convert PHP array syntax to JavaScript object syntax
         expr_js = self.convert_php_array_to_js_object(expr_js)
-        
+
+        # FIX(F2, docs/FIX_PLAN_2026-08-14.md): biểu thức nguồn ĐÃ là arrow
+        # function ở cấp cao nhất (`() => f(x)`, `(e) => f(e)`, `x => f(x)`)
+        # thì KHÔNG được bọc thêm — mọi nhánh return bên dưới đều wrap
+        # `(event) => ...`/`() => ...` vô điều kiện, biến nó thành
+        # `() => () => f(x)`: click chỉ TẠO RA một function thay vì GỌI nó,
+        # không lỗi, không log, im lặng không làm gì.
+        # Dùng `original_expr` (trước mọi convert) vì các bước trên chỉ đổi
+        # $-prefix/property-access — không đụng tới cấu trúc `(...) =>` đầu.
+        if self._is_top_level_arrow(original_expr):
+            return re.sub(r'(?<!")@(?:EVENT|event|Event)(?!")', '"@EVENT"', expr_js)
+
         # Kiểm tra xem có phải là function call không có $ prefix không
         # Ví dụ: setCount($count - 1) → setCount(count - 1)
         # Ví dụ: count(...) nếu count có trong usestate_variables → cần dùng setter
@@ -1016,7 +1156,7 @@ class EventDirectiveProcessor:
                 return f'(event) => {setter_name}({params_str_js})'
             else:
                 # Không có useState → dùng arrow function thông thường
-                return f'(event) => {expr_js}'
+                return f'(event) => {self._arrow_body(expr_js)}'
         
         # Kiểm tra xem có phải là biểu thức với $ variable không
         # Ví dụ: $press++, $hoverCount+=2
@@ -1060,9 +1200,9 @@ class EventDirectiveProcessor:
         # Không có useState hoặc không phải $ variable → dùng arrow function thông thường
         # Kiểm tra xem có cần event parameter không
         if '@EVENT' in expr_js or 'event' in expr_js.lower():
-            return f'(event) => {expr_js}'
+            return f'(event) => {self._arrow_body(expr_js)}'
         else:
-            return f'() => {expr_js}'
+            return f'() => {self._arrow_body(expr_js)}'
     
     def build_event_config_unified(self, event_type, handlers, arrow_functions):
         """

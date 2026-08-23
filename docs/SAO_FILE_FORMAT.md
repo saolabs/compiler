@@ -53,9 +53,26 @@ Defines properties passed from parent components.
 ```
 
 ### Variable Declarations
-- `@let(varName = value)`: Mutable variable used within the template scope.
+- `@let(varName = value)`: Mutable local variable, computed **once at init**.
+  **Not reactive** — if `value` reads a state, `varName` stays frozen after
+  the first render even though the state keeps changing. The compiler warns
+  at compile time when it detects this (`@let(x = expr)` where `expr`
+  references a declared state); use `@computed` instead if you need the
+  value to track state.
+- `@computed(varName = expr)`: **Reactive** derived value, memoized
+  (recomputed lazily — only when a dependency changes AND something reads
+  it). Use this for anything that should stay in sync with state
+  (`@computed(total = price * qty)`), never `@let` for that.
 - `@const(API_URL = '/api/v1')`: Immutable constant.
 - **Legacy variants**: `@useState($var, value)`, `@vars([$a = 1, $b = 2])`.
+
+Known dependency-tracking limit (both `@computed` and `{{ }}`/`@if`/
+`@foreach`): dependencies are detected by scanning identifiers **in the
+expression itself**. Reading state indirectly through a function call
+(`{{ label() }}` where `label()` reads state in its body) is not tracked —
+the call still runs and returns the right value, but the surrounding output
+won't re-render on its own when that state changes. See
+`docs/FIX_PLAN_2026-08-14.md` §F3 and `client/docs/GAPS_AND_ROADMAP.md`.
 
 ---
 
