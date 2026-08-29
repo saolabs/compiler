@@ -43,8 +43,10 @@ class HtmlElement(Node):
         self.children = []
         self.static_classes = []       # ['demo', 'container']
         self.binding_classes = {}      # {'active': {'php': '$status', 'js': 'status', 'state_vars': {'status'}}}
+        self.dynamic_classes = []      # class="language-{{ lang }}" — tên class do biểu thức sinh, không phải bật/tắt tên cố định
         self.static_attrs = {}         # {'id': 'counter-value'}
         self.binding_attrs = {}        # {'data-count': {'php': 'count($demoList)', 'js': '...', 'state_vars': {...}}}
+        self.styles = {}               # @style — {'color': {'js': ..., 'state_vars': {...}}} hoặc {'static': '...'}
         self.binding_props = {}        # {'checked': {'php': '$todo->completed', 'js': 'todo.completed', 'state_vars': {...}}} — DOM property, không phải attribute
         self.events = {}               # {'click': ['setStatus(!status)']}
         self.event_modifiers = {}      # {'click': ['prevent', 'stop']} — từ @click.prevent.stop(...)
@@ -224,6 +226,11 @@ EVENT_NAMES = frozenset({
 #   self    → chỉ chạy khi event.target === event.currentTarget (kiểm TRƯỚC prevent/stop)
 #   once    → addEventListener({ once: true })
 EVENT_MODIFIERS = frozenset({'prevent', 'stop', 'self', 'once'})
+
+# Tách class="..." thành token: `{{ ... }}`/`{!! ... !!}` là NGUYÊN KHỐI nên khoảng
+# trắng bên trong biểu thức không cắt token — 'language-{{ lang }}' là một token,
+# 'todo-item {{ done ? "x" : "" }}' là hai.
+CLASS_TOKEN_RE = re.compile(r'(?:\{\{.*?\}\}|\{!!.*?!!\}|\S)+', re.DOTALL)
 
 # @checked(expr)... → DOM property binding (el.checked = !!expr), map tên directive
 # → tên property JS (readonly → readOnly).
@@ -979,6 +986,17 @@ class TemplateASTParser:
                     pos = self._find_close_paren(attrs_str, paren_start) + 1
                     continue
 
+            # @style({...}) — bucket riêng, runtime dùng style.setProperty nên chỉ
+            # đụng đúng property được liệt kê (Html.initializeStyles).
+            m = re.match(r'@style\s*\(', remaining)
+            if m:
+                paren_start = pos + m.end() - 1
+                content = self._extract_balanced(attrs_str, paren_start)
+                if content is not None:
+                    self._parse_style_binding(content, element)
+                    pos = self._find_close_paren(attrs_str, paren_start) + 1
+                    continue
+
             # @subscribe([...])
             m = re.match(r'@subscribe\s*\(', remaining)
             if m:
@@ -1078,8 +1096,21 @@ class TemplateASTParser:
             if not m:
                 m = re.match(r"class\s*=\s*'([^']*)'", remaining)
             if m:
-                classes = m.group(1).split()
-                element.static_classes.extend(classes)
+                class_value = m.group(1)
+                if '{{' in class_value or '{!!' in class_value:
+                    # class="language-{{ lang }}" — KHÔNG cắt theo khoảng trắng trần,
+                    # khoảng trắng bên trong {{ }} thuộc về biểu thức. Token nào có
+                    # nội suy thành dynamic class (tên do runtime tính), còn lại static.
+                    for token in CLASS_TOKEN_RE.findall(class_value):
+                        if '{{' in token or '{!!' in token:
+                            js_val, svars = self._convert_attr_echo_value(token)
+                            element.dynamic_classes.append({
+                                'php': token, 'js': js_val, 'state_vars': svars
+                            })
+                        else:
+                            element.static_classes.append(token)
+                else:
+                    element.static_classes.extend(class_value.split())
                 pos += m.end()
                 continue
 
@@ -1202,27 +1233,60 @@ class TemplateASTParser:
         return entry, None
 
     def _parse_attr_binding(self, content, element):
-        """Parse @attr([...]) content and populate element attrs."""
+        """Parse @attr(...) content and populate element attrs.
+
+        Nhận cả `[...]` lẫn `{...}`, cả `=>` lẫn `:` — như _parse_class_binding.
+        Không nhận `{}` thì `@attr({id: x})` ở file KHÔNG qua preprocessor (bọc
+        <blade>) rơi mất TOÀN BỘ attribute, im lặng, vì không entry nào có '=>'.
+        """
         content = content.strip()
-        if content.startswith('['):
-            content = content[1:]
-        if content.endswith(']'):
-            content = content[:-1]
+        if (content.startswith('[') and content.endswith(']')) or \
+           (content.startswith('{') and content.endswith('}')):
+            content = content[1:-1]
 
         entries = self._split_php_array(content)
         for entry in entries:
             entry = entry.strip()
             if not entry:
                 continue
-            if '=>' in entry:
-                parts = entry.split('=>', 1)
-                attr_name = parts[0].strip().strip("'\"")
-                val_php = parts[1].strip()
+            attr_name, val_php = self._split_class_entry(entry)
+            if val_php is not None:
+                attr_name = attr_name.strip("'\"")
                 val_js = php_to_js(val_php)
                 svars = self._get_state_vars(val_php)
                 element.binding_attrs[attr_name] = {
                     'php': val_php, 'js': val_js, 'state_vars': svars
                 }
+
+    def _parse_style_binding(self, content, element):
+        """Parse @style(...) → populate element.styles.
+
+        Nhận cả `[...]` lẫn `{...}`, cả `=>` lẫn `:` — dùng chung
+        _split_class_entry nên ternary trong value không bị cắt nhầm.
+
+        Trước khi có hàm này, @style KHÔNG có trong dispatch: `@style({'color': c})`
+        rơi xuống parser attribute thường và ra `attrs: {style: true, color: true}`
+        — hai attribute boolean rác, không binding gì, trong khi Blade vẫn giữ
+        @style đúng ⇒ SSR khác CSR mà không báo lỗi.
+        """
+        content = content.strip()
+        if (content.startswith('[') and content.endswith(']')) or \
+           (content.startswith('{') and content.endswith('}')):
+            content = content[1:-1]
+
+        for entry in self._split_php_array(content):
+            entry = entry.strip()
+            if not entry:
+                continue
+            prop, val_php = self._split_class_entry(entry)
+            if val_php is None:
+                continue
+            prop = prop.strip().strip("'\"")
+            element.styles[prop] = {
+                'php': val_php,
+                'js': php_to_js(val_php),
+                'state_vars': self._get_state_vars(val_php),
+            }
 
     def _convert_attr_echo_value(self, attr_value):
         """Convert an attribute value containing {{ }} to JS and extract state vars.
@@ -1436,20 +1500,14 @@ class TemplateASTParser:
         """Parse @include parameters: path and optional data.
         Returns (path_php, data_php) or (path_php, None)."""
         # Find first comma not inside nesting
+        # Giữ nguyên nháy của path. Bóc ra rồi để _convert_path_to_js đoán lại
+        # bằng regex là mất thông tin: 'web.components.code-block' không khớp
+        # regex định danh nên không được bọc lại, sinh ra phép trừ code - block.
+        # _parse_import_include_params cũng không bóc — giữ hai đường giống nhau.
         parts = self._split_php_array(expr)
         if len(parts) >= 2:
-            path_raw = parts[0].strip()
-            # Only strip wrapping quotes for simple string paths (e.g. 'views.home')
-            # Don't strip for dynamic expressions like $__template__.'sessions.tasks'
-            if (path_raw.startswith("'") and path_raw.endswith("'") and path_raw.count("'") == 2) or \
-               (path_raw.startswith('"') and path_raw.endswith('"') and path_raw.count('"') == 2):
-                path_raw = path_raw[1:-1]
-            return path_raw, parts[1].strip()
-        path_raw = expr.strip()
-        if (path_raw.startswith("'") and path_raw.endswith("'") and path_raw.count("'") == 2) or \
-           (path_raw.startswith('"') and path_raw.endswith('"') and path_raw.count('"') == 2):
-            path_raw = path_raw[1:-1]
-        return path_raw, None
+            return parts[0].strip(), parts[1].strip()
+        return expr.strip(), None
 
     def _convert_path_to_js(self, path_expr):
         """Convert a path expression to JS, detecting whether it's already JS syntax.

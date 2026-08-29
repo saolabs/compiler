@@ -105,7 +105,7 @@ Variables are rendered using double curly braces (Mustache syntax).
 Saola provides shorthand directives to bind dynamic JS variables directly to HTML attributes, eliminating the need for string interpolation inside quotes.
 
 - `@attr({ href: link, title: docTitle })`: Bind multiple generic attributes via object.
-- `@class(['active' => isActive, 'text-red' => hasError, 'btn'])`: Dynamically apply CSS classes based on truthy conditions.
+- `@class({'active': isActive, 'text-red': hasError, 'btn'})`: Dynamically apply CSS classes based on truthy conditions.
 - `@style({ 'color': textColor, 'font-size': size + 'px' })`: Dynamically apply inline styles.
 - **Form State Bindings**:
   - `@bind(stateVariable)`: Two-way data binding (like `v-model`).

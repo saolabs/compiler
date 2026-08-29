@@ -276,3 +276,132 @@ def make_loop_id_blade(base_prefix, loop_var_expr):
     Returns: PHP interpolation fragment like "{$loop->index}"
     """
     return f"{{{loop_var_expr}}}"
+
+
+# ── Hydrate ID encoding ───────────────────────────────────────────────
+# Cả sao2js lẫn sao2blade PHẢI gọi hàm này. Hai compiler parse .sao ĐỘC LẬP
+# (không dùng chung cây duyệt), nên id chỉ khớp khi cách mã hoá là một HÀM
+# THUẦN của base_id. Mọi thay đổi ở đây phải giữ tính chất đó — bộ đếm tuần
+# tự theo thứ tự gọi sẽ làm hai phía lệch nhau.
+#
+# SAOLA_ID_MODE:
+#   terse   — MẶC ĐỊNH. compact + bỏ chữ 'e' ở element một chữ số
+#             ('div-1-h1-2' -> '12'). Byte thô NGANG md5 (+1%) mà nén nhỏ hơn
+#             10,7% (JS) / 16,6% (HTML). Đã kiểm 4.030 id / 46 view: 0 va chạm.
+#   compact — id cấu trúc rút gọn ('div-1-h1-2' -> 'e1e2'). Đo được
+#             -10,8% gzip: token ngắn và lặp lại nên nén tốt, còn hex ngẫu nhiên
+#             thì gần như không nén được. Không thể va chạm: mỗi loại node có bộ
+#             đếm riêng trong scope nên số thứ tự đã đủ phân biệt (đã kiểm 4.029
+#             id trên 46 view, ánh xạ 1:1 với md5).
+#   md5     — hành vi cũ, 8 hex. Đường lùi nếu compact lộ vấn đề ở app khác.
+#   raw     — id cấu trúc đầy đủ, dùng để debug hydration
+import os as _os
+import hashlib as _hashlib
+import re as _re
+
+_ID_MODE = _os.environ.get('SAOLA_ID_MODE', 'terse')
+
+# element/reactive/output/component/yield/block-outlet dùng BỘ ĐẾM RIÊNG trong
+# cùng một scope, nên số thứ tự một mình không đủ phân biệt — phải giữ 1 ký tự
+# đánh dấu loại. Trong một scope, số thứ tự là duy nhất cho mỗi loại.
+_KIND = [
+    (_re.compile(r'^rc-(?:if|switch)-(\d+)$'), 'r'),
+    (_re.compile(r'^(?:foreach|for|while)-(\d+)$'), 'l'),
+    (_re.compile(r'^case_(\d+)$'), 'k'),
+    (_re.compile(r'^output-(\d+)$'), 'o'),
+    (_re.compile(r'^component-(\d+)$'), 'c'),
+    (_re.compile(r'^yield-(\d+)$'), 'y'),
+    (_re.compile(r'^block-outlet$'), 'b'),
+]
+
+
+def _compact(base_id):
+    """Rút gọn id cấu trúc, vẫn là hàm thuần và không va chạm.
+
+    'div-1-h1-2' → 'e1e2'      (tên tag thừa: mỗi scope chỉ có MỘT bộ đếm
+                                element nên số thứ tự đã đủ phân biệt)
+    'rc-if-1-case_1-p-2' → 'r1k1e2'
+    """
+    # tách theo '-' nhưng gộp lại các segment nhiều phần (rc-if-1, block-outlet)
+    out = []
+    parts = base_id.split('-')
+    i = 0
+    while i < len(parts):
+        rest = '-'.join(parts[i:])
+        matched = False
+        for pat, code in _KIND:
+            # thử khớp segment dài dần
+            for take in range(len(parts) - i, 0, -1):
+                seg = '-'.join(parts[i:i + take])
+                m = pat.match(seg)
+                if m:
+                    out.append(code + (m.group(1) if m.groups() else ''))
+                    i += take
+                    matched = True
+                    break
+            if matched:
+                break
+        if matched:
+            continue
+        # block-<name>
+        if parts[i] == 'block' and i + 1 < len(parts):
+            out.append('B' + parts[i + 1])
+            i += 2
+            continue
+        # <tag>-<n>  → e<n>
+        if i + 1 < len(parts) and parts[i + 1].isdigit():
+            out.append('e' + parts[i + 1])
+            i += 2
+            continue
+        out.append(parts[i])
+        i += 1
+    return ''.join(out)
+
+
+_TERSE = _re.compile(r'([erlkocy])(\d+)|(b)')
+_TERSE_HEAD = _re.compile(r'^B[a-z0-9_]+?(?=[erlkocy]\d|b(?![a-z]))')
+
+
+def _terse(base_id):
+    """compact + bỏ chữ 'e' ở element một chữ số.
+
+    'Bworkspacee2e3r1k2l1' -> 'Bworkspace23r1k2l1'
+
+    Đơn ánh: chữ số trần LUÔN là một bậc element; chỉ số >= 10 đóng bằng '_'
+    nên không nhập nhằng với chuỗi chữ số đứng sau ('r1'+'e2'+'e3' -> 'r123'
+    còn 'r12'+'e3' -> 'r12_3'). block-outlet là 'b' KHÔNG có chữ số — bỏ sót
+    nó làm 'e1' và 'e1b' cùng ra '1' (đã gặp thật khi kiểm 4.030 id).
+    """
+    c = _compact(base_id)
+    out = []
+    i = 0
+    m = _TERSE_HEAD.match(c)
+    if m:
+        out.append(m.group(0))
+        i = m.end()
+    for m in _TERSE.finditer(c[i:]):
+        if m.group(3):
+            out.append('b')
+            continue
+        kind, num = m.group(1), m.group(2)
+        # Segment ĐẦU TIÊN giữ nguyên chữ cái: id còn được dùng làm class CSS
+        # trực tiếp (Html.ts CSR: classList.add(id)), mà class mở đầu bằng chữ
+        # số là selector không hợp lệ. Chỉ tốn 1 ký tự cho cả id.
+        if kind == 'e' and len(num) == 1 and out:
+            out.append(num)
+        elif len(num) == 1:
+            out.append(kind + num)
+        else:
+            out.append(kind + num + '_')
+    return ''.join(out)
+
+
+def hydrate_hash(base_id):
+    """Mã hoá base_id thành id hydrate. PHẢI giống hệt ở sao2js và sao2blade."""
+    if _ID_MODE == 'raw':
+        return base_id
+    if _ID_MODE == 'terse':
+        return _terse(base_id)
+    if _ID_MODE == 'compact':
+        return _compact(base_id)
+    return _hashlib.md5(base_id.encode('utf-8')).hexdigest()[:8]

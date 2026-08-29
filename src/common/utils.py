@@ -28,12 +28,16 @@ def js_text_literal(text):
     lệch nhau: server hiện `@states`, client hiện `&#64;states`.
 
     Giải mã xong mới escape cho string literal JS (thứ tự ngược lại sẽ hỏng).
+
+    Xuống dòng escape thành `\\n`, KHÔNG đổi thành space: Blade giữ nguyên ký tự
+    xuống dòng nên đổi ở đây làm SSR ≠ CSR — thấy rõ nhất trong <pre>, nơi cả khối
+    code dồn về một dòng khi render ở client.
     """
     decoded = html.unescape(text)
     return (decoded.replace('\\', '\\\\')
                    .replace("'", "\\'")
-                   .replace('\n', ' ')
-                   .replace('\r', ''))
+                   .replace('\r', '')
+                   .replace('\n', '\\n'))
 
 
 def reset_uid():

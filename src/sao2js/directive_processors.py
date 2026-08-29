@@ -457,22 +457,6 @@ class DirectiveProcessor:
         # Produce string like: ${this.__output(['a','b'], () => (expr))}
         return '${' + "this.__output(" + subscribe_js + ", () => (" + js_expr + "))}"
     
-    def process_register_directive(self, line, stack, output):
-        """Process @register directive - chỉ để đánh dấu, không tạo output"""
-        if line.startswith('@register'):
-            # Chỉ đánh dấu để parser biết bắt đầu @register block
-            stack.append(('register', len(output)))
-            return True
-        return False
-    
-    def process_endregister_directive(self, stack, output):
-        """Process @endregister directive - chỉ để đánh dấu, không tạo output"""
-        if stack and stack[-1][0] == 'register':
-            stack.pop()
-            # Không tạo output, chỉ đóng register block
-            return True
-        return False
-    
     def process_wrapper_directive(self, line, stack, output):
         """Process @wrapper/@view directive"""
         line_lower = line.lower()

@@ -24,6 +24,18 @@ import re
 from common.utils import extract_balanced_parentheses
 
 
+_VERBATIM_RE = re.compile(r'@verbatim\b.*?@endverbatim\b', re.DOTALL | re.IGNORECASE)
+
+
+def _mask_verbatim(code):
+    """@import nằm trong @verbatim là văn bản mẫu chứ không phải directive.
+
+    Che vùng đó bằng khoảng trắng cùng độ dài để offset vẫn khớp code gốc,
+    nhờ vậy chỉ cần quét trên bản che còn cắt chuỗi thì vẫn dùng code thật.
+    """
+    return _VERBATIM_RE.sub(lambda m: ' ' * (m.end() - m.start()), code)
+
+
 class ImportParser:
     """Parse @import directives and build tag-to-path mapping."""
 
@@ -41,9 +53,10 @@ class ImportParser:
         # Find all @import directives using balanced parentheses
         import_pattern = re.compile(r'@import\s*\(', re.IGNORECASE)
         
+        scan = _mask_verbatim(code)
         pos = 0
         while pos < len(code):
-            match = import_pattern.search(code, pos)
+            match = import_pattern.search(scan, pos)
             if not match:
                 break
             
@@ -78,11 +91,12 @@ class ImportParser:
         import_pattern = re.compile(r'@import\s*\(', re.IGNORECASE)
         
         result = code
+        scan = _mask_verbatim(result)
         # Process in reverse to preserve positions
         matches = []
         pos = 0
         while pos < len(result):
-            match = import_pattern.search(result, pos)
+            match = import_pattern.search(scan, pos)
             if not match:
                 break
             

@@ -289,6 +289,14 @@ class Compiler {
             bladeContent += templateContent;
         }
         
+        // Kèm nguyên văn khối <style scoped> để sao2blade suy ra được class scope
+        // (nó hash chính nội dung CSS, giống hệt sao2js làm) — blade_compiler đã
+        // tự strip <style> khỏi output nên không lọt vào file .blade.php.
+        const scopedStyleBlocks = (fileContent.match(/<style[^>]*\bscoped\b[^>]*>[\s\S]*?<\/style>/gi) || []);
+        if (scopedStyleBlocks.length) {
+            bladeContent += '\n' + scopedStyleBlocks.join('\n');
+        }
+
         // Gọi Python sao2blade compiler để xử lý reactive wrapping
         try {
             // Chèn SSR assets SAU hydrate processor: <link> không thuộc View

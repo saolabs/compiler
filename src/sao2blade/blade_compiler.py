@@ -19,6 +19,7 @@ from common.declaration_tracker import DeclarationTracker
 from common.utils import extract_balanced_parentheses
 from common.import_parser import ImportParser
 from common.import_tag_resolver import ImportTagResolver
+from common.scoped_style import extract_scoped_css, scope_class_for
 from common.template_structure import validate_imported_tag_structure
 from common.children_slot import (
     has_children_placeholder,
@@ -79,7 +80,10 @@ class BladeTemplateCompiler:
         
         # Step 0: Parse @import directives and resolve custom tags
         import_parser = ImportParser()
-        component_imports = import_parser.parse_imports(one_content)
+        component_imports = {
+            tag: self._convert_path_to_php(path)
+            for tag, path in import_parser.parse_imports(one_content).items()
+        }
 
         # Imported component tags are lifecycle boundaries. Validate their
         # nesting once, before Blade/JS-specific rewriting can diverge.
@@ -127,18 +131,22 @@ class BladeTemplateCompiler:
         
         # Step 2: Detect if view uses @extends
         has_extends = bool(re.search(r'@extends\s*\(', one_content))
+
+        # <style scoped> → class scope dán lên mọi element. Suy từ CHÍNH nội dung
+        # CSS nên sao2js tự ra cùng giá trị, không phải truyền view path qua lại.
+        scope_class = scope_class_for(extract_scoped_css(one_content))
         
         # Step 3: If no state variables, still add hydrate IDs but skip reactive wrapping
         if not state_variables:
             # Add hydrate IDs without reactive markers
-            hydrate_proc = BladeHydrateProcessor(state_variables=set())
+            hydrate_proc = BladeHydrateProcessor(state_variables=set(), scope_class=scope_class)
             processed_template = hydrate_proc.process(blade_content, has_extends=has_extends)
             if component_imports:
                 processed_template = self._resolve_import_includes_blade(processed_template)
             return self._assemble_output(decl_list, ssr_content, processed_template, component_imports, has_extends=has_extends)
         
         # Step 4: Add hydrate IDs and @startMarker/@endMarker (replaces old ReactiveWrapper)
-        hydrate_proc = BladeHydrateProcessor(state_variables=state_variables)
+        hydrate_proc = BladeHydrateProcessor(state_variables=state_variables, scope_class=scope_class)
         processed_template = hydrate_proc.process(blade_content, has_extends=has_extends)
         
         # Resolve @importInclude...@endImportInclude blocks for blade output
@@ -581,6 +589,26 @@ class BladeTemplateCompiler:
                     return i
         return -1
 
+    def _convert_path_to_php(self, path_expr):
+        """File .sao viết path import theo cú pháp JS (__template__ + 'x').
+
+        Blade cần cú pháp PHP ($__template__.'x'), nếu không PHP sẽ đọc
+        __template__ như một hằng số không tồn tại. Đối xứng với
+        _convert_path_to_js bên sao2js.
+        """
+        path_expr = path_expr.strip()
+        # Đã là PHP, hoặc là chuỗi đơn thuần — không cần đụng vào
+        if '$' in path_expr or '+' not in path_expr:
+            return path_expr
+
+        # Chỉ đổi phần nằm ngoài chuỗi: dấu + trong 'a+b' phải giữ nguyên
+        parts = re.split(r"('[^']*'|\"[^\"]*\")", path_expr)
+        for i in range(0, len(parts), 2):
+            parts[i] = re.sub(
+                r'(?<![\w$])(__\w+__)', r'$\1', parts[i]
+            ).replace('+', '.')
+        return ''.join(parts)
+
     def _build_component_registry(self, component_imports):
         """Build PHP array string for $__ONE_COMPONENT_REGISTRY__ from imports dict.
         
@@ -681,7 +709,12 @@ class BladeTemplateCompiler:
             n = counter[0]
             counter[0] += 1
             section_name = f"$__ONE_COMPONENT_REGISTRY__['{tag_name}'].'_{n}'"
-            var_name = f"$__{tag_name}__{n}_content"
+            # Tên tag đi thẳng vào tên biến PHP, mà tag kebab-case (<code-window>)
+            # sinh ra $__code-window__0_content — dấu `-` không hợp lệ trong định
+            # danh PHP nên Blade ParseError. Section name giữ nguyên tag thật vì
+            # nó là khoá chuỗi trong registry, chỉ tên biến mới cần làm sạch.
+            safe_tag = re.sub(r'\W', '_', tag_name)
+            var_name = f"$__{safe_tag}__{n}_content"
             
             parts = []
             parts.append(f"@exec($__env->startSection({section_name}))")

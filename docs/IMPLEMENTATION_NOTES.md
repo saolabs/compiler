@@ -121,7 +121,7 @@ npm run build:views:watch       # Watch for changes
 ## Key Features
 
 ✅ **Python Compiler**: Uses battle-tested 13K+ line Python compiler from sao
-✅ **Blade Support**: Properly handles Blade directives (@verbatim, @register, etc.)
+✅ **Blade Support**: Properly handles Blade directives (@verbatim, @section, etc.)
 ✅ **Event Handling**: Advanced event directive processing
 ✅ **PHP-to-JS**: Sophisticated PHP to JavaScript conversion
 ✅ **Echo Processor**: Variable interpolation with escaping

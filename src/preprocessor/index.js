@@ -56,6 +56,9 @@ class SaolaPreprocessor {
         // Pass 1: Collect symbols
         this.symbolCollector.collect(fullContent);
         this.expressionTransformer = new ExpressionTransformer(this.symbolCollector);
+        // Alias @import phải lấy từ nội dung GỐC: sau transform thì `x as tên`
+        // đã thành cú pháp PHP, không còn nhận ra alias nữa.
+        this.expressionTransformer.collectImportAliases(fullContent);
 
         // Pass 2: Transform
         const transformedParts = { ...parts };
@@ -95,6 +98,7 @@ class SaolaPreprocessor {
         // Collect symbols
         this.symbolCollector.collect(content);
         this.expressionTransformer = new ExpressionTransformer(this.symbolCollector);
+        this.expressionTransformer.collectImportAliases(content);
 
         // Split into sections: declarations, template, script, style
         const sections = this._splitSections(content);

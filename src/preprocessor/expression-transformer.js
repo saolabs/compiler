@@ -25,6 +25,14 @@ const { isPHPBuiltin } = require('./php-builtins');
  */
 const LOOP_ALIASES = new Set(['__loop', 'loop']);
 
+/**
+ * Directive có đối số là ĐƯỜNG DẪN VIEW → vị trí (0-based) của đối số đó.
+ * Alias khai báo bằng @import được thay bằng path tại đúng vị trí này.
+ * @includeIf/@includeWhen/@includeUnless/@includeFirst hiện chưa đi qua
+ * preprocessor chút nào (kể cả {} → []), nên chưa đưa vào đây.
+ */
+const VIEW_PATH_DIRECTIVES = { extends: 0, include: 0 };
+
 class ExpressionTransformer {
     /**
      * @param {import('./symbol-collector')} symbolCollector
@@ -111,6 +119,18 @@ class ExpressionTransformer {
             return placeholder;
         });
 
+        // 0b. Protect @verbatim ... @endverbatim — nghĩa của verbatim là "giữ NGUYÊN
+        // văn". Không chặn ở đây thì `{{ title }}` trong khối code minh hoạ bị thêm
+        // `$` (thành `{{ $title }}`), còn `{{ $title }}` viết sẵn thành `{{ $$title }}`
+        // — sai nội dung ở CẢ Blade lẫn JS. Python đã tôn trọng @verbatim, chỉ tầng
+        // preprocessor Node là chưa.
+        const verbatimBlocks = [];
+        result = result.replace(/@verbatim[\s\S]*?@endverbatim/g, (match) => {
+            const placeholder = `__VERBATIM_RAW_${verbatimBlocks.length}__`;
+            verbatimBlocks.push(match);
+            return placeholder;
+        });
+
         // 1. Transform {{ expr }} → {{ php_expr }}
         result = result.replace(/\{\{\s*([\s\S]*?)\s*\}\}/g, (match, expr) => {
             const transformed = this.transformExpression(expr.trim());
@@ -129,9 +149,14 @@ class ExpressionTransformer {
         // 4. Transform bound HTML attributes (:attr="expr", @event="expr")
         result = this._transformAttributeBindings(result);
 
-        // 5. Restore blade comments
+        // 5. Restore blade comments + verbatim.
+        // Replacement phải là HÀM: dạng chuỗi bị String.replace diễn giải `$$`/`$&`
+        // trong nội dung, đúng thứ hay gặp trong khối code minh hoạ.
         for (let i = 0; i < bladeComments.length; i++) {
-            result = result.replace(`__BLADE_COMMENT_${i}__`, bladeComments[i]);
+            result = result.replace(`__BLADE_COMMENT_${i}__`, () => bladeComments[i]);
+        }
+        for (let i = 0; i < verbatimBlocks.length; i++) {
+            result = result.replace(`__VERBATIM_RAW_${i}__`, () => verbatimBlocks[i]);
         }
 
         return result;
@@ -140,16 +165,19 @@ class ExpressionTransformer {
     _transformAttributeBindings(template) {
         let result = '';
         let inTag = false;
+        let currentTag = '';
         let inString = false;
         let stringChar = '';
         let i = 0;
-        
+
         while (i < template.length) {
             const ch = template[i];
-            
+
             if (!inTag) {
                 if (ch === '<' && template[i+1] && /[a-zA-Z/]/.test(template[i+1])) {
                     inTag = true;
+                    const tm = template.slice(i + 1).match(/^([A-Za-z][\w.-]*)/);
+                    currentTag = tm ? tm[1] : '';
                 }
                 result += ch;
                 i++;
@@ -172,18 +200,23 @@ class ExpressionTransformer {
                     continue;
                 }
                 
+                // `::attr` → literal `:attr` (escape hatch, not a binding).
+                if (ch === ':' && template[i + 1] === ':') {
+                    result += ':';
+                    i += 2;
+                    continue;
+                }
+
                 // Check for attribute binding: :name="expr" or x-bind:name="expr"
-                // Do NOT transform event bindings (@name="expr" or x-on:name="expr") 
+                // Do NOT transform event bindings (@name="expr" or x-on:name="expr")
                 // because they execute client-side and must remain JS syntax.
-                let attrMatch = template.substring(i).match(/^(x-bind:|:)([a-zA-Z_:\-]+)\s*=\s*(["'])/);
+                let attrMatch = template.substring(i).match(/^(x-bind:|:)([A-Za-z_][\w:.\-]*)\s*=\s*(["'])/);
                 if (attrMatch) {
-                    const prefix = attrMatch[1];
                     const name = attrMatch[2];
                     const quote = attrMatch[3];
-                    
-                    result += template.substring(i, i + attrMatch[0].length);
+
                     i += attrMatch[0].length;
-                    
+
                     // Read until matching quote
                     let exprStart = i;
                     let exprEnd = -1;
@@ -198,13 +231,22 @@ class ExpressionTransformer {
                         }
                         i++;
                     }
-                    
+
                     if (exprEnd !== -1) {
                         const expr = template.substring(exprStart, exprEnd);
                         const transformed = this.transformExpression(expr.trim());
-                        result += transformed;
-                        result += template[exprEnd]; // the quote
+                        // Component tag → keep `:prop="expr"` for common/import_tag_resolver.py
+                        // (it turns the tag into @include and needs the ':' to spot bindings).
+                        // Plain element → `:attr="expr"` ≡ `attr="{{ expr }}"`; emit the echo
+                        // form so BOTH sao2blade and sao2js pick it up via their existing
+                        // {{ }}-in-attribute paths (no compiler changes needed).
+                        const isComponent = !!(this.importAliases && this.importAliases.has(currentTag));
+                        result += isComponent
+                            ? `:${name}=${quote}${transformed}${quote}`
+                            : `${name}=${quote}{{ ${transformed} }}${quote}`;
                         i = exprEnd + 1;
+                    } else {
+                        result += attrMatch[0];
                     }
                     continue;
                 }
@@ -814,20 +856,148 @@ class ExpressionTransformer {
         result = this._replaceDirectiveArgs(result, 'show', inner => this.transformExpression(inner));
         result = this._replaceDirectiveArgs(result, 'hide', inner => this.transformExpression(inner));
 
-        // Transform @include  
-        result = this._replaceDirectiveArgs(result, 'include', inner => this.transformExpression(inner));
+        // Transform @include — xem VIEW_PATH_DIRECTIVES bên dưới
 
         // Transform @switch/@case
         result = this._replaceDirectiveArgs(result, 'switch', inner => this.transformExpression(inner));
         result = this._replaceDirectiveArgs(result, 'case', inner => this.transformExpression(inner));
 
-        // Transform Architecture Directives (@extends, @section, @block, @yield)
-        const archDirectives = ['extends', 'section', 'block', 'yield'];
+        // Transform Architecture Directives (@section, @block, @yield)
+        // @extends nằm ở VIEW_PATH_DIRECTIVES vì đối số của nó là đường dẫn view.
+        const archDirectives = ['section', 'block', 'yield'];
         for (const dir of archDirectives) {
             result = this._replaceDirectiveArgs(result, dir, inner => this.transformExpression(inner));
         }
 
+        // Directive nhận ĐƯỜNG DẪN VIEW: gỡ alias @import trước khi transform.
+        for (const [dir, viewArgIndex] of Object.entries(VIEW_PATH_DIRECTIVES)) {
+            result = this._replaceDirectiveArgs(result, dir, inner =>
+                this.transformExpression(this._resolveViewAlias(inner, viewArgIndex)));
+        }
+
         return result;
+    }
+
+    /**
+     * Thu thập alias từ @import trong nội dung .sao GỐC (chưa transform).
+     *
+     *   @import(<path> as tên)        → tên        -> <path>
+     *   @import({ tên: <path>, ... }) → tên        -> <path>
+     *   @import(<path>)               → tên suy ra -> <path>
+     *
+     * Tên suy ra dùng CÙNG luật với import_parser.py::_extract_tag_from_path.
+     * test-import-alias.js gọi thẳng Python đối chiếu nên hai bản không lệch
+     * âm thầm được — tên thẻ và alias phải luôn là một.
+     *
+     * Alias tường minh THẮNG tên suy ra khi trùng.
+     */
+    collectImportAliases(content) {
+        this.importAliases = new Map();
+        const derived = new Map();
+        if (!content) return this.importAliases;
+
+        const regex = /@import\s*\(/g;
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+            let depth = 1;
+            let i = match.index + match[0].length;
+            const start = i;
+            while (i < content.length && depth > 0) {
+                if (content[i] === '(') depth++;
+                else if (content[i] === ')') depth--;
+                i++;
+            }
+            if (depth !== 0) break;
+            regex.lastIndex = i;
+
+            const inner = content.slice(start, i - 1).trim();
+
+            // Dạng object: @import({ counter: 'a.b', demo: __template__ + 'c' })
+            if (inner.startsWith('{') && inner.endsWith('}')) {
+                for (const entry of this._splitTopLevelStr(inner.slice(1, -1), ',')) {
+                    const colon = entry.indexOf(':');
+                    if (colon === -1) continue;
+                    const name = entry.slice(0, colon).trim().replace(/^['"]|['"]$/g, '');
+                    const path = entry.slice(colon + 1).trim();
+                    if (name && path) this.importAliases.set(name, path);
+                }
+                continue;
+            }
+
+            // Dạng 'as': @import(<path> as tên)
+            const asMatch = inner.match(/^([\s\S]+?)\s+as\s+([A-Za-z_][\w-]*)$/);
+            if (asMatch) {
+                this.importAliases.set(asMatch[2], asMatch[1].trim());
+                continue;
+            }
+
+            // Không có 'as': suy tên từ path, đúng luật Python dùng cho tên thẻ.
+            const derivedName = ExpressionTransformer.deriveImportName(inner);
+            if (derivedName) derived.set(derivedName, inner);
+        }
+
+        for (const [name, path] of derived) {
+            if (!this.importAliases.has(name)) this.importAliases.set(name, path);
+        }
+
+        return this.importAliases;
+    }
+
+    /**
+     * Suy tên từ biểu thức đường dẫn @import — bản JS của
+     * import_parser.py::_extract_tag_from_path.
+     *
+     *   __layout__ + 'docs'             → docs
+     *   __layout__ + 'docs.test-layout' → test-layout
+     *   'a'                             → a
+     *   $__blade_custom_path__          → blade_custom_path
+     */
+    static deriveImportName(path) {
+        path = (path || '').trim();
+        if (!path) return null;
+
+        // Chuỗi literal CUỐI trong biểu thức → đoạn sau dấu chấm cuối
+        let last = null;
+        for (const m of path.matchAll(/['"]([^'"]+)['"]/g)) last = m[1];
+        if (last !== null) {
+            const parts = last.split('.');
+            return parts[parts.length - 1] || null;
+        }
+
+        // Tên biến PHP: $__custom_path__ → custom_path. '\$' là BẮT BUỘC, đúng
+        // như Python: path .sao chưa có '$' nên rơi xuống nhánh cuối và giữ
+        // nguyên dấu gạch dưới. Bỏ '\$' đi là JS ra 'blade_custom_path' còn
+        // Python ra '__blade_custom_path__' → tên thẻ và alias trỏ hai nơi.
+        const varMatch = path.match(/^\$_*([a-zA-Z][a-zA-Z0-9_]*?)_*$/);
+        if (varMatch) return varMatch[1];
+
+        const clean = path.replace(/[^a-zA-Z0-9_]/g, '');
+        return clean || null;
+    }
+
+    /**
+     * Thay alias ở vị trí đối số đường dẫn bằng chính biểu thức path.
+     *
+     * Alias là ĐIỂM NEO lúc biên dịch, không phải biến: `@extends(layout)` phải
+     * thành `@extends(__layout__ + 'base')` TRƯỚC khi transformExpression chạy.
+     * Không thay thì identifier trần bị thêm '$' → Blade ra `@extends($layout)`
+     * (biến không tồn tại) còn JS ra `superView: layout` (ReferenceError).
+     * Làm ở preprocessor vì đầu ra của nó nuôi CẢ sao2blade lẫn sao2js — hai
+     * nhánh không thể trỏ hai nơi khác nhau.
+     */
+    _resolveViewAlias(inner, viewArgIndex) {
+        if (!this.importAliases || this.importAliases.size === 0) return inner;
+
+        const args = this._splitTopLevelStr(inner, ',');
+        if (args.length <= viewArgIndex) return inner;
+
+        const arg = args[viewArgIndex];
+        const name = arg.trim();
+        if (!this.importAliases.has(name)) return inner;  // chỉ khớp identifier TRẦN
+
+        const at = arg.indexOf(name);
+        args[viewArgIndex] = arg.slice(0, at) + this.importAliases.get(name) + arg.slice(at + name.length);
+        return args.join(',');
     }
 
     _replaceDirectiveArgs(template, directiveName, transformFn) {

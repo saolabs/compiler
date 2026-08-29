@@ -46,9 +46,13 @@ class BladeHydrateProcessor:
         'pointerenter', 'pointerleave', 'pointercancel',
     }
     
-    def __init__(self, state_variables=None):
+    def __init__(self, state_variables=None, scope_class=''):
         self.state_variables = state_variables or set()
         self.id_gen = HydrateIdGenerator()
+        # <style scoped> → mọi element của view mang thêm class này, selector đã
+        # được ghép sẵn `.scope` lúc biên dịch. Nhờ vậy scoped CSS không còn phụ
+        # thuộc Wrapper (trang extends layout không có Wrapper) và ăn ngay từ SSR.
+        self.scope_class = scope_class or ''
     
     def process(self, template_content, has_extends=False):
         """
@@ -613,7 +617,13 @@ class BladeHydrateProcessor:
                 name = attr_m.group(1)
                 value = attr_m.group(2)
                 if name == 'class':
-                    classes.extend(value.split())
+                    # Không cắt thô theo khoảng trắng: `class="language-{{ lang }}"`
+                    # sẽ vỡ thành ['language-{{', '$lang', '}}'] và Blade in cả
+                    # `<?php echo e($lang); ?>` ra HTML. Coi mỗi {{...}}/{!!...!!}
+                    # là một mảnh liền, chỉ tách ở khoảng trắng ngoài chúng.
+                    classes.extend(
+                        t for t in re.findall(r'(?:\{\{.*?\}\}|\{!!.*?!!\}|\S)+', value) if t
+                    )
                 else:
                     is_binding = '{{' in value or '{!!' in value
                     regular_attrs.append((name, value, is_binding))
@@ -633,10 +643,28 @@ class BladeHydrateProcessor:
         
         return classes, regular_attrs, directive_parts
     
+    @staticmethod
+    def _class_token_to_php(token):
+        """Một token class -> biểu thức PHP.
+
+        'card'                -> "'card'"
+        'language-{{ lang }}' -> "'language-'.( lang )"
+        """
+        parts = []
+        for seg in re.split(r'(\{\{.*?\}\}|\{!!.*?!!\})', token):
+            if not seg:
+                continue
+            m = re.fullmatch(r'\{\{\s*(.*?)\s*\}\}|\{!!\s*(.*?)\s*!!\}', seg)
+            if m:
+                parts.append('(' + (m.group(1) if m.group(1) is not None else m.group(2)) + ')')
+            else:
+                parts.append("'" + seg.replace("\\", "\\\\").replace("'", "\\'") + "'")
+        return '.'.join(parts) if parts else "''"
+
     def _build_blade_attrs(self, element_id, loop_scopes, classes, regular_attrs, directive_parts):
         """Build final blade attribute string with @class, @attr, and directives."""
-        import hashlib
-        hashed_id = hashlib.md5(element_id.encode('utf-8')).hexdigest()[:8]
+        from common.hydrate_id import hydrate_hash
+        hashed_id = hydrate_hash(element_id)
         
         # Calculate hydration class
         if loop_scopes:
@@ -647,10 +675,12 @@ class BladeHydrateProcessor:
             hydrate_class = f"$__VIEW_ID__ . '-{hashed_id}'"
 
         all_classes = [hydrate_class]
+        if self.scope_class:
+            all_classes.append(f"'{self.scope_class}'")
         
         # Merge static classes from class="..." attribute
         for c in classes:
-            all_classes.append(f"'{c}'")
+            all_classes.append(self._class_token_to_php(c))
             
         # Check if @class already exists in directive_parts and merge it
         final_directive_parts = []
@@ -706,16 +736,16 @@ class BladeHydrateProcessor:
             dynamic_id = self._inject_loop_vars(id_str, loop_scopes)
             return f'"{dynamic_id}"'
             
-        import hashlib
-        hashed_id = hashlib.md5(id_str.encode('utf-8')).hexdigest()[:8]
+        from common.hydrate_id import hydrate_hash
+        hashed_id = hydrate_hash(id_str)
         return f"'{hashed_id}'"
     
     def _inject_loop_vars(self, id_str, loop_scopes):
         """Inject PHP variable interpolation into ID string for loop contexts.
         Generates a 6-character hash of the base ID and appends -{key} for each loop.
         """
-        import hashlib
-        hashed_id = hashlib.md5(id_str.encode('utf-8')).hexdigest()[:8]
+        from common.hydrate_id import hydrate_hash
+        hashed_id = hydrate_hash(id_str)
         
         dynamic_parts = []
         for rc_id, blade_var, js_var in loop_scopes:

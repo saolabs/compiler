@@ -34,7 +34,11 @@ class RenderGenerator:
         render_body = gen.generate(ast_root, has_extends=True, extends_expr=...)
     """
 
-    def __init__(self, state_variables=None, declared_variables=None, is_typescript=False):
+    def __init__(self, state_variables=None, declared_variables=None, is_typescript=False,
+                 scope_class=''):
+        # <style scoped> → class dán lên MỌI element của view; CSS đã được ghép
+        # `.scope` sẵn lúc biên dịch nên runtime khỏi phải dò node gốc.
+        self.scope_class = scope_class or ''
         self.state_variables = state_variables or set()
         self.declared_variables = declared_variables or set()
         self._is_ts = is_typescript
@@ -1034,6 +1038,12 @@ class RenderGenerator:
         if attrs_obj:
             parts.append(f'attrs: {attrs_obj}')
 
+        # @style — bucket riêng: Html.initializeStyles dùng style.setProperty nên
+        # chỉ property được liệt kê bị đụng, không ghi đè cả thuộc tính style.
+        styles_obj = self._gen_styles_obj(element)
+        if styles_obj:
+            parts.append(f'styles: {styles_obj}')
+
         # DOM properties (@checked/@disabled/... — el.prop, không phải attribute)
         props_obj = self._gen_props_obj(element)
         if props_obj:
@@ -1076,6 +1086,9 @@ class RenderGenerator:
         """Generate classes configuration array: [{type, value, factory?, stateKeys?}]."""
         entries = []
 
+        if self.scope_class:
+            entries.append(f'{{ type: \'static\', value: "{self.scope_class}" }}')
+
         # Static classes
         for cls in element.static_classes:
             entries.append(f'{{ type: \'static\', value: "{cls}" }}')
@@ -1089,9 +1102,59 @@ class RenderGenerator:
                 f'factory: () => {info["js"]}, stateKeys: {keys_str} }}'
             )
 
+        # Dynamic classes — class="language-{{ lang }}": factory trả về TÊN class
+        # (có thể nhiều tên, có thể rỗng), khác 'binding' chỉ bật/tắt một tên cố định.
+        for info in getattr(element, 'dynamic_classes', []):
+            svars = sorted(info.get('state_vars', set()))
+            keys_str = str(svars).replace("'", '"')
+            entries.append(
+                f'{{ type: \'dynamic\', factory: () => `{info["js"]}`, stateKeys: {keys_str} }}'
+            )
+
         if not entries:
             return None
         return '[' + ', '.join(entries) + ']'
+
+    def _gen_styles_obj(self, element):
+        """Generate styles configuration object cho @style.
+
+        Shape phải khớp ElementInterface.styles:
+          { "<prop>": { type: 'binding', value: <expr>, factory: () => <expr>, stateKeys: [...] } }
+        Giá trị là hằng chuỗi thì phát type 'static' để khỏi tạo subscription thừa.
+        """
+        entries = []
+        for prop, info in getattr(element, 'styles', {}).items():
+            js_val = info['js']
+            svars = sorted(info.get('state_vars', set()))
+            php_val = info.get('php', '').strip()
+
+            is_const_str = (
+                not svars
+                and len(php_val) >= 2
+                and php_val[0] == php_val[-1]
+                and php_val[0] in ('"', "'")
+                and php_val[0] not in php_val[1:-1]
+            )
+            if is_const_str:
+                val_escaped = php_val[1:-1].replace('"', '\\"')
+                entries.append(f'"{prop}": {{ type: \'static\', value: "{val_escaped}" }}')
+                continue
+
+            keys_str = str(svars).replace("'", '"')
+            if '${' in js_val:
+                value_expr = f'`{js_val}`'
+                factory_expr = f'() => `{js_val}`'
+            else:
+                value_expr = js_val
+                factory_expr = f'() => {js_val}'
+            entries.append(
+                f'"{prop}": ' + '{ type: \'binding\', value: ' + value_expr + ', '
+                + 'factory: ' + factory_expr + ', stateKeys: ' + keys_str + ' }'
+            )
+
+        if not entries:
+            return None
+        return '{ ' + ', '.join(entries) + ' }'
 
     def _gen_attrs_obj(self, element):
         """Generate attrs configuration object."""
@@ -1197,8 +1260,8 @@ class RenderGenerator:
         """Format a hydrate ID as JS template literal, injecting loop variables.
         Generates a 6-character hash of the base ID and appends -{key} for each loop.
         """
-        import hashlib
-        hashed_id = hashlib.md5(base_id.encode('utf-8')).hexdigest()[:8]
+        from common.hydrate_id import hydrate_hash
+        hashed_id = hydrate_hash(base_id)
         
         dynamic_parts = []
         for loop_prefix, js_loop_expr in self._loop_scopes:

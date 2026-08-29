@@ -194,6 +194,35 @@ test(testExpr('Mixed arithmetic in parens + string',
     baseSymbols
 ));
 
+// 9. `:attr="expr"` shorthand for dynamic attributes
+console.log('\n📋 :attr shorthand:');
+function testAttr(label, input, expected, imports) {
+    const sc = new SymbolCollector();
+    baseSymbols.forEach(s => sc.addSymbol(s.name, s.type, s.source));
+    const et = new ExpressionTransformer(sc);
+    et.importAliases = new Map((imports || []).map(n => [n, 'x.' + n]));
+    const result = et.transformTemplate(input);
+    const pass = result.trim() === expected.trim();
+    console.log(`  ${pass ? '✅' : '❌'} ${label}`);
+    if (!pass) console.log(`     Expected: ${expected}\n     Got:      ${result}`);
+    return pass;
+}
+test(testAttr('plain element → {{ }} echo',
+    '<div :data-id="count" :title="message + \'!\'">x</div>',
+    '<div data-id="{{ $count }}" title="{{ $message . \'!\' }}">x</div>'));
+test(testAttr('ternary value',
+    '<a :href="count > 0 ? \'/y\' : \'/n\'">x</a>',
+    '<a href="{{ $count > 0 ? \'/y\' : \'/n\' }}">x</a>'));
+test(testAttr('component tag keeps :prop for tag resolver',
+    '<statcard label="hi" :value="count" />',
+    '<statcard label="hi" :value="$count" />', ['statcard']));
+test(testAttr('::attr escapes to literal :attr',
+    '<div ::data-x="raw" :data-y="count">x</div>',
+    '<div :data-x="raw" data-y="{{ $count }}">x</div>'));
+test(testAttr('@event handler is left untouched',
+    '<button @click="setCount(count + 1)" :aria-busy="status">go</button>',
+    '<button @click="setCount(count + 1)" aria-busy="{{ $status }}">go</button>'));
+
 console.log(`\n${'='.repeat(60)}`);
 console.log(`Results: ${passed}/${total} passed`);
 console.log('='.repeat(60));

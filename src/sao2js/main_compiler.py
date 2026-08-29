@@ -15,13 +15,14 @@ _current_dir = os.path.dirname(os.path.abspath(__file__))
 if _current_dir not in sys.path:
     sys.path.insert(0, _current_dir)
 
-from common.utils import extract_balanced_parentheses
+from common.utils import extract_balanced_parentheses, js_text_literal
 from common.config import JS_FUNCTION_PREFIX, HTML_ATTR_PREFIX, APP_HELPER_NAMESPACE, ViewConfig
 from common.php_js_converter import set_user_methods as _set_converter_user_methods
 from common.compiler_utils import CompilerUtils
 from common.declaration_tracker import DeclarationTracker
 from common.import_parser import ImportParser
 from common.import_tag_resolver import ImportTagResolver
+from common.scoped_style import extract_scoped_css, scope_class_for, scope_css
 from common.template_structure import TemplateStructureError, validate_imported_tag_structure
 from common.children_slot import ChildrenSlotError, has_children_placeholder
 from parsers import DirectiveParsers
@@ -75,6 +76,7 @@ class BladeCompiler:
         
     def compile_blade_to_js(self, blade_code, view_name, function_name=None, factory_function_name=None):
         """Main compiler function"""
+        self._scope_class = scope_class_for(extract_scoped_css(blade_code))
         blade_code = blade_code.strip()
 
         # Chuẩn hoá @state(...) (singular) → @states(...) để mọi machinery @states
@@ -132,31 +134,6 @@ class BladeCompiler:
         blade_code = re.sub(ssr_pattern, '', blade_code, flags=re.IGNORECASE)
         
         # ========================================================================
-        # PRIORITY 3: Process @register/@endregister blocks BEFORE escaping backticks
-        # ========================================================================
-        # @register blocks are processed AFTER @verbatim and @ssr to ensure @register inside
-        # @verbatim or @ssr is NOT processed. This protects content inside @register blocks
-        # from being escaped (they contain raw JavaScript code)
-        register_blocks = {}
-        register_counter = 0
-        
-        def protect_register_block(match):
-            nonlocal register_counter
-            # Get full match including @register and @endregister
-            # Note: This will NOT match @register inside @verbatim (already replaced)
-            full_content = match.group(0)
-            placeholder = f"__REGISTER_BLOCK_{register_counter}__"
-            register_blocks[placeholder] = full_content
-            register_counter += 1
-            return placeholder
-        
-        # Match @register with optional parameters and @endregister (case insensitive)
-        # Also match aliases: @setup/@endsetup, @script/@endscript
-        # IMPORTANT: This will NOT match inside @verbatim blocks (already protected)
-        register_pattern = r'@(?:register|setup|script)\s*(?:\([^)]*\))?\s*(.*?)\s*@end(?:register|setup|script)'
-        blade_code = re.sub(register_pattern, protect_register_block, blade_code, flags=re.DOTALL | re.IGNORECASE)
-        
-        # ========================================================================
         # Protect <script setup> blocks from backtick escaping
         # ========================================================================
         # <script setup> contains raw JavaScript that should NOT have backticks escaped
@@ -178,7 +155,7 @@ class BladeCompiler:
         # ========================================================================
         # Escape backticks in blade content ONLY (not in script blocks)
         # ========================================================================
-        # This needs to be done AFTER protecting @register and <script setup> blocks
+        # This needs to be done AFTER protecting <script setup> blocks
         escape_str = '@@@@@@@@@@@@@@@@@@@@@@@--------------------------------$$$$$$$$$$$$$$$$$$$$$$$$$$'
         blade_code = blade_code.replace('\\`', escape_str)  # Protect already escaped backticks
         blade_code = blade_code.replace('`', '\\`')  # Escape all backticks
@@ -211,47 +188,21 @@ class BladeCompiler:
         has_fetch = '@fetch(' in blade_code
         has_subscribe = ('@subscribe(' in blade_code) or re.search(r'@dontsubscribe\b', blade_code, flags=re.IGNORECASE)
         
-        # Parse register data EARLY to detect TypeScript
-        # Extract unescaped content from @register blocks BEFORE restoring to blade_code
-        register_content_unescaped = None
-        for placeholder, original_content in register_blocks.items():
-            # Extract just the content inside @register...@endregister (without the directives)
-            content_match = re.search(r'@(?:register|setup|script)\s*(?:\([^)]*\))?\s*(.*?)\s*@end(?:register|setup|script)', original_content, re.DOTALL | re.IGNORECASE)
-            if content_match:
-                if register_content_unescaped is None:
-                    register_content_unescaped = content_match.group(1)
-                else:
-                    # If multiple @register blocks, concatenate them
-                    register_content_unescaped += "\n" + content_match.group(1)
-        
-        # Restore @register blocks to blade_code for removal from template
-        for placeholder, original_content in register_blocks.items():
-            blade_code = blade_code.replace(placeholder, original_content)
-        
-        # Parse @register directive from blade_code (for removal from template)
-        register_content = self.parsers.parse_register(blade_code)
-        
-        # Parse register data
+        # Collect runtime assets đặt trực tiếp trong .sao (<script setup>, <script>,
+        # <style>, <link rel=stylesheet>). Nếu bỏ qua, chúng sẽ lọt vào render tree
+        # và bị chèn sai vị trí.
         register_data = None
-        if register_content_unescaped:
-            register_data = self.register_parser.parse_register_content(register_content_unescaped, view_name)
-        elif register_content:
-            register_data = self.register_parser.parse_register_content(register_content, view_name)
-        
-        # Không có @register vẫn phải collect runtime assets đặt trực tiếp trong
-        # .sao. Nếu bỏ qua, chúng sẽ lọt vào render tree và bị chèn sai vị trí.
-        if not register_data:
-            setup_match = re.search(r'<script\s+setup[^>]*>(.*?)</script>', blade_code, re.DOTALL | re.IGNORECASE)
-            has_runtime_assets = re.search(
-                r'<script\b[^>]*>|<style\b[^>]*>|'
-                r'<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>',
-                blade_code,
-                re.IGNORECASE,
-            )
-            if setup_match or has_runtime_assets:
-                # Parse the full template content so scripts/styles/userDefined are all collected.
-                # Parsing only the setup tag drops <style> blocks and other script metadata.
-                register_data = self.register_parser.parse_register_content(blade_code, view_name)
+        setup_match = re.search(r'<script\s+setup[^>]*>(.*?)</script>', blade_code, re.DOTALL | re.IGNORECASE)
+        has_runtime_assets = re.search(
+            r'<script\b[^>]*>|<style\b[^>]*>|'
+            r'<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>',
+            blade_code,
+            re.IGNORECASE,
+        )
+        if setup_match or has_runtime_assets:
+            # Parse the full template content so scripts/styles/userDefined are all collected.
+            # Parsing only the setup tag drops <style> blocks and other script metadata.
+            register_data = self.register_parser.parse_register_content(blade_code, view_name)
 
         # FIX(F3, docs/FIX_PLAN_2026-08-14.md): nạp tên method của
         # <script setup> vào converter DÙNG CHUNG cho `{{ method() }}` (echo)
@@ -405,10 +356,6 @@ class BladeCompiler:
         init_functions, css_content = self.parsers.parse_init(blade_code)
         view_type_data = self.parsers.parse_view_type(blade_code)
         
-        # Note: register_data was already parsed early (before wrapper generation)
-        # Here we just need to parse_register for removing it from blade_code
-        register_content = self.parsers.parse_register(blade_code)
-        
         # Remove script setup/import/imports/scope content from blade_code before processing
         # These should only be used for import statements, not for render function content
         script_types = ['setup', 'import', 'imports', 'scope', 'scoped']
@@ -423,12 +370,6 @@ class BladeCompiler:
         # Support: @await, @await(...), @fetch(...)
         blade_code = re.sub(r'@await\s*(?:\([^)]*\))?\s*', '', blade_code, flags=re.IGNORECASE)
         blade_code = re.sub(r'@fetch\s*\([^)]*\)\s*', '', blade_code, flags=re.IGNORECASE)
-        
-        # Then remove script setup/import/imports/scope content from register_content for template processing
-        if register_content:
-            for script_type in script_types:
-                pattern = rf'<script\s+{script_type}[^>]*>.*?</script>'
-                register_content = re.sub(pattern, '', register_content, flags=re.DOTALL | re.IGNORECASE)
         
         # Remove <blade> wrapper tags (they are only used as container in .sao files)
         blade_code = re.sub(r'<blade\b[^>]*>', '', blade_code, flags=re.IGNORECASE)
@@ -485,6 +426,15 @@ class BladeCompiler:
             protected_content = protected_content.replace('__ESCAPED_BACKTICK__', '\\\\`')
             protected_content = protected_content.replace('__ESCAPED_DOLLAR_BRACE__', '\\\\${')
             
+            # Nhánh AST sinh `this.text('__VERBATIM_BLOCK_N__')` — chuỗi NHÁY ĐƠN,
+            # không phải template string. Escape kiểu backtick ở trên không đụng
+            # tới nháy đơn lẫn xuống dòng, nên nội dung verbatim có `'` hoặc nhiều
+            # dòng sẽ sinh ra JS vỡ cú pháp. Thay cả literal có sẵn nháy trước, rồi
+            # mới để nhánh template string xử lý phần còn lại.
+            template_content = template_content.replace(
+                f"'{placeholder}'", f"'{js_text_literal(content)}'"
+            )
+
             # Replace placeholder with escaped content
             template_content = template_content.replace(placeholder, protected_content)
         
@@ -820,9 +770,6 @@ class BladeCompiler:
             # Remove @init blocks
             ast_blade = re.sub(r'@init\s*\n.*?@endinit', '', ast_blade, flags=re.DOTALL | re.IGNORECASE)
             
-            # Remove @register blocks 
-            ast_blade = re.sub(r'@register\s*\n.*?@endregister', '', ast_blade, flags=re.DOTALL | re.IGNORECASE)
-            
             # Find level-0 wrappers first in ast_blade BEFORE stripping them
             wrappers = []
             for tag in ['template', 'blade', 'sao:blade']:
@@ -955,7 +902,8 @@ class BladeCompiler:
             render_gen = RenderGenerator(
                 state_variables=usestate_variables,
                 declared_variables=declared_template_variables,
-                is_typescript=self._is_typescript
+                is_typescript=self._is_typescript,
+                scope_class=getattr(self, '_scope_class', '')
             )
             structured_body = render_gen.generate(
                 ast_root,
@@ -997,10 +945,10 @@ class BladeCompiler:
         # Generate loadServerData function - empty function (logic removed)
         load_server_data_func = self.function_generators.generate_load_server_data_function()
         
-        # CSS functions - combine CSS từ @onInit và @register
+        # CSS functions - combine CSS từ @onInit và <style>/<link> trong .sao
         combined_css_content = css_content.copy() if css_content else []
         
-        # Thêm CSS từ @register
+        # Thêm CSS thu thập từ template
         if register_data and register_data.get('css'):
             css_data = register_data['css']
             
@@ -1314,12 +1262,16 @@ class BladeCompiler:
             for style in styles_data:
                 style_parts = [f'"type":"{style["type"]}"']
 
-                # scoped → style đi theo component (runtime scope CSS); mặc định global
-                if style.get('scoped'):
-                    style_parts.append('"scoped":true')
+                # scoped: CSS đã được ghép `.scope` NGAY LÚC BIÊN DỊCH và class
+                # scope đã dán lên mọi element, nên KHÔNG phát cờ "scoped" nữa —
+                # runtime chèn nguyên văn, khỏi cần dò node gốc (thứ trang extends
+                # layout không có) và khỏi phải gắn attribute sau khi mount.
+                style_content = style.get('content')
+                if style.get('scoped') and style['type'] == 'code':
+                    style_content = scope_css(style_content, getattr(self, '_scope_class', ''))
 
                 if style['type'] == 'code':
-                    content_escaped = style["content"].replace('"', '\\"').replace('\n', '\\n')
+                    content_escaped = style_content.replace('"', '\\"').replace('\n', '\\n')
                     style_parts.append(f'"content":"{content_escaped}"')
                 elif style['type'] == 'href':
                     # Process Blade syntax in href
@@ -1807,6 +1759,14 @@ export function """ + function_name + """(__data__ = {}, systemData = {}) {
             protected_content = protected_content.replace('__ESCAPED_BACKTICK__', '\\\\`')
             protected_content = protected_content.replace('__ESCAPED_DOLLAR_BRACE__', '\\\\${')
             
+            # Nhánh AST sinh `this.text('__VERBATIM_BLOCK_N__')` — chuỗi NHÁY ĐƠN,
+            # không phải template string. Escape backtick/${ ở trên không đụng tới
+            # nháy đơn lẫn xuống dòng, nên khối verbatim có `'` hoặc nhiều dòng sẽ
+            # sinh JS vỡ cú pháp. Thay literal đã có nháy trước, phần còn lại
+            # (script/style trong template string) giữ nguyên hành vi cũ.
+            return_template = return_template.replace(
+                f"'{placeholder}'", f"'{js_text_literal(content)}'"
+            )
             return_template = return_template.replace(placeholder, protected_content)
         
         # Handle type markers based on language

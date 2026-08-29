@@ -1173,34 +1173,6 @@ class DirectiveParsers:
 
         return -1
     
-    def parse_register(self, blade_code):
-        """Parse @register directive hoặc aliases (@setup, @script)
-        
-        NOTE: This method should NOT find @register inside @verbatim blocks
-        because @verbatim blocks are already replaced with placeholders in main_compiler.py
-        before this method is called. This ensures @verbatim has absolute priority.
-        """
-        # Skip verbatim placeholders to ensure we don't process anything inside them
-        # (Even though they should already be replaced, this is a safety check)
-        blade_code_filtered = re.sub(r'__VERBATIM_BLOCK_\d+__', '', blade_code)
-        
-        # Tìm @register trước (có thể có hoặc không có parameters)
-        register_match = re.search(r'@register(?:\s*\([^)]*\))?(.*?)@endregister', blade_code_filtered, re.DOTALL | re.IGNORECASE)
-        if register_match:
-            return register_match.group(1).strip()
-            
-        # Tìm @setup (alias của @register, có thể có hoặc không có parameters)
-        setup_match = re.search(r'@setup(?:\s*\([^)]*\))?(.*?)@endsetup', blade_code_filtered, re.DOTALL | re.IGNORECASE)
-        if setup_match:
-            return setup_match.group(1).strip()
-            
-        # Tìm @script (xử lý như @register)
-        script_match = re.search(r'@script\s*(?:\([^)]*\))?(.*?)@endscript', blade_code_filtered, re.DOTALL | re.IGNORECASE)
-        if script_match:
-            return script_match.group(1).strip()
-            
-        return None
-
     def parse_view_type(self, blade_code):
         """Parse @viewType/@viewtype directive"""
         # Match both @viewType and @viewtype (case insensitive)

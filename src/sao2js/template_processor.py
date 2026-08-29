@@ -4,7 +4,7 @@ Template processor chính xử lý template content
 
 import re
 from common.children_slot import replace_children_for_legacy_js
-from common.utils import extract_balanced_parentheses
+from common.utils import extract_balanced_parentheses, js_text_literal
 from conditional_handlers import ConditionalHandlers
 from loop_handlers import LoopHandlers
 from section_handlers import SectionHandlers
@@ -339,15 +339,6 @@ class TemplateProcessor:
         blade_code = self._process_multiline_include_directives(blade_code)
 
         blade_code = re.sub(r'@oninit.*?@endoninit', '', blade_code, flags=re.DOTALL | re.IGNORECASE)
-        # Remove @register directive - với hoặc không có parameters
-        blade_code = re.sub(r'@register\s*(?:\([^)]*\))?.*?@endregister', '', blade_code, flags=re.DOTALL | re.IGNORECASE)
-        
-        # Remove @setup directive (alias of @register) - với hoặc không có parameters
-        blade_code = re.sub(r'@setup\s*(?:\([^)]*\))?.*?@endsetup', '', blade_code, flags=re.DOTALL | re.IGNORECASE)
-        
-        # Remove @script directive (xử lý như @register)
-        blade_code = re.sub(r'@script\s*(?:\([^)]*\))?.*?@endscript', '', blade_code, flags=re.DOTALL | re.IGNORECASE)
-        
         # Process inline directives in HTML attributes (before echo processing)
         # Example: <div @if($count > 0) data-test="active" @endif>
         lines = blade_code.splitlines()
@@ -1073,42 +1064,6 @@ class TemplateProcessor:
         if line.startswith('@endswitch'):
             return self.conditional_handlers.process_endswitch_directive(stack, output)
         
-        # Handle @register
-        if line.startswith('@register'):
-            result = self.directive_processors.process_register_directive(line, stack, output)
-            if result:
-                return result
-        
-        # Handle @endregister
-        if line.startswith('@endregister'):
-            result = self.directive_processors.process_endregister_directive(stack, output)
-            if result:
-                return result
-                
-        # Handle @setup (alias của @register)
-        if line.startswith('@setup'):
-            result = self.directive_processors.process_register_directive(line, stack, output)
-            if result:
-                return result
-        
-        # Handle @endsetup (alias của @endregister)
-        if line.startswith('@endsetup'):
-            result = self.directive_processors.process_endregister_directive(stack, output)
-            if result:
-                return result
-                
-        # Handle @script (xử lý như @register)
-        if line.startswith('@script'):
-            result = self.directive_processors.process_register_directive(line, stack, output)
-            if result:
-                return result
-        
-        # Handle @endscript (xử lý như @endregister)  
-        if line.startswith('@endscript'):
-            result = self.directive_processors.process_endregister_directive(stack, output)
-            if result:
-                return result
-        
         # Handle @wrapper and @wrap (NOT @view - that's handled as @template style)
         line_lower = line.lower()
         if line_lower.startswith('@wrapper') or line_lower.startswith('@wrap'):
@@ -1554,6 +1509,13 @@ class TemplateProcessor:
         """Restore verbatim blocks from placeholders"""
         if hasattr(self, 'verbatim_blocks'):
             for placeholder, content in self.verbatim_blocks.items():
+                # Nhánh AST sinh `this.text('__VERBATIM_BLOCK_N__')` — chuỗi nháy
+                # đơn. Chèn thẳng nội dung thô vào đó thì mọi `'` và mọi xuống
+                # dòng trong khối verbatim đều làm vỡ cú pháp JS. Thay literal có
+                # sẵn nháy trước, phần còn lại giữ nguyên hành vi cũ.
+                processed_content = processed_content.replace(
+                    f"'{placeholder}'", f"'{js_text_literal(content)}'"
+                )
                 processed_content = processed_content.replace(placeholder, content)
         return processed_content
     

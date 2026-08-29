@@ -54,7 +54,7 @@
 | Directive | Mô tả | Ví dụ |
 |-----------|-------|-------|
 | `@bind(var)` | Two-way data binding | `<input @bind(name) />` |
-| `@class([...])` | Class động dựa trên điều kiện | `<div @class(['active': active])>` |
+| `@class({...})` | Class động dựa trên điều kiện | `<div @class({'active': active})>` |
 | `@style({...})` | Style inline động | `<div @style({'color': color})>` |
 | `@attr({...})` | Attributes động tùy chỉnh | `<div @attr({id: myId})>` |
 | `@show(cond)` | Hiện/Ẩn (display: none) | `<div @show(isVisible)>` |
@@ -165,12 +165,63 @@ Liên kết 2 chiều giữa input và state (giống `v-model`).
 
 ### `@class` — Dynamic CSS Classes
 ```saola
-<div @class([
+<div @class({
     'btn',
     'btn-primary': isPrimary,
     'disabled': loading
-])>
+})>
 ```
+
+### Truy cập dữ liệu: `.key` hay `['key']`?
+
+Compiler dịch `.` thành `->` cho nhánh Blade và giữ nguyên `['key']` cho cả hai nhánh.
+Nên **chọn theo hình dạng thật của dữ liệu ở phía SSR**, nếu không SSR và CSR sẽ lệch
+nhau mà không báo lỗi:
+
+| Nguồn | SSR là gì | Viết |
+|---|---|---|
+| `@vars(user)` — controller truyền Eloquent/stdClass | object | `user.name` |
+| `@states({rows: [{id: 1}]})` — object literal viết trong `.sao` | **mảng PHP** | `row['id']` |
+| `@props({rec: {}})` — giá trị mặc định | **mảng PHP** (`[]`) | `rec['name']` |
+| Props nhận qua `@include`/thẻ tuỳ chỉnh | theo đúng shape mà cha truyền | theo cha |
+| Dữ liệu chỉ fetch ở client | SSR không chạm tới | cả hai đều được |
+
+Object literal viết trong `.sao` **luôn** thành mảng PHP: preprocessor đổi `{` thành `[`
+không phân biệt ngữ cảnh. Vì vậy `@states({rows: [{ id: 1 }]})` sinh ra
+`@useState($rows, [[ 'id' => 1 ]])`, và trong `@foreach` phải viết `row['id']` —
+`row.id` sẽ thành `$row->id` và trả `null` ở SSR trong khi CSR vẫn đúng.
+
+```saola
+{{-- ĐÚNG: literal → mảng --}}
+@states({ todos: [{ id: 1, done: false }] })
+@foreach(todos as todo)
+    <li @class({'done': todo['done']})>{{ todo['id'] }}</li>
+@endforeach
+
+{{-- ĐÚNG: object do controller truyền vào --}}
+@vars(user)
+<p>{{ user.name }}</p>
+```
+
+### `<style scoped>` — phạm vi CSS
+
+Compiler dán một class scope (suy từ chính nội dung CSS) lên **mọi element của
+view**, rồi ghép class đó thẳng vào selector — cùng cách `data-v-` của Vue:
+
+```css
+.card { }        →  .card.s7k2f1 { }
+.a .b { }        →  .a .b.s7k2f1 { }
+.c:hover { }     →  .c.s7k2f1:hover { }
+@keyframes x { } →  giữ nguyên
+```
+
+Vì scope được quyết định lúc BIÊN DỊCH, nó không cần view có wrapper — trang
+`@extends` layout (render qua `@block`, không có wrapper riêng) vẫn ăn style
+bình thường.
+
+> **Selector chỉ trúng element của CHÍNH view này.** `.wrap a { }` không áp cho
+> `<a>` do component con sinh ra. Muốn tác động vào con thì dùng CSS global,
+> hoặc cho con nhận class qua prop.
 
 ---
 
@@ -208,7 +259,7 @@ Bên trong `@foreach`, biến `__loop` cho biết trạng thái vòng lặp (tư
 
 ```saola
 @foreach(items as item)
-    <li @class(['first': __loop.first])>{{ __loop.iteration }}. {{ item.name }}</li>
+    <li @class({'first': __loop.first})>{{ __loop.iteration }}. {{ item.name }}</li>
 @endforeach
 ```
 
@@ -254,6 +305,29 @@ Bên trong `@foreach`, biến `__loop` cho biết trạng thái vòng lặp (tư
 
 <Card title="Sản phẩm" :data="product" />
 ```
+
+Thuộc tính không tiền tố là chuỗi tĩnh; `:` trước tên thì giá trị là biểu thức.
+Dạng `:` sinh ra đúng cùng lời gọi như `@include` với object props — kể cả
+`stateKeys` — nên prop vẫn được đẩy lại khi state đổi.
+
+Alias đặt bằng `as` còn dùng được ở mọi chỗ nhận **đường dẫn view**, hiện là
+`@extends` và `@include`:
+
+```saola
+@import(__layout__ + 'docs' as layout)
+@import('web.parts.card' as card)
+
+@extends(layout)              {{-- y hệt @extends(__layout__ + 'docs') --}}
+@include(card, {value: count})
+```
+
+Alias là **điểm neo lúc biên dịch, không phải biến**: preprocessor thay nó bằng
+chính biểu thức đường dẫn trước khi transform, nên Blade và JS luôn trỏ cùng một
+view. Chỉ alias khai báo tường minh (`as tên`, hoặc dạng object
+`@import({tên: path})`) mới dùng được ở đây; dạng không có `as` chỉ sinh tên thẻ.
+
+> `@includeIf` / `@includeWhen` / `@includeUnless` / `@includeFirst` chưa đi qua
+> preprocessor — chúng chưa nhận alias, và cũng chưa đổi `{...}` thành mảng.
 
 ### Layout: `@extends` & `@block`
 ```saola

@@ -1,5 +1,5 @@
 """
-Parser cho directive @register với format mới
+Parser cho <script>/<style>/<link> đặt trực tiếp trong file .sao
 """
 
 import re

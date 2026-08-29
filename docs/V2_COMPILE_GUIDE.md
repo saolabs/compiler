@@ -21,7 +21,6 @@ File `.sao` thường có 4 thành phần chính:
 - Khai báo các methods, lifecycle hooks, logic
 - Dùng thẻ `<script setup>...</script>` 
 - Phần object sau `export default { ... }` sẽ được đưa vào `setUserDefined()`
-- **Lưu ý**: Bản mới không cần bao trong `@register ... @endregister`
 
 ### 4. **Phần Style** (CSS/SCSS)
 - Khai báo styles cho component

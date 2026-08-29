@@ -464,6 +464,41 @@ class PHPToJSConverter:
             # Variable or expression
             return self._convert_simple_expression(value)
     
+    def _split_concat_operands(self, expr: str):
+        """Tách biểu thức theo dấu '.' nối chuỗi ở mức ngoài cùng.
+
+        Chỉ coi '.' là toán tử nối khi nó không nằm trong ngoặc và không phải
+        dấu thập phân của số (1.5). Từng toán hạng trả về NGUYÊN VĂN, nên phép
+        toán bên trong ($count * 10) không bị vỡ.
+        """
+        parts, buf, depth, i = [], [], 0, 0
+        while i < len(expr):
+            ch = expr[i]
+            if ch in '([{':
+                depth += 1
+            elif ch in ')]}':
+                depth -= 1
+            elif ch == '.' and depth == 0:
+                prev = expr[i - 1] if i else ''
+                nxt = expr[i + 1] if i + 1 < len(expr) else ''
+                if not (prev.isdigit() and nxt.isdigit()):
+                    parts.append(''.join(buf))
+                    buf = []
+                    i += 1
+                    continue
+            buf.append(ch)
+            i += 1
+        parts.append(''.join(buf))
+        return parts
+
+    def _restore_string_literal(self, literal: str) -> str:
+        """Placeholder → literal JS. Chuỗi nháy kép của PHP có nội suy biến nên
+        thành template literal; nháy đơn giữ nguyên."""
+        if literal.startswith('"'):
+            inner = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'${\1}', literal[1:-1])
+            return f"`{inner}`"
+        return literal
+
     def _handle_string_concatenation(self, expr: str) -> str:
         """Handle string concatenation (. to +) while preserving object property access"""
         
@@ -512,33 +547,26 @@ class PHPToJSConverter:
             # Protect double-quoted strings
             expr_protected = re.sub(r'"[^"]*"', protect_string_literal, expr_protected)
             
-            # Use regex to properly split string concatenation
-            # Pattern to match: variable, string literal placeholder, or other tokens (excluding . and spaces)
-            pattern = r'(\$[a-zA-Z_][a-zA-Z0-9_]*|__STR_LIT_\d+__|[^\s\.]+)'
-            parts = re.findall(pattern, expr_protected)
-            
+            # Tách theo dấu '.' NỐI CHUỖI ở mức ngoài cùng, giữ NGUYÊN VĂN từng
+            # toán hạng. Bản cũ tách theo cả khoảng trắng rồi nối tất cả bằng '+'
+            # nên toán tử nằm giữa hai vế bị nuốt:
+            #   $count * 10 . '%'  →  count+*+10+'%'   (JS không parse được)
+            #   $count + 1 . 'px'  →  count+++1+'px'
             js_parts = []
-            for part in parts:
-                if not part or part == '.':
-                    # Skip empty strings and dots
+            for operand in self._split_concat_operands(expr_protected):
+                operand = operand.strip()
+                if not operand:
                     continue
-                if part.startswith('$'):
-                    var_name = part[1:]
-                    js_parts.append(var_name)
-                elif part.startswith('__STR_LIT_'):
-                    # Restore string literal
-                    idx = int(re.search(r'\d+', part).group())
-                    literal = string_literals[idx]
-                    if literal.startswith("'"):
-                        js_parts.append(literal)
-                    elif literal.startswith('"'):
-                        inner = literal[1:-1]
-                        inner = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'${\1}', inner)
-                        js_parts.append(f"`{inner}`")
-                else:
-                    # Other tokens (shouldn't normally reach here)
-                    js_parts.append(part)
-            
+                # Bỏ '$' TRƯỚC khi khôi phục literal: làm ngược lại thì '$foo'
+                # nằm trong chuỗi nháy đơn cũng bị cắt mất '$'.
+                operand = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'\1', operand)
+                operand = re.sub(
+                    r'__STR_LIT_(\d+)__',
+                    lambda m: self._restore_string_literal(string_literals[int(m.group(1))]),
+                    operand,
+                )
+                js_parts.append(operand)
+
             return '+'.join(js_parts)
         
         # Protect string literals FIRST before processing object access

@@ -9,10 +9,10 @@ const __VIEW_CONFIG__ = {
     [VIEW_CONFIG_PLACEHOLDER]
 };
 
+[COMPONENT_PROPS_INTERFACE]
 
 [COMPONENT_SCRIPT_CONTENTS]
 
-[COMPONENT_PROPS_INTERFACE]
 class [COMPONENT_NAME]ViewController extends ViewController {
     constructor(view:[TYPE:View]) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -25,7 +25,7 @@ class [COMPONENT_NAME]ViewController extends ViewController {
 }
 
 class [COMPONENT_NAME]View extends View {
-    constructor(__data__:[TYPE:[COMPONENT_NAME]Props] = {}, systemData:[TYPE:any] = {}) {
+    constructor(__data__:[TYPE:any] = {}, systemData:[TYPE:any] = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, [COMPONENT_NAME]ViewController);
         const App:[TYPE:Application] = app("App") as [TYPE:Application];
         const __STATE__ = this.__ctrl__.states;
@@ -61,7 +61,7 @@ class [COMPONENT_NAME]View extends View {
 }
 
 // Export factory function
-export function [FACTORY_FUNCTION_NAME](__data__:[TYPE:[COMPONENT_NAME]Props] = {}, systemData:[TYPE:any] = {}):[TYPE:[COMPONENT_NAME]View] {
+export function [FACTORY_FUNCTION_NAME](__data__ = {}, systemData = {}):[TYPE:[COMPONENT_NAME]View] {
     return new [COMPONENT_NAME]View(__data__, systemData);
 }
 export default [FACTORY_FUNCTION_NAME];

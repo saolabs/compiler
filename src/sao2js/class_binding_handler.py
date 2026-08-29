@@ -187,7 +187,7 @@ class ClassBindingHandler:
             return [{"type": "static", "value": class_name}]
         
         # Case 2: Two arguments - @class('class', $condition)
-        if ',' in expression and not expression.startswith('['):
+        if ',' in expression and not expression.startswith(('[', '{')):
             parts = self._split_arguments(expression)
             if len(parts) == 2:
                 class_name = self._extract_string_value(parts[0].strip())
@@ -201,8 +201,10 @@ class ClassBindingHandler:
                     "checker": js_condition
                 }]
         
-        # Case 3: Array format - @class(['class1' => $cond, 'class2'])
-        if expression.startswith('[') and expression.endswith(']'):
+        # Case 3: Array/object format - @class(['c1' => $cond, 'c2'])
+        #                            or @class({'c1': $cond, 'c2'})
+        if (expression.startswith('[') and expression.endswith(']')) or \
+           (expression.startswith('{') and expression.endswith('}')):
             return self._parse_array_expression(expression)
         
         # Fallback: treat as static class
@@ -211,26 +213,24 @@ class ClassBindingHandler:
     def _parse_array_expression(self, expression):
         """
         Parse array expression: ['class1' => $cond, 'static', 'class2' => $cond2]
+        or object expression:   {'class1': $cond, 'static', 'class2': $cond2}
         Returns list of binding dicts
         """
-        # Remove outer brackets
+        # Remove outer brackets/braces
         inner = expression[1:-1].strip()
-        
+
         # Split by comma, but respect nested structures
         items = self._split_array_items(inner)
-        
+
         bindings = []
         for item in items:
             item = item.strip()
             if not item:
                 continue
-            
-            # Check if it's a key => value pair
-            if '=>' in item:
-                parts = item.split('=>', 1)
-                class_name = self._extract_string_value(parts[0].strip())
-                condition = parts[1].strip()
-                
+
+            # Check if it's a key => value / key: value pair
+            class_name, condition = self._split_entry(item)
+            if condition is not None:
                 # Check if condition is a static string
                 if self._is_simple_string(condition):
                     # Static value like 'demo' => 'dump'
@@ -250,9 +250,37 @@ class ClassBindingHandler:
                 # Static class without condition
                 class_name = self._extract_string_value(item)
                 bindings.append({"type": "static", "value": class_name})
-        
+
         return bindings
-    
+
+    def _split_entry(self, item):
+        """
+        Split one array/object entry into (class_name, condition).
+        Returns (item, None) when the entry is a bare static class.
+
+        The separator only counts right after the key, so a ternary in the value
+        ('a ? b : c') is not mistaken for one; ':(?!:)' keeps '::' out.
+        Must stay in sync with template_ast.py::_split_class_entry — the two
+        parsers are hit by the same .sao depending on which render path runs.
+        """
+        # Quoted key: 'c' / "c"  then  =>  or  :
+        m = re.match(r"""^\s*(['"])(.*?)\1\s*(?:=>|:(?!:))\s*(.+)$""", item, re.DOTALL)
+        if m:
+            return m.group(2).strip(), m.group(3).strip()
+
+        # Bare identifier key:  my-class  =>|:  cond
+        m = re.match(r"""^\s*([A-Za-z_][\w-]*)\s*(?:=>|:(?!:))\s*(.+)$""", item, re.DOTALL)
+        if m:
+            return m.group(1).strip(), m.group(2).strip()
+
+        # Any other key expression before '=>' (PHP arrays allow e.g. $var => ...)
+        if '=>' in item:
+            key, cond = item.split('=>', 1)
+            return self._extract_string_value(key.strip()), cond.strip()
+
+        return item, None
+
+
     def _split_array_items(self, content):
         """
         Split array items by comma, respecting nested structures
