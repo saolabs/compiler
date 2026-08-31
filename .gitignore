@@ -1,5 +1,12 @@
-node_modules
-# Sensitive files
-npm-token.txt
-*.token.txt
-.env.local
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache
+
+# Bộ oracle/parity Python chỉ dùng cục bộ trong giai đoạn chuyển đổi.
+# Không publish và tuyệt đối không đưa vào Git; PHPUnit là test suite chính thức.
+/tests/Parity/
+/tests/Tools/
+*.py
+*.py[cod]
+__pycache__/

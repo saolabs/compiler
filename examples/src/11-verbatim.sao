@@ -1,0 +1,8 @@
+{{-- @verbatim giữ nguyên văn: dùng để in cú pháp .sao ra trang docs --}}
+@states({ title: 'thật' })
+<template>
+    <p>{{ title }}</p>
+    @verbatim
+    <pre><code>{{ title }} và @children giữ nguyên</code></pre>
+    @endverbatim
+</template>

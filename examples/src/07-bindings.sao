@@ -1,0 +1,18 @@
+{{-- @class/@style/@attr là binding có phản ứng; :attr là dạng rút gọn --}}
+@states({ active: true, width: 120, label: 'nút' })
+<template>
+    <div
+        @class({'box', 'box-active': active})
+        @style({ width: width })
+        @attr({ 'data-label': label })
+        :title="label"
+        
+    >Hộp</div>
+    <input type="text" v-model="label" @bind(label)>
+
+    {{-- :attr đứng MỘT MÌNH trên element thì thành attr="{{ expr }}".
+         Lưu ý: nếu trước nó có directive chứa ':' trong ngoặc nhọn
+         (@style, @attr, hay @class có điều kiện) thì nó KHÔNG được đổi —
+         xem docs/05-roadmap.md §8. Cả bản Python lẫn PHP đều vậy. --}}
+    <span :title="label">rút gọn hoạt động ở đây</span>
+</template>

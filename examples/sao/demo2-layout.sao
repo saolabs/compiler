@@ -1,9 +1,0 @@
-@pageStart
-{{-- đây là trang layout --}}
-
-<div class="container">
-    @useBlock('content')
-    {{-- tương đương vói dạng @blockoutlet('content') hay <block-outlet name="content"></block-outlet> --}}
-</div>
-
-@pageEnd

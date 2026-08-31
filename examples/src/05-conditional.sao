@@ -1,0 +1,12 @@
+@states({ status: 'idle' })
+<template>
+    <div>
+    @if(status === 'ready')
+        <p class="ok">Sẵn sàng</p>
+    @elseif(status === 'idle')
+        <p class="idle">Đang chờ</p>
+    @else
+        <p class="err">Lỗi</p>
+    @endif
+    </div>
+</template>

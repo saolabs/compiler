@@ -1,0 +1,8 @@
+{{-- <style scoped> gắn class scope lúc BIÊN DỊCH, không cần wrapper --}}
+<template>
+    <div class="panel"><span>Có scope</span></div>
+</template>
+<style scoped>
+.panel { padding: 8px }
+.panel span:hover { color: red }
+</style>

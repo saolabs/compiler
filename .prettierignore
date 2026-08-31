@@ -1,0 +1,8 @@
+# Golden của compiler PHẢI là output nguyên byte — format lại là cổng đỏ ngay,
+# và diff sẽ trông như regression trong khi thật ra chỉ là khoảng trắng.
+# (Đã xảy ra: 14-demo-full.js bị format thành `let { name = ... }` thay vì
+#  `let {name = ...}`.)
+examples/expected/
+
+# Fixture parity cũng vậy: chúng là INPUT của cổng, đổi một byte là đổi kết quả.
+tests/Parity/**/fixtures/

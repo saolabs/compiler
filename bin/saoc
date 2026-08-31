@@ -1,0 +1,167 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Saola\Compiler\CompileOptions;
+use Saola\Compiler\Directive\Builtin\BuiltinDirective;
+use Saola\Compiler\Directive\DirectiveRegistry;
+use Saola\Compiler\Directive\UserDirective;
+use Saola\Compiler\SaolaCompiler;
+
+$autoloadCandidates = [dirname(__DIR__).'/vendor/autoload.php', dirname(__DIR__, 3).'/autoload.php'];
+$autoloaded = false;
+foreach ($autoloadCandidates as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        $autoloaded = true;
+        break;
+    }
+}
+if (!$autoloaded) {
+    fwrite(STDERR, "saoc: không tìm thấy Composer autoload. Hãy chạy composer install.\n");
+    exit(2);
+}
+
+/** @return array{0:list<string>,1:array<string,mixed>} */
+function saoc_parse_args(array $args): array
+{
+    $positionals = [];
+    $options = [];
+    for ($i = 0; $i < count($args); $i++) {
+        $arg = $args[$i];
+        if (!str_starts_with($arg, '--')) {
+            $positionals[] = $arg;
+            continue;
+        }
+        $pair = explode('=', substr($arg, 2), 2);
+        $key = $pair[0];
+        if (count($pair) === 2) {
+            $options[$key] = $pair[1];
+        } elseif (isset($args[$i + 1]) && !str_starts_with($args[$i + 1], '--')) {
+            $options[$key] = $args[++$i];
+        } else {
+            $options[$key] = true;
+        }
+    }
+    return [$positionals, $options];
+}
+
+/** @param array<string,mixed> $raw */
+function saoc_options(array $raw): CompileOptions
+{
+    return CompileOptions::fromArray($raw);
+}
+
+function saoc_registry(?string $file, bool $sandbox): DirectiveRegistry
+{
+    $registry = DirectiveRegistry::builtins();
+    if ($file === null) return $registry;
+    if ($sandbox) throw new RuntimeException('Sandbox không cho phép nạp sao.directives.php.');
+    if (!is_file($file)) throw new RuntimeException("Không tìm thấy directives file: {$file}");
+    $definitions = require $file;
+    if (!is_iterable($definitions)) throw new RuntimeException('Directives file phải trả về iterable.');
+    foreach ($definitions as $name => $definition) {
+        if ($definition instanceof BuiltinDirective) {
+            $registry->register($definition);
+        } elseif ($definition instanceof UserDirective) {
+            $registry->registerUser($definition);
+        } elseif (is_string($name) && is_callable($definition)) {
+            $registry->directive($name, $definition);
+        } else {
+            throw new RuntimeException('Directive definition không hợp lệ.');
+        }
+    }
+    return $registry;
+}
+
+/** @param mixed $value */
+function saoc_json(mixed $value): string
+{
+    $json = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    return $json."\n";
+}
+
+function saoc_usage(): void
+{
+    fwrite(STDERR, <<<'TXT'
+Saola Compiler
+  php bin/saoc compile <file|-> --view-path=x --fn=View --factory=View --json
+  php bin/saoc compile-dir <dir> --namespace=theme.dark. --json
+  php bin/saoc serve
+
+TXT);
+}
+
+$argv = $_SERVER['argv'] ?? [];
+array_shift($argv);
+$command = array_shift($argv) ?? 'help';
+
+if ($command === 'serve') {
+    while (($line = fgets(STDIN)) !== false) {
+        $id = null;
+        try {
+            $request = json_decode(trim($line), true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($request)) throw new RuntimeException('Request phải là JSON object.');
+            $id = $request['id'] ?? null;
+            if (($request['cmd'] ?? '') !== 'compile') throw new RuntimeException('Worker chỉ hỗ trợ cmd=compile.');
+            $options = saoc_options(is_array($request['options'] ?? null) ? $request['options'] : []);
+            $registry = saoc_registry(isset($request['directives']) ? (string) $request['directives'] : null, $options->sandbox);
+            $result = (new SaolaCompiler($registry))->compile((string) ($request['source'] ?? ''), $options);
+            $payload = ['id' => $id, 'ok' => true] + $result->jsonSerialize();
+            fwrite(STDOUT, saoc_json($payload));
+            fflush(STDOUT);
+        } catch (Throwable $e) {
+            fwrite(STDOUT, saoc_json(['id' => $id, 'ok' => false, 'error' => $e->getMessage()]));
+            fflush(STDOUT);
+        }
+    }
+    exit(0);
+}
+
+if (!in_array($command, ['compile', 'compile-dir'], true)) {
+    saoc_usage();
+    exit($command === 'help' || $command === '--help' ? 0 : 2);
+}
+
+[$positionals, $rawOptions] = saoc_parse_args($argv);
+$input = $positionals[0] ?? null;
+if ($input === null) {
+    saoc_usage();
+    exit(2);
+}
+
+try {
+    $options = saoc_options($rawOptions);
+    $directives = isset($rawOptions['directives']) ? (string) $rawOptions['directives'] : null;
+    $compiler = new SaolaCompiler(saoc_registry($directives, $options->sandbox));
+    if ($command === 'compile-dir') {
+        $result = $compiler->compileDirectory($input, $options);
+        fwrite(STDOUT, saoc_json($result));
+        exit($result->hasErrors() ? 1 : 0);
+    }
+    $source = $input === '-' ? stream_get_contents(STDIN) : file_get_contents($input);
+    if (!is_string($source)) throw new RuntimeException("Không đọc được input: {$input}");
+    $result = $compiler->compile($source, $options);
+    if (isset($rawOptions['blade-output']) && $result->blade !== null) {
+        $writeOptions = clone $options;
+        $writeOptions->bladeOutputPath = (string) $rawOptions['blade-output'];
+        $writeOptions->jsOutputPath = isset($rawOptions['js-output']) ? (string) $rawOptions['js-output'] : null;
+        if ($input === '-') throw new RuntimeException('Output file yêu cầu input là file.');
+        $result = $compiler->compileFile($input, $writeOptions);
+    } elseif (isset($rawOptions['js-output']) && $result->js !== null) {
+        $writeOptions = clone $options;
+        $writeOptions->jsOutputPath = (string) $rawOptions['js-output'];
+        if ($input === '-') throw new RuntimeException('Output file yêu cầu input là file.');
+        $result = $compiler->compileFile($input, $writeOptions);
+    }
+    // Cảnh báo ra STDERR: STDOUT là JSON mà node transport và cổng parity đọc,
+    // chen chữ vào đó sẽ hỏng parse.
+    foreach ($result->warnings as $warning) {
+        fwrite(STDERR, "saoc: {$warning}\n");
+    }
+    fwrite(STDOUT, saoc_json($result));
+} catch (Throwable $e) {
+    fwrite(STDERR, "saoc: {$e->getMessage()}\n");
+    exit(1);
+}

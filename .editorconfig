@@ -1,0 +1,10 @@
+# Xem .prettierignore — golden và fixture không được format lại.
+root = false
+
+[examples/expected/**]
+insert_final_newline = unset
+trim_trailing_whitespace = false
+
+[tests/Parity/**/fixtures/**]
+insert_final_newline = unset
+trim_trailing_whitespace = false

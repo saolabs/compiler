@@ -1,0 +1,10 @@
+{{-- @key cho phép reconcile theo field thay vì theo chỉ số --}}
+@states({ items: [] })
+<template>
+    <ul>
+    @foreach(items as item)
+        @key(item.id)
+        <li>{{ item.name }}</li>
+    @endforeach
+    </ul>
+</template>

@@ -1,442 +1,163 @@
-# Saola Compiler
+# saola/compiler
 
-Saola Compiler là một công cụ biên dịch chuyên biệt chuyển đổi các file template `.sao` thành hai định dạng output:
-- **Blade files** (.blade.php) cho Laravel Server-Side Rendering (SSR)
-- **JavaScript View files** (.js) cho client-side rendering
+Trình biên dịch `.sao` viết bằng PHP thuần. Cài qua Composer.
 
-## Cấu Trúc Compiler
+> **Trạng thái: P0–P6 xong. Byte parity đầu-cuối, đã chạy thật trong app.**
+> `builder/src/index.js` gọi `vendor/bin/saoc` (có cả worker `serve`).
+> `php artisan sao:compile` chạy được không cần Node.
+> Bản Python **không còn trên đường build**. Bộ oracle/parity chỉ giữ cục bộ
+> trong `tests/Parity/`, đã được `.gitignore` và không phân phối cùng package.
+> Theme runtime (P7) chưa triển khai.
+
+
+
+## Bằng chứng mạnh nhất
+
+Compile lại **toàn bộ 56 view production** bằng `bin/saoc` rồi so với output đã
+commit (do pipeline Python cũ sinh ra):
 
 ```
-compiler/
-├── index.js           # Main compiler - Node.js wrapper
-├── cli.js             # CLI entry point  
-├── config-manager.js   # Manages sao.config.json
-├── python/            # Python compiler (13k+ lines from onejs)
-│   ├── main_compiler.py
-│   ├── cli.py
-│   ├── function_generators.py
-│   ├── section_handlers.py
-│   ├── php_js_converter.py
-│   └── ... (26 modules)
-├── package.json       # Package configuration
-└── README.md          # This file
+.blade.php   56 / 56   khớp từng byte
+.js / .ts    55 / 56   khớp từng byte
 ```
 
-## Quy Trình Biên Dịch
+Một file lệch là `web.modules.demo.index` — **đúng 4 hunk, tất cả là bug đã sửa**
+(`__STR_LIT_0__` và `App.Helper.*` rò vào chuỗi hiển thị, xem §7 của roadmap).
+Cùng số dòng, không có khác biệt nào khác. Output đã commit là bản CŨ còn lỗi.
 
-### Node.js Wrapper (index.js)
-1. Đọc `.sao` files
-2. Tách các phần: declarations, blade template, script, style
-3. **GHI NGAY Blade file** (declarations + template)
-4. **Song song:** Gọi Python compiler để generate JavaScript
-5. Copy app files vào temp directory
-
-### Python Compiler
-- Xử lý Blade syntax → JavaScript
-- Generate prerender & render functions
-- Xử lý directives (@await, @fetch, @section, etc)
-- Convert PHP expressions sang JavaScript
-- Tạo state management code
-
-## Key Features
-
-✅ **Declaration Order Preservation**: Giữ nguyên thứ tự khai báo
-✅ **Auto-Create Folders**: Tự động tạo temp directories
-✅ **Namespace Support**: Nhiều namespaces mỗi context
-✅ **App Files Copy**: Tự động copy app files vào temp
-✅ **PHP to JS Conversion**: Chuyển đổi PHP expressions
-✅ **Prerender/Render Separation**: Riêng biệt SSR và dynamic rendering
-✅ **Parallel Processing**: Blade và JS compile song song
-
-## File Cấu Hình: sao.config.json
-
-Đặt tại project root của Laravel:
-
-```json
-{
-  "packages": {
-     "saola": "1.0.0"
-  },
-  "paths": {
-    "resources": "resources",
-     "saoView": "resources/sao",
-    "bladeView": "resources/views",
-    "temp": "resources/js/temp",
-    "public": "public/static/one"
-  },
-  "output": {
-    "default": "app/js",
-    "contexts": {
-      "admin": "admin/js",
-      "web": "web/js",
-      "mobile": "mobile/js"
-    }
-  },
-  "contexts": {
-    "web": {
-      "name": "Web",
-      "app": ["web/app"],
-      "views": {
-        "web": "web/views"
-      },
-      "blade": {
-        "web": "web"
-      },
-      "temp": {
-        "views": "web/views",
-        "app": "web/app",
-        "registry": "web/registry.js"
-      }
-    },
-    "admin": {
-      "name": "Admin Panel",
-      "app": ["admin/app"],
-      "views": {
-        "admin": "admin/views"
-      },
-      "blade": {
-        "admin": "admin"
-      },
-      "temp": {
-        "views": "admin/views",
-        "app": "admin/app",
-        "registry": "admin/registry.js"
-      }
-    },
-    "default": {
-      "name": "Default - All Contexts",
-      "app": ["admin/app", "web/app"],
-      "views": {
-        "web": "web/views",
-        "admin": "admin/views"
-      },
-      "blade": {
-        "web": "web",
-        "admin": "admin"
-      },
-      "temp": {
-        "views": "app/views",
-        "app": "app/app",
-        "registry": "app/registry.js"
-      }
-    }
-  }
-}
-```
-
-### Config Structure
-
-#### paths (Base Paths)
-Các base paths cho các mục khác nhau:
-- `saoView`: Base cho views và app sources
-- `bladeView`: Base cho blade outputs  
-- `temp`: Base cho JS temp outputs
-- `public`: Base cho production outputs
-
-#### contexts
-Mỗi context có các relative paths (sẽ được prefix với base paths):
-- `app[]`: Array các thư mục app sources (sẽ copy vào compiled.app)
-- `views{}`: Object namespace → view path mapping
-- `blade{}`: Object namespace → blade output path mapping
-- `compiled.views`: Temp views output directory
-- `compiled.app`: Temp app output directory
-- `compiled.registry`: Registry file path
-
-**Lưu ý:** `default` context không phải là context thật, dùng khi không chỉ định context.
-## Cách Sử Dụng
-
-### 1. Installation
 ```bash
-npm install @saolabs/compiler
-# hoặc local install để test
-cd /path/to/saola-compiler && npm pack
-cd /path/to/your-project && npm install ../saola-compiler/saolabs-compiler-1.0.0.tgz
+composer test                 # PHPUnit, không cần Python
+./tests/Parity/run-all.sh     # parity cục bộ, cần thư mục oracle bị ignore
 ```
 
-### 2. CLI Commands
+## Trạng thái parity
+
+Bản PHP phải khớp **từng byte** với compiler Python. Đã chứng minh:
+
+```
+hydrate-id/    ✅  26.960 / 26.960     mã hoá id, 4 mode
+                                       6.740 base_id — trong đó 3.750 id THẬT
+                                       bóc từ cả 56 view production
+id-generator/  ✅ 100.000 / 100.000    bộ đếm theo scope
+                                       5 seed × 20.000 thao tác ngẫu nhiên
+expression/    ✅     750 / 750        chuyển biểu thức
+                                       587 biểu thức THẬT bóc bằng spy gài vào
+                                       php_to_js() + 163 ca tổng hợp nhắm nhánh
+source-split/  ✅      85 / 85         tách file .sao         (oracle: JS)
+balanced/      ✅     240 / 240        quét ngoặc              (oracle: JS)
+symbol-collector/ ✅   85 / 85         bảng ký hiệu            (oracle: JS)
+preprocessor/  ✅      85 / 85         Saola Syntax → Blade    (oracle: JS)
+common-utils/  ✅     245 / 245        ScopedStyle, ChildrenSlot,
+                                       ImportParser, TemplateStructure (oracle: PY)
+declarations/  ✅      85 / 85         DeclarationTracker      (oracle: PY)
+                                       56 file .sao thật + 29 fixture ca biên
+import-tags/   ✅      62 / 62         ImportTagResolver       (oracle: PY)
+                                       26 ca tổng hợp + 36 lượt trên view thật
+hydrate-proc/ ✅     408 / 408        marker/class × 4 id mode (oracle: PY)
+blade-emit/   ✅      85 / 85         56 view thật + 29 fixture (oracle: PY)
+```
+
 ```bash
-# Compile specific context
-npx sao-compile web
-npx sao-compile admin
-
-# Compile all contexts (skips 'default')
-npx sao-compile all
-
-# Watch mode
-npx sao-compile web --watch
-
-# Show help
-npx sao-compile --help
+./tests/Parity/run-all.sh     # chỉ có trong workspace chuyển đổi cục bộ
 ```
 
-### 3. Quy Trình Compile
-
-**Input Structure:**
-```
-resources/sao/
-├── web/
-│   ├── app/              ← App sources
-│   │   ├── helpers/
-│   │   └── services/
-│   └── views/            ← .sao files
-│       └── pages/
-│           ├── home.sao
-│           └── about.sao
-└── admin/
-    ├── app/
-    └── views/
-```
-
-**Output Structure:**
-```
-resources/
-├── views/                ← Blade outputs
-│   ├── web/
-│   │   └── pages/
-│   │       ├── home.blade.php
-│   │       └── about.blade.php
-│   └── admin/
-└── js/temp/              ← JS temp outputs
-    ├── web/
-    │   ├── app/          ← Copied from sources
-    │   │   ├── helpers/
-    │   │   └── services/
-    │   └── views/        ← Compiled JS
-    │       ├── WebPagesHome.js
-    │       └── WebPagesAbout.js
-    └── admin/
-```
-
-### 4. Path Resolution
-
-Compiler tự động resolve paths:
-```
-views:  paths.saoView + context.views[namespace]
-        → resources/sao + web/views
-        → resources/sao/web/views
-
-blade:  paths.bladeView + context.blade[namespace]
-        → resources/views + web
-        → resources/views/web
-
-temp:   paths.compiled + context.compiled.views
-        → resources/js/temp + web/views
-        → resources/js/temp/web/views
-```
-
-# Watch mode (development)
-npm run dev:web
-npm run dev:admin
-
-# Or run CLI directly
-onejs-build web
-onejs-build admin --watch
-```
-
-## Input: .sao File Format
-
-File `.sao` có 4 phần:
-
-```one
-@useState($isOpen, false)
-@const($API_URL = '/api/users')
-
-<blade>
-<div class="component" @click($setIsOpen(!$isOpen))>
-    Status: {{ $isOpen ? 'Open' : 'Closed' }}
-</div>
-</blade>
-
-<script setup>
-    export default {
-        toggle() {
-            setIsOpen(!isOpen);
-        }
-    }
-</script>
-
-<style scoped>
-    .component {
-        padding: 10px;
-    }
-</style>
-```
-
-## Output Structures
-
-### Blade Output (resources/views/web/admin/users/List.blade.php)
-```blade
-@useState($isOpen, false)
-<div class="component" @click(...)>
-    Status: {{ $isOpen ? 'Open' : 'Closed' }}
-</div>
-```
-
-### JavaScript Output (resources/sao/js/temp/web/views/WebAdminUsersList.js)
-```javascript
-class WebAdminUsersListView extends View {
-    constructor(App, systemData) {
-        super(__VIEW_PATH__, __VIEW_TYPE__);
-        this.__ctrl__.setApp(App);
-    }
-
-    __setup__(__data__, systemData) {
-        // 8-step initialization process
-        // ... state management
-        // ... lifecycle callbacks
-        // ... render function
-    }
-}
-
-export function WebAdminUsersList(data, systemData) {
-    const App = app.make("App");
-    const view = new WebAdminUsersListView(App, systemData);
-    view.__setup__(data, systemData);
-    return view;
-}
-```
-
-### Registry Output (resources/sao/js/temp/web/registry.js)
-```javascript
-export const ViewRegistry = {
-    'web.admin.users.List': () => import('./views/WebAdminUsersList.js'),
-    'web.pages.Home': () => import('./views/WebPagesHome.js'),
-    // ... more views
-};
-```
-
-## Directory Structure Sync
-
-**CRITICAL**: Cấu trúc folder PHẢI đồng bộ giữa input và Blade output
+## Đã có gì
 
 ```
-Input:  resources/sao/app/web/views/admin/users/List.sao
-                      └─context─┘ └─folder path──┘
-
-Output: resources/views/web/admin/users/List.blade.php
-             └─context─┘ └─folder path──┘
+src/
+├── Support/
+│   ├── Re.php                  bọc preg — lỗi thành exception, không null im lặng
+│   ├── RegexException.php
+│   └── PyStr.php               vị từ chuỗi kiểu Python (isDigit/isAlnum unicode)
+├── Hydration/
+│   ├── IdMode.php              enum: terse | compact | md5 | raw
+│   ├── HydrateId.php           mã hoá id (hàm thuần — bất biến I2)
+│   ├── HydrateIdScope.php      bộ đếm cho một cấp trong cây
+│   ├── HydrateIdGenerator.php  stack scope, cấp id theo vị trí node
+│   └── BladeHydrateProcessor.php hydrate class + marker SSR
+├── Emit/
+│   └── BladeEmitter.php        `.sao` đã ráp → output `.blade.php`
+├── Expr/
+│   ├── ExpressionCompiler.php  cửa vào: compile() và compileStatement()
+│   ├── HelperResolver.php      hàm trần → App.Helper.* / App.View.* / this.view.*
+│   ├── PhpJsBridge.php         mảng PHP, nối chuỗi, ->  (cầu nối bắt buộc, mọi file)
+│   └── KnownFunctions.php      danh sách tên hàm — dữ liệu thuần
+├── Source/
+│   ├── SourceSplitter.php      .sao → khai báo / template / script / style
+│   ├── SourceParts.php         value object kết quả
+│   ├── WrapperScanner.php      tìm <template>/<blade>/<sao:blade> cấp ngoài cùng
+│   └── WrapperTag.php          value object một thẻ bọc
+├── Declaration/
+│   ├── DeclarationTracker.php  quét @vars/@let/@const/@useState/@states/@computed
+│   └── Declaration.php         value object một khai báo
+├── Style/
+│   └── ScopedStyle.php         scope CSS lúc biên dịch (hash djb2 theo codepoint)
+├── Template/
+│   ├── ImportParser.php        @import → bảng thẻ→đường dẫn
+│   ├── ImportTagResolver.php   thẻ import → @include / @importInclude
+│   ├── ChildrenSlot.php        hợp đồng @children / {{ $children }}
+│   ├── TemplateStructure.php   kiểm cân bằng thẻ component
+│   └── ChildrenSlotError.php / TemplateStructureError.php
+└── Preprocessor/
+    ├── Preprocessor.php        cửa vào 2 lượt + nhận dạng cú pháp
+    ├── SymbolCollector.php     lượt 1 — quét khai báo
+    ├── SymbolTable.php         bảng ký hiệu có phân tầng scope
+    ├── Symbol.php / SymbolType.php
+    ├── ExpressionTransformer.php  lượt 2 — dịch biểu thức + template
+    ├── Tokenizer.php / Token.php / TokenType.php
+    ├── ImportAliases.php       gỡ alias @import cho đường dẫn view
+    ├── JsMethodMap.php         .length → count(), .join() → implode()
+    └── PhpBuiltins.php         hàm PHP có sẵn — không thêm '$'
 ```
 
-**Rules:**
-- ✅ Filename PHẢI giống nhau (.sao → .blade.php)
-- ✅ Folder path PHẢI đồng bộ hoàn toàn
-- ✅ Context prefix từ config
-- ❌ JavaScript không cần match folder structure (tên file JS đã include path)
+`Support/LiteralMask.php` giữ bất biến "khôi phục lớp ngoài trước lớp trong" —
+nơi duy nhất biết về thứ tự, sau khi bug rò `__STR_LIT_` được sửa.
 
-## Quy Trình Build 4 Bước
+**Phase 1, 2 và 3 đã xong.** Phase 3 đạt 8/8 module đang chạy.
 
-1. **KHỞI TẠO**: Đọc & parse sao.config.json
-2. **DUYỆT & PHÂN TÍCH**: Parse tất cả .sao files
-3. **SINH RA OUTPUT**: Generate Blade, JavaScript, Registry
-4. **BUNDLING**: Webpack bundle + minify cho production
+Xong: `ScopedStyle`, `ChildrenSlot`, `ImportParser`, `ImportTagResolver`,
+`TemplateStructure`, `DeclarationTracker`, `BladeHydrateProcessor`,
+`BladeEmitter`. `ReactiveWrapper` (709 dòng) không port: chỉ còn một import chết,
+không được khởi tạo/gọi; `BladeHydrateProcessor` đã thay thế nó trong pipeline.
 
-## State Management Patterns
+Hạ tầng cổng `blade-emit/` đã nối vào suite và đạt parity. Phạm vi thật của
+Phase 3 rộng hơn con số 2.429 dòng của `sao2blade/`:
+nó kéo theo `common/declaration_tracker` (718), `import_tag_resolver` (414),
+`import_parser` (287), `scoped_style`, `children_slot`, `template_structure` —
+tổng khoảng 4.500–5.000 dòng.
 
-### @useState
-```one
-@useState($count, 0)
-@useState($isOpen, false)
-```
+## Vì sao có package này
 
-### State Setters
-```javascript
-// Auto-generated setters
-setCount(count + 1);
-setIsOpen(!isOpen);
-```
+Compiler hiện tại là Python, được Node spawn ra — nên chỉ chạy được lúc build.
+Bản PHP mở ra: compile in-process, không cần Python3/Node ở production, và về sau
+là cài theme từ trang admin mà không cần redeploy.
 
-### Lifecycle Callbacks
-```javascript
-commitConstructorData()    // Initialize states
-updateVariableData(data)   // Update all variables
-updateVariableItemData()   // Update individual items
-prerender()               // Pre-render hook
-render()                  // Main render function
-```
+Phần thưởng ngoài dự kiến: bản Python duyệt cây **hai lần độc lập** (một cho
+Blade, một cho JS) rồi hai bên phải tự khớp marker id với nhau. Bản PHP duyệt
+**một lần, hai bộ phát mã**, dùng chung một allocator — marker desync trở thành
+trạng thái không biểu diễn được.
 
-## Directives Supported
+## Chuẩn code
 
-### Event Binding
-- `@click(handler)`
-- `@input(handler)`
-- `@change(handler)`
-- `@submit(handler)`
-- `@keyup(handler)`, `@keydown(handler)`
-- `@focus(handler)`, `@blur(handler)`
-- `@mouseenter(handler)`, `@mouseleave(handler)`
+PSR-4 (`Saola\Compiler\` → `src/`), PSR-12, `declare(strict_types=1)` mọi file,
+`final` mặc định, không static mang trạng thái. Chi tiết:
+[docs/06-coding-standards.md](docs/06-coding-standards.md).
 
-### Data Binding
-- `@bind($var)` - Two-way binding
-- `@val($var)` - Value binding
-- `@checked($var)` - Checkbox binding
-- `@selected($var)` - Select option binding
-
-### Conditional & Looping
-- `@if`, `@elseif`, `@else`, `@endif`
-- `@foreach`, `@endforeach`
-- `@for`, `@endfor`
-- `@while`, `@endwhile`
-
-### Attributes & Styling
-- `@attr([...])` - Dynamic attributes
-- `@class([...])` - Dynamic classes
-- `@style([...])` - Dynamic styles
-- `@show($condition)` - Toggle visibility
-- `@hide($condition)` - Hide element
-
-## Error Handling
-
-Compiler provides:
-- ✅ Syntax error detection
-- ✅ Line and column references
-- ✅ Helpful error messages
-- ✅ Validation at compile time
-- ✅ Warnings for common issues
-
-## Performance Optimizations
-
-- ✅ Incremental builds (watch mode)
-- ✅ File hash comparison
-- ✅ Dependency tracking
-- ✅ Cascading rebuilds when imports change
-- ✅ Caching of parsed ASTs
-
-## Troubleshooting
-
-### sao.config.json not found
 ```bash
-# Create the file at project root
-cat > sao.config.json << 'EOF'
-{
-  "root": "resources/sao/app",
-  ...
-}
-EOF
+php -l $(find src -name '*.php')      # cú pháp
+composer dump-autoload -o --strict-psr   # PSR-4
+./tests/Parity/run-all.sh             # parity cục bộ (bị Git ignore)
 ```
 
-### Context not found
-Check that context name in sao.config.json matches CLI argument:
-```bash
-onejs-build web  # 'web' must be in config.contexts
-```
+## Tài liệu
 
-### Files not being compiled
-- Check file has .sao extension
-- Verify file is in paths specified in sao.config.json
-- Run compiler with explicit context: `onejs-build web`
-
-## Development
-
-### Run tests
-```bash
-npm test
-```
-
-### Debug mode
-```bash
-DEBUG=saolabs:* sao-build web
-```
-
-## License
-
-MIT
+| Doc | Nội dung |
+|---|---|
+| [00-overview.md](docs/00-overview.md) | Mục tiêu, quyết định đã chốt, câu hỏi mở |
+| [01-architecture.md](docs/01-architecture.md) | Pipeline, bản đồ module, phạm vi port |
+| [02-public-api.md](docs/02-public-api.md) | `SaolaCompiler` — API dùng chung cho Node + web |
+| [03-directives.md](docs/03-directives.md) | Cơ chế đăng ký directive |
+| [04-runtime-compile.md](docs/04-runtime-compile.md) | Compile runtime, cài theme *(Phase 7)* |
+| [05-roadmap.md](docs/05-roadmap.md) | Lộ trình, cổng parity, bẫy khi port |
+| [06-coding-standards.md](docs/06-coding-standards.md) | Chuẩn PSR + quy ước riêng |
+| `tests/Parity/README.md` *(local, ignored)* | Cách hoạt động của cổng đối chiếu chuyển đổi |
