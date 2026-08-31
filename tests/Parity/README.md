@@ -13,7 +13,7 @@ Mỗi cổng có ba phần cùng chung một hợp đồng stdin/stdout:
 
 | File | Vai trò |
 |---|---|
-| `oracle.py` | Chạy bằng **compiler Python thật** trong `compiler/src/` — đây là chuẩn |
+| `oracle.py` | Chạy bằng **compiler Python thật** trong `builder/.reference/python/src/` — đây là chuẩn |
 | `subject.php` | Chạy bằng bản PHP trong `src/` |
 | `run.sh` | Nạp input cho cả hai, `diff` kết quả. Lệch một byte là hỏng |
 
@@ -60,7 +60,7 @@ các nhánh biến đổi.
 ### `source-split/` — tách file `.sao`
 
 **Oracle ở đây là JAVASCRIPT**, không phải Python: `parseSaoFile` nằm trong
-`compiler/src/index.js`. Xem [docs/01-architecture.md §3](../../docs/01-architecture.md).
+`builder/src/index.js`. Xem [docs/01-architecture.md §3](../../docs/01-architecture.md).
 
 56 file thật + 16 fixture ép ca biên: thẻ bọc lồng nhau, hai thẻ cấp ngoài cùng,
 thẻ không đóng, khối `@ssr`, khai báo trong thẻ bọc, ngoặc lồng, BOM + khoảng
@@ -120,7 +120,7 @@ bằng việc examples CŨNG chạy qua `full-pipeline`.
 
 ### `node-transport/` — đường vận chuyển Node↔PHP
 
-Cổng duy nhất chạy `compiler/src/index.js` THẬT. Mọi cổng khác gọi thẳng
+Cổng duy nhất chạy `builder/src/index.js` THẬT. Mọi cổng khác gọi thẳng
 `bin/saoc` hoặc `SaolaCompiler::compile()`, nên vùng Node spawn PHP → giải mã
 stdout → ráp registry → ghi file không được ai kiểm. Bug ⑤ (vỡ UTF-8 ở ranh
 giới chunk) sống đúng trong vùng đó và **lọt qua 28 cổng xanh**.

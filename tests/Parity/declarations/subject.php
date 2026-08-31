@@ -15,7 +15,7 @@ function repoRoot(): string
     $dir = __DIR__;
     while ($dir !== dirname($dir)) {
         $dir = dirname($dir);
-        if (is_file($dir . '/compiler/src/index.js')) {
+        if (is_file($dir . '/builder/src/index.js')) {
             return $dir;
         }
     }
