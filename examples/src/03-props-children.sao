@@ -1,0 +1,11 @@
+{{-- @props nhận dữ liệu từ cha; @children là điểm chèn nội dung con --}}
+@props({
+    title: '',
+    tone: 'default'
+})
+<template>
+    <article @class({'card', 'card-accent': tone === 'accent'})>
+        <h2>{{ title }}</h2>
+        <div class="card-body">@children</div>
+    </article>
+</template>

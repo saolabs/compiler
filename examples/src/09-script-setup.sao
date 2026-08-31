@@ -1,0 +1,11 @@
+{{-- method trong <script setup> gọi qua this.view, không rơi vào App.Helper --}}
+@states({ n: 0 })
+<script setup>
+export default {
+    mounted() { console.log('mounted'); },
+    double(x) { return x * 2; }
+}
+</script>
+<template>
+    <button @click(setN(double(n)))>Nhân đôi: {{ n }}</button>
+</template>

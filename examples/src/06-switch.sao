@@ -1,0 +1,13 @@
+@states({ runtime: 'blade' })
+<template>
+    @switch(runtime)
+        @case('blade')
+            <span>Server</span>
+            @break
+        @case('js')
+            <span>Client</span>
+            @break
+        @default
+            <span>Không rõ</span>
+    @endswitch
+</template>

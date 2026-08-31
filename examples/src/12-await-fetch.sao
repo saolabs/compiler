@@ -1,0 +1,7 @@
+{{-- @await/@fetch bật prerender: SSR chờ dữ liệu trước khi render --}}
+@props({ users: [] })
+@await
+@fetch('/api/users')
+<template>
+    <div>Có {{ users.length }} người dùng</div>
+</template>

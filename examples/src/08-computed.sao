@@ -1,0 +1,6 @@
+{{-- @computed là state dẫn xuất, có memo hoá --}}
+@states({ price: 100, qty: 2 })
+@computed(total = price * qty)
+<template>
+    <p>Tổng: {{ total }}</p>
+</template>

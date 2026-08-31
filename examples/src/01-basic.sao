@@ -1,0 +1,7 @@
+{{-- HTML tĩnh: không state, không directive --}}
+<template>
+    <section class="hero">
+        <h1>Xin chào Saola</h1>
+        <p>Trang tĩnh đơn giản nhất.</p>
+    </section>
+</template>

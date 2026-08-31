@@ -1,0 +1,31 @@
+@props({
+    label: '',
+    value: 0,
+    items: ['']
+})
+<template>
+    <div class="my-4">
+        <label>{{ label }}</label>
+        <input type="text" v-model="value">
+    </div>
+    <div class="mt-4">
+        <ul>
+            @foreach (items as item)
+                <li :key="item">{{ item }}</li>
+            @endforeach
+        </ul>
+    </div>
+    <div 
+        @class({
+            'bg-red-500': value < 10,
+            'bg-green-500': value >= 10,
+            'bg-blue-500': value >= 20
+        })
+        @style({
+            'color': value > 10 ? 'blue' : 'red',
+            'font-size': value + 'px'
+        })
+    >
+        {{ value }}
+    </div>
+</template>

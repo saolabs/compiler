@@ -1,0 +1,134 @@
+@import(__template__ + 'users.item' as UserItem)
+@import(__template__ + 'users.list' as UserList)
+@import(__template__ + 'forms.user-form')
+@import(__template__ + 'users.group' as UserGroup)
+
+@props({
+    name: 'Hello',
+    age: 18,
+    items: []
+})
+@vars(users = [{id: 1, name: 'Lâm', email: 'lam#domain.com'}, {id: 2,name: 'Hồng', email: "hong#domain.com"}], title = "Hồ sơ người dùng")
+
+@let(
+    status = 1,
+    article = {
+        title: "Bài viết đầu tiên",
+        content: "Nội dung bài viết",
+        author: "Lâm",
+        createdAt: "2022-01-01",
+        updatedAt: "2022-01-01"
+    }
+)
+
+@states({
+    formData : {
+        name: name,
+        age: age
+    },
+    count: 0
+})
+
+@computed(statusLabel = status === 1 ? 'Nháp' : (status === 2 ? 'Đã xuất bản' : 'Không rõ'))
+
+@const(MAX_FOR_LOOP_COUNT = 100)
+@const([editingMode, setEditingMode] = useState(false))
+
+
+<template>
+    <div class="click-section">
+        <button type="button" @click(setCount(count + 1))>
+            Click me ({{ count }})
+        </button>
+    </div>
+    <div>
+        @if(editingMode)
+            <div class="editor-section">
+                <h1>{{ name }} - {{ age }}</h1>
+                <user-form :user="{name:name,age:age}" />
+            </div>
+        @else
+            <div class="viewer-section">
+                <h1>{{ name }} - {{ age }}</h1>
+                <ul>
+                    @foreach (items as item)
+                        <li>{{ item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+    </div>
+    <div class="users">
+        @foreach (users as user)
+            @key(user.id)
+            <UserItem :user="user" :config="{editingMode}" />
+        @endforeach
+    </div>
+    <UserList :users="users" />
+    <UserGroup :users="users" title="Nhóm người dùng">
+        @foreach (users as user)
+            @key(user.id)
+            <UserItem :user="user" />
+        @endforeach
+    </UserGroup>
+
+    {{-- @switch/@case + @computed: status dùng để rẽ nhánh HIỂN THỊ, statusLabel
+         là state dẫn xuất (memo hoá) từ CHÍNH biến status đó — hai cách khác
+         nhau để phản ứng với cùng một giá trị. --}}
+    <div class="status-section">
+        @switch(status)
+            @case(1)
+                <span class="status-badge status-draft">Bản nháp</span>
+                @break
+            @case(2)
+                <span class="status-badge status-published">Đã xuất bản</span>
+                @break
+            @default
+                <span class="status-badge">Không rõ trạng thái</span>
+        @endswitch
+        <small>({{ statusLabel }})</small>
+    </div>
+
+    {{-- Tổ hợp @class + @style + @attr + :attr rút gọn CÙNG một element —
+         cả bốn nguồn phải gom vào đúng MỘT @class/@attr/@style, không phải
+         bốn directive rời rạc (xem docs/05-roadmap.md §8③). So sánh `>` bên
+         trong @class không được cắt nhầm thẻ (§8②). --}}
+    <article
+        class="article-card"
+        @class({'article-card--long': strlen(article.content) > 10})
+        @style({ 'border-color': status === 1 ? 'orange' : 'green' })
+        @attr({ 'data-status': status })
+        :title="article.title"
+    >
+        <h2>{{ article.title }}</h2>
+        <p>{{ article.content }}</p>
+        <small>{{ article.author }} — {{ article.createdAt }}</small>
+    </article>
+
+    {{-- Form: sự kiện client-side không có "modifier" rút gọn kiểu .prevent —
+         gọi thẳng event.preventDefault() bên trong handler khai ở
+         <script setup>. Trộn method của view (setStatus, handleFormSubmit)
+         với helper toàn cục (String) trong CÙNG một biểu thức. --}}
+    <form @submit(handleFormSubmit(event))>
+        <input
+            type="text"
+            :value="statusLabel"
+            @input(setStatus(Number(event.target.value)))
+        >
+        <button type="submit" :disabled="MAX_FOR_LOOP_COUNT < 1">
+            Lưu ({{ status }})
+        </button>
+    </form>
+</template>
+
+{{-- CHỈ MỘT khối <script> — SourceSplitter chỉ lấy match ĐẦU TIÊN, một khối
+     thứ hai sẽ mất nội dung âm thầm, không lỗi gì báo ra. --}}
+     
+<script setup>
+export default {
+    handleFormSubmit(event) {
+        event.preventDefault();
+    }
+}
+</script>
