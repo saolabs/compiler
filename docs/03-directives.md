@@ -49,7 +49,7 @@ và thứ tự cấp phát marker; cho ghi đè là mời bug hydration vào nh�
 
 | Tầng | Directive | Ghi đè? |
 |---|---|---|
-| **T0 — Khoá** | `@if @elseif @else @foreach @for @while @switch @case @default @break` `@startMarker @endMarker @startReactive @endReactive @pageStart @pageEnd @hydrate @out` | ❌ Không bao giờ. Đây là hình dạng AST và hợp đồng marker |
+| **T0 — Khoá** | `@if @elseif @else @foreach @for @while @switch @case @default @break` `@startMarker @endMarker @startReactive @endReactive @pageStart @pageEnd @out` | ❌ Không bao giờ. Đây là hình dạng AST và hợp đồng marker |
 | **T1 — Lõi** | `@useState @states @vars @props @let @const @computed @include @importInclude @children @extends @yield @section @block @wrapper @await @fetch @subscribe` | ⚠️ Chỉ ghi đè khi khai báo `override: true` tường minh. Có cảnh báo |
 | **T2 — Mở** | Mọi directive người dùng tự tạo: inline, attribute, block | ✅ Đây là mục tiêu thật của registry |
 

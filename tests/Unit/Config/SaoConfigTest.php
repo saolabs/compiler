@@ -10,7 +10,7 @@ use Saola\Compiler\Config\SaoConfig;
 use Saola\Compiler\Lang;
 
 /**
- * Luật đặt tên và đường dẫn PHẢI khớp `compiler/src/index.js::processSaoFile`.
+ * Luật đặt tên và đường dẫn PHẢI khớp `builder/src/index.js::processSaoFile`.
  *
  * Lệch một chữ là Node và `artisan sao:compile` ghi ra hai file khác nhau cho
  * cùng một view — và không cổng parity nào bắt được, vì bản Python không có

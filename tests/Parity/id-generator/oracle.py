@@ -32,7 +32,6 @@ DISPATCH = {
     'nextYield':          lambda g, a: g.next_yield(),
     'depth':              lambda g, a: g.get_depth(),
     'formatJsId':         lambda g, a: g.format_js_id(*a),
-    'formatBladeHydrate': lambda g, a: g.format_blade_hydrate(*a),
     'reset':              lambda g, a: g.reset(),
     'popScope':           lambda g, a: g.pop_scope(),
 }

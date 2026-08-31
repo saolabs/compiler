@@ -56,8 +56,6 @@ def generate(count: int, seed: int) -> list[dict]:
             depth += 1
         elif roll < 0.84:
             ops.append({'op': 'depth', 'args': []})
-        elif roll < 0.88:
-            ops.append({'op': 'formatBladeHydrate', 'args': ['div-1-output-1']})
         elif roll < 0.91:
             ops.append({'op': 'formatJsId', 'args': ['div-1-output-1']})
         elif roll < 0.94 and depth > 8:

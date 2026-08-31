@@ -50,7 +50,6 @@ while (($line = fgets(STDIN)) !== false) {
         'nextYield'          => $generator->nextYield(),
         'depth'              => $generator->depth(),
         'formatJsId'         => $generator->formatJsId($args[0]),
-        'formatBladeHydrate' => $generator->formatBladeHydrate($args[0]),
         'reset'              => $generator->reset(),
         'popScope'           => $generator->popScope(),
     };

@@ -201,21 +201,4 @@ final class HydrateIdGenerator
     {
         return '`' . $baseId . '`';
     }
-
-    /**
-     * Sinh directive @hydrate cho output Blade.
-     *
-     * Dùng nháy kép khi trong stack có scope vòng lặp, vì id lúc đó chứa nội
-     * suy PHP ("{$loop->index}") — nháy đơn sẽ không nội suy.
-     */
-    public function formatBladeHydrate(string $baseId): string
-    {
-        foreach ($this->scopeStack as $scope) {
-            if ($scope->loopVarBlade !== null) {
-                return '@hydrate("' . $baseId . '")';
-            }
-        }
-
-        return "@hydrate('" . $baseId . "')";
-    }
 }
