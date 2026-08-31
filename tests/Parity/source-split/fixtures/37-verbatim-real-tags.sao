@@ -1,0 +1,12 @@
+{{-- @verbatim chứa THẺ HTML THẬT: không được gắn id, không được bọc marker --}}
+@states({ title: 'thật' })
+<template>
+    <p>{{ title }}</p>
+    @verbatim
+    <div class="demo">
+        <pre><code>{{ title }} và @children giữ nguyên</code></pre>
+        <span :attr="x" @class({'a': b})>ví dụ cú pháp</span>
+    </div>
+    @endverbatim
+    <p>{{ title }}</p>
+</template>

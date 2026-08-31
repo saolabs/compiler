@@ -1,0 +1,8 @@
+@states({ items: [] })
+<template>
+@foreach(items as item)
+  <li>{{ __loop.index }} — {{ loop.index }} — {{ item }}</li>
+  <span>{{ __loop.first }} {{ loop.last }}</span>
+  <b>{{ loopFoo }} {{ myloop }} {{ x.loop }}</b>
+@endforeach
+</template>

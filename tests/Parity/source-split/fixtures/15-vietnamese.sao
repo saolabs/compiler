@@ -1,0 +1,5 @@
+@states({ tieuDe: 'Xin chào' })
+<template>
+  <h1>{{ tieuDe }} — có dấu tiếng Việt</h1>
+  <p>Đường dẫn: tài/liệu/tệp.php</p>
+</template>

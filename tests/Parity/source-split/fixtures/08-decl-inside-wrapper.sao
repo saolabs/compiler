@@ -1,0 +1,5 @@
+@states({ ngoai: 1 })
+<template>
+  @let(trong = 2)
+  <div>khai báo bên trong thẻ bọc KHÔNG được bóc ra</div>
+</template>

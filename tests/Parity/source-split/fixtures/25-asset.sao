@@ -1,0 +1,7 @@
+@asset(logo = 'images/logo.png')
+@assets({ theme: 'css/theme.css', sub: '/co/gach/dau.css' })
+<template>
+  <img src="{{ logo }}">
+  <link href="{{ theme }}">
+  <link href="{{ sub }}">
+</template>

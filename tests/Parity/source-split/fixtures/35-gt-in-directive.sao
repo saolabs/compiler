@@ -1,0 +1,10 @@
+{{-- '>' trong đối số directive không được cắt nhầm thẻ --}}
+@states({ n: 1, m: 2 })
+<template>
+    <div @class({'hot': n > 10})>so sánh trong @class</div>
+    <div @style({ width: n > 5 ? 100 : 50 })>ba ngôi trong @style</div>
+    <div @attr({ 'data-big': n >= m })>so sánh trong @attr</div>
+    <button @click(setN(n > 5 ? 1 : 0))>lồng ngoặc</button>
+    <img @attr({ src: n }) />
+    <div @class({'a': n < m, 'b': n > m})>hai so sánh</div>
+</template>

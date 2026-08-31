@@ -1,0 +1,7 @@
+<template>
+  <div>a</div>
+  <script>console.log('trong thẻ bọc — KHÔNG bóc');</script>
+  <style>.trong { color: blue }</style>
+</template>
+<script setup>const ngoai = 1;</script>
+<style>.ngoai { color: green }</style>

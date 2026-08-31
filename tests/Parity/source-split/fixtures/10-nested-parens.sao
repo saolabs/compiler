@@ -1,0 +1,3 @@
+@let([x, y] = useState(fn(a, (b))))
+@vars({ a: fn(g(1)), b: [1, (2)] })
+<div>{{ x }}</div>

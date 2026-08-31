@@ -1,0 +1,9 @@
+@states({ title: 'x' })
+<template>
+  {{-- comment: {{ title }} không được đổi --}}
+  @verbatim
+    <code>{{ title }} và {{ $title }} giữ nguyên</code>
+  @endverbatim
+  <div>{{ title }}</div>
+  {{-- có $$ và $& trong comment --}}
+</template>

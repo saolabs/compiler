@@ -1,0 +1,4 @@
+@props({ title: '' })
+<blade>
+  <h1>{{ title }}</h1>
+</blade>

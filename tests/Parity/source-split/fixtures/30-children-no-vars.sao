@@ -1,0 +1,3 @@
+<template>
+  <div class="slot-only">@children</div>
+</template>

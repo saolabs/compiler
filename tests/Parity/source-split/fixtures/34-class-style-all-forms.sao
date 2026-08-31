@@ -1,0 +1,8 @@
+{{-- Ca khó: class và style cùng lúc ở cả ba dạng --}}
+@states({ cond: true, w: 1, cls: 'dyn', sty: 'color:red' })
+<template>
+    <div class="a b" @class({'c': cond}) :class="cls">chỉ class</div>
+    <div style="margin:0" @style({ width: w }) :style="sty">chỉ style</div>
+    <div class="a" @class({'c': cond}) :class="cls"
+         style="margin:0" @style({ width: w }) :style="sty">cả hai</div>
+</template>

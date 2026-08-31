@@ -1,0 +1,9 @@
+@vars({
+  list: [
+    1,
+    2
+  ]
+})
+<template>
+  <div>{{ list }}@children</div>
+</template>

@@ -1,0 +1,17 @@
+{{-- Thẻ mở trải nhiều dòng vẫn phải được cấp hydrate id --}}
+@states({ n: 1, label: 'a' })
+<template>
+    <div
+        class="a"
+        @class({'hot': n > 10})
+        @attr({ 'data-n': n })
+        :title="label"
+    >
+        {{ n }}
+    </div>
+    <input
+        type="text"
+        @attr({ value: n })
+    />
+    <p>{{ n }}</p>
+</template>

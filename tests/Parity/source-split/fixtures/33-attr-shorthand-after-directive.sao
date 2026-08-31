@@ -1,0 +1,12 @@
+{{-- :attr phải hoạt động dù đứng SAU directive có '>' trong output --}}
+@states({ label: 'a', w: 1, k: 2, cond: true })
+<template>
+    <div @attr({ k: k }) :title="label">một dòng</div>
+    <div @style({ width: w }) :title="label">sau @style</div>
+    <div @class({'x': cond}) :title="label">sau @class có điều kiện</div>
+    <div
+        @attr({ k: k })
+        :title="label"
+        :data-w="w"
+    >nhiều dòng, nhiều :attr</div>
+</template>

@@ -1,0 +1,3 @@
+@const(A = 1)
+@const(A = 1)
+<div>hai khai báo giống hệt nhau — kiểm tra chỉ thay lần đầu</div>

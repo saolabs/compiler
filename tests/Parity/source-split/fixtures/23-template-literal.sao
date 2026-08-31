@@ -1,0 +1,9 @@
+@states({ name: 'Sao', n: 1 })
+<template>
+  <div>{{ `Xin chào ${name}` }}</div>
+  <div>{{ `a ${n + 1} b ${name} c` }}</div>
+  <div>{{ `không có nội suy` }}</div>
+  <div>{{ `` }}</div>
+  <div>{{ `có \` escape` }}</div>
+  <div>{{ `nháy ' đơn` }}</div>
+</template>

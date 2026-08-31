@@ -1,0 +1,6 @@
+@let(handler = function(e) { return e.target })
+@let(arrow = (a, b) => a + b)
+@let(short = x => x * 2)
+@let(khongPhaiHam = 1 + 2)
+@const(CB = () => nothing())
+<div>phân biệt function với giá trị thường</div>

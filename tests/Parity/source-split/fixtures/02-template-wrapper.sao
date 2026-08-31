@@ -1,0 +1,5 @@
+@states({ count: 0 })
+<template>
+  <div>Trong thẻ bọc</div>
+</template>
+<script setup>const y = 2;</script>

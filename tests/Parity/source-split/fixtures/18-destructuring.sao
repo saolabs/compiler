@@ -1,0 +1,4 @@
+@const([count, setCount] = useState(0))
+@const({host, port} = config)
+@let([a, b] = tach(x))
+<div>{{ count }} {{ host }} {{ a }}</div>

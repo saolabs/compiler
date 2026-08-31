@@ -1,0 +1,10 @@
+{{-- §21: thẻ bọc nêu làm VÍ DỤ trong chú thích không phải thẻ bọc thật.
+     Không che thì WrapperScanner lấy nhầm cái này, template THẬT bị bỏ qua
+     và view render nội dung chú thích.
+     <template><p>khong-duoc-render</p></template>
+--}}
+@states({ that: 1 })
+<template>
+    <p>{{ that }}</p>
+</template>
+{{-- @await và @fetch(gia = '/api') nêu trong chú thích cũng KHÔNG phải cờ thật --}}

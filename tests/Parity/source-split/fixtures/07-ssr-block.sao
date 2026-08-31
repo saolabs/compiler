@@ -1,0 +1,8 @@
+@states({ n: 1 })
+<template>
+  <div>luôn hiển thị</div>
+  @ssr
+  <div>chỉ có ở server</div>
+  @endssr
+  <div>sau khối ssr</div>
+</template>

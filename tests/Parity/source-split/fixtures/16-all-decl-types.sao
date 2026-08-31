@@ -1,0 +1,12 @@
+@useState($a, 0)
+@const(B = 1)
+@let(c = 2)
+@var(d = 3)
+@vars({ e: 4 })
+@state(f = 5)
+@props({ g: 6 })
+@states({ h: 7 })
+@import(Card from 'card')
+@asset('a.css')
+@assets(['b.css'])
+<div>đủ 11 loại khai báo</div>

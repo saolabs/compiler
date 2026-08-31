@@ -1,0 +1,5 @@
+@const(A = b == c)
+@const(B = d != e)
+@const(C = f >= g)
+@const(D = h => h)
+<div>= gán phải phân biệt với ==, !=, >=, =></div>

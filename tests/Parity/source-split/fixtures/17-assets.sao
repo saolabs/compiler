@@ -1,0 +1,3 @@
+@asset(logo = 'images/logo.png', theme = "css/theme.css")
+@assets({ icon: 'svg/icon.svg', font: 'fonts/inter.woff2' })
+<div>khai báo asset cả hai dạng</div>

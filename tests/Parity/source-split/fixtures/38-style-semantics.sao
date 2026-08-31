@@ -1,0 +1,11 @@
+{{-- @style: cú pháp Saola {thuộc-tính: giá-trị}.
+     Directive @style của core (StyleDirectiveService) nhận CẢ dạng Laravel
+     {'css text': điều kiện} — xem docs/05-roadmap.md §8 ④. --}}
+@states({ count: 5, c: 'red', n: 15, hidden: true })
+<template>
+    <i @style({ width: `${count * 10}%` })></i>
+    <div @style({ color: c, 'font-size': n })></div>
+    <div @style({ color: n > 10 ? 'blue' : 'red' })></div>
+    <div @style({ 'display: none': hidden })></div>
+    <div @style({ margin: 0 })></div>
+</template>

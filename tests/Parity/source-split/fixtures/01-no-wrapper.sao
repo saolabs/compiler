@@ -1,0 +1,6 @@
+@states({ count: 0 })
+<div>Không có thẻ bọc</div>
+<script setup>
+const x = 1;
+</script>
+<style>.a { color: red }</style>

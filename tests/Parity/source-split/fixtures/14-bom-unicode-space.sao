@@ -1,0 +1,4 @@
+﻿@states({ a: 1 })
+<template>
+   <div>BOM đầu file + non-breaking space</div> 
+</template>

@@ -1,0 +1,15 @@
+{{-- §15: biến đứng SAU một chuỗi ký tự bị mất dấu '$' ở Blade.
+     Nguyên nhân: '+' được đổi thành token PhpConcat có value CŨNG là '.',
+     nên khâu gắn '$' tưởng đó là dấu chấm truy cập thuộc tính.
+     Hệ quả: `'x' . a` → PHP 8 Fatal "Undefined constant a" khi SSR,
+     trong khi CSR chạy đúng. --}}
+@states({ a: 'x', b: 'y' })
+<template>
+    <p>{{ a + '-' + b }}</p>
+    <p>{{ 'đầu' + a + 'giữa' + b }}</p>
+    <p>{{ a + "-" + b }}</p>
+    {{-- không có chuỗi ⇒ '+' vẫn là cộng số học, KHÔNG đổi thành '.' --}}
+    <p>{{ a + b }}</p>
+    {{-- truy cập thuộc tính vẫn phải giữ nguyên khi trộn với nối chuỗi --}}
+    <div :title="a + '-' + b">t</div>
+</template>

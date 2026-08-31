@@ -1,0 +1,4 @@
+@states({ msg: 'có \'nháy\' lồng', other: "có \"nháy kép\" lồng" })
+@let(re = 'a,b,c')
+@vars(x, y)
+<div>{{ msg }}</div>

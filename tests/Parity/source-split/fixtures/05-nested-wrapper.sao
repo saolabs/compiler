@@ -1,0 +1,6 @@
+<template>
+  <div>ngoài</div>
+  <template>
+    <span>trong — vẫn là HTML, không phải thẻ bọc</span>
+  </template>
+</template>

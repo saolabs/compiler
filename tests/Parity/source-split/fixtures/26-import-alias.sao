@@ -1,0 +1,9 @@
+@import(__layout__ + 'docs.base' as layout)
+@import({ counter: 'web.components.counter' })
+@import(__template__ + 'card')
+@extends(layout)
+<template>
+  @include(counter, { n: 1 })
+  <counter :count="1"></counter>
+  <div :title="1 + 2" ::keep="raw" x-bind:id="2">nội dung</div>
+</template>

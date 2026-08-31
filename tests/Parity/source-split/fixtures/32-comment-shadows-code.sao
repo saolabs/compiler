@@ -1,0 +1,17 @@
+{{-- §16: ví dụ minh hoạ TRONG comment bị coi là mã thật.
+     Trang tài liệu dính nặng nhất — nó tồn tại để in ra cú pháp Saola.
+     @props({giaProp: 1})
+     @vars(giaVar = 2)
+     @const(GIA_CONST = 3)
+     @import(__template__ + 'u.giaImport')
+     <style scoped>.gia{color:red}</style>
+     <script setup>export default { giaMethod(){} }</script>
+--}}
+@states({ x: 1 })
+<template>
+    <p>{{ x }}</p>
+    {{-- @states({giaTrongTemplate: 9}) và <style>.gia2{}</style> --}}
+</template>
+<style scoped>
+.that { color: green }
+</style>

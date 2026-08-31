@@ -1,0 +1,16 @@
+@states({ items: [], text: '' })
+<template>
+  <div>{{ items.length }}</div>
+  <div>{{ text.upper() }}</div>
+  <div>{{ text.lower() }}</div>
+  <div>{{ items.join(', ') }}</div>
+  <div>{{ items.includes(3) }}</div>
+  <div>{{ text.contains('a') }}</div>
+  <div>{{ text.split(',') }}</div>
+  <div>{{ items.map(fn) }}</div>
+  <div>{{ items.filter(fn) }}</div>
+  <div>{{ text.replace('a', 'b') }}</div>
+  <div>{{ items.khongCoAnhXa() }}</div>
+  <div>{{ Math.max(1, 2) }}</div>
+  <div>{{ JSON.stringify(items) }}</div>
+</template>

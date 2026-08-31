@@ -1,0 +1,6 @@
+<template>
+  <div>thẻ bọc thứ nhất — được giữ</div>
+</template>
+<template>
+  <div>thẻ bọc thứ hai — bị bỏ</div>
+</template>

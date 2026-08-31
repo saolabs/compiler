@@ -1,0 +1,4 @@
+@await
+<template>
+  <div class="slot">@children</div>
+</template>

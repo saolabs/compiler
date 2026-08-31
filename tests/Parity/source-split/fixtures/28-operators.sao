@@ -1,0 +1,13 @@
+@states({ a: 1, b: 2, s: 'x' })
+<template>
+  <div>{{ a + b }}</div>
+  <div>{{ s + 'hậu tố' }}</div>
+  <div>{{ 'tiền tố' + s }}</div>
+  <div>{{ (a + b) + 'x' }}</div>
+  <div>{{ a > b ? 'yes' : 'no' }}</div>
+  <div>{{ { k: a, j: b } }}</div>
+  <div>{{ a > b ? { k: 1 } : { k: 2 } }}</div>
+  <div>{{ a ?? b }}</div>
+  <div>{{ a === b }}</div>
+  <div>{{ !a }}</div>
+</template>

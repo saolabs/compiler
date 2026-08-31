@@ -1,0 +1,12 @@
+{{-- Thẻ <blade> KHÔNG còn nghĩa "giữ nguyên PHP thô" — nó hoạt động y hệt
+     <template>. Cổng hồi quy: nếu ai vô tình thêm lại logic phân biệt, ca này
+     sẽ đỏ ngay (trước đây file này viết $count/$if($count>0) kiểu PHP thuần
+     và mong đợi giữ nguyên — giờ mong đợi NGƯỢC LẠI: transform như bình
+     thường). Xem docs/05-roadmap.md §11. --}}
+@states({ count: 0 })
+<blade>
+  <div>{{ count }}</div>
+  @if(count > 0)
+    <span>{{ count * 2 }}</span>
+  @endif
+</blade>

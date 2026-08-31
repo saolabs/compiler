@@ -1,0 +1,16 @@
+{{-- §14: nội dung nằm CÙNG DÒNG với directive. Trước khi sửa, sao2js bỏ hẳn
+     nội dung còn sao2blade render nhưng không cấp hydrate id → SSR ≠ CSR.
+     Mỗi directive dưới đây từng hỏng riêng và được tìm ra bằng sweep. --}}
+@states({ x: 1, items: [] })
+<template>
+    <div>
+        @if(x > 0)<span>trong if</span>@endif
+        @foreach(items as item)<i>{{ item }}</i>@endforeach
+        @if(x > 1)<b>a</b>@else<em>b</em>@endif
+        @foreach(items as it)@key(it.id)<li>{{ it.name }}</li>@endforeach
+        @section('s')<h3>trong section</h3>@endsection
+        @block('bl')<h4>trong block</h4>@endblock
+    </div>
+    {{-- '>' trong ngoặc là toán tử so sánh, KHÔNG phải đóng thẻ (§8② lặp lại) --}}
+    <p @class({'on': x > 0})>directive thuộc tính không bị đụng</p>
+</template>
