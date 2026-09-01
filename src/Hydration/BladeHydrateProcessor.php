@@ -49,6 +49,15 @@ final class BladeHydrateProcessor
         'pointerenter' => true, 'pointerleave' => true, 'pointercancel' => true,
     ];
 
+    /**
+     * Directive chỉ có nghĩa ở CSR — Blade không đăng ký, nên phải BỎ khỏi
+     * output giống hệt event. Để lọt thì `@transition('row')` in nguyên văn
+     * vào thẻ mở, thành một attribute rác trong HTML SSR.
+     *
+     * @var array<string, true>
+     */
+    private const CSR_ONLY_DIRECTIVES = ['transition' => true];
+
     /** @var array<string, true> */
     private array $stateVariables;
 
@@ -576,7 +585,10 @@ final class BladeHydrateProcessor
             }
 
             $remaining = substr($attrsSource, $pos);
-            if (Re::match('/^@(\w+)\s*\(/u', $remaining, $directive)) {
+            if (Re::match('/^@(\w+)((?:\.\w+)*)\s*\(/u', $remaining, $directive)) {
+                // Modifier phải nằm trong match: `\w+` không ăn dấu chấm, nên
+                // `@click.stop(...)` từng rơi xuống nhánh boolean-attribute và
+                // sinh ra `@attr(['click.stop' => true, 'removeUser' => true])`.
                 $directiveName = strtolower($directive[1]);
                 $parenStart = $pos + strlen($directive[0]) - 1;
                 $content = $this->extractParens($attrsSource, $parenStart);
@@ -585,7 +597,7 @@ final class BladeHydrateProcessor
                     $isEvent = isset(self::EVENT_NAMES[$directiveName])
                         || (str_starts_with($directiveName, 'on')
                             && isset(self::EVENT_NAMES[substr($directiveName, 2)]));
-                    if (! $isEvent) {
+                    if (! $isEvent && ! isset(self::CSR_ONLY_DIRECTIVES[$directiveName])) {
                         $directiveParts[] = substr($attrsSource, $pos, $fullLength);
                     }
                     $pos += $fullLength;
