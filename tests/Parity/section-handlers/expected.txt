@@ -1,0 +1,15 @@
+{"name":"section-01","result":{"output":["${App.Helper.section('title', 'Hello', 'string')}"],"returns":[true],"sections":["${App.Helper.section('title', 'Hello', 'string')}"],"stack":[]}}
+{"name":"section-02","result":{"output":["${App.Helper.section('title', \"Hello \\\"Saola\\\"\", 'string')}"],"returns":[true],"sections":["${App.Helper.section('title', \"Hello \\\"Saola\\\"\", 'string')}"],"stack":[]}}
+{"name":"section-03","result":{"output":["${App.Helper.section('title', name+' | App', 'string')}"],"returns":[true],"sections":["${App.Helper.section('title', name+' | App', 'string')}"],"stack":[]}}
+{"name":"section-04","result":{"output":["${App.Helper.section('title', App.Helper.fn(a, App.Helper.nested(1, 2)), 'string')}"],"returns":[true],"sections":["${App.Helper.section('title', App.Helper.fn(a, App.Helper.nested(1, 2)), 'string')}"],"stack":[]}}
+{"name":"section-05","result":{"output":["${App.Helper.section('empty', '', 'string')}"],"returns":[true],"sections":["${App.Helper.section('empty', '', 'string')}"],"stack":[]}}
+{"name":"section-06","result":{"output":["${App.Helper.section('body', `Hello`, 'string')}"],"returns":[true,null,true],"sections":["${App.Helper.section('body', `Hello`, 'string')}"],"stack":[]}}
+{"name":"section-07","result":{"output":["${App.Helper.section('body', `<b>Hello</b>`, 'html')}"],"returns":[true,null,true],"sections":["${App.Helper.section('body', `<b>Hello</b>`, 'html')}"],"stack":[]}}
+{"name":"section-08","result":{"output":["${App.Helper.section('body', `A`, 'string')}"],"returns":[true,null,null,null,true],"sections":["${App.Helper.section('body', `A`, 'string')}"],"stack":[]}}
+{"name":"section-09","result":{"output":[],"returns":[true],"sections":[],"stack":[]}}
+{"name":"section-10","result":{"output":["${this.__block('main', {}, `<main>x</main>`)}"],"returns":[true,null,true],"sections":["${this.__block('main', {}, `<main>x</main>`)}"],"stack":[]}}
+{"name":"section-11","result":{"output":["${this.__block('main', {\"class\": class}, `body`)}"],"returns":[true,null,true],"sections":["${this.__block('main', {\"class\": class}, `body`)}"],"stack":[]}}
+{"name":"section-12","result":{"output":["${this.__block('@App.Helper.block(dynamic', {}, `body`)}"],"returns":[true,null,true],"sections":["${this.__block('@App.Helper.block(dynamic', {}, `body`)}"],"stack":[]}}
+{"name":"section-13","result":{"output":[],"returns":[true],"sections":[],"stack":[]}}
+{"name":"section-14","result":{"output":[],"returns":[false,false],"sections":[],"stack":[]}}
+{"name":"section-15","result":{"output":["${App.Helper.section('outer', `before\n${App.Helper.section('inner', `inside`, 'string')}`, 'string')}"],"returns":[true,null,true,null,true,true],"sections":["${App.Helper.section('inner', `inside`, 'string')}","${App.Helper.section('outer', `before\n${App.Helper.section('inner', `inside`, 'string')}`, 'string')}"],"stack":[]}}

@@ -1,0 +1,15 @@
+{"name": "section-01", "operations": [{"op": "section", "line": "@section('title', 'Hello')"}]}
+{"name": "section-02", "operations": [{"op": "section", "line": "@section(\"title\", \"Hello \\\"Saola\\\"\")"}]}
+{"name": "section-03", "operations": [{"op": "section", "line": "@section('title', $name . ' | App')"}]}
+{"name": "section-04", "operations": [{"op": "section", "line": "@section('title', fn($a, nested(1, 2)))"}]}
+{"name": "section-05", "operations": [{"op": "section", "line": "@section('empty', )"}]}
+{"name": "section-06", "operations": [{"op": "section", "line": "@section('body')"}, {"op": "append", "value": "Hello"}, {"op": "endsection"}]}
+{"name": "section-07", "operations": [{"op": "section", "line": "@section('body')"}, {"op": "append", "value": "<b>Hello</b>"}, {"op": "endsection"}]}
+{"name": "section-08", "operations": [{"op": "section", "line": "@section('body')"}, {"op": "append", "value": false}, {"op": "append", "value": "A"}, {"op": "append", "value": 1}, {"op": "endsection"}]}
+{"name": "section-09", "operations": [{"op": "endsection"}]}
+{"name": "section-10", "operations": [{"op": "block", "line": "@block('main')"}, {"op": "append", "value": "<main>x</main>"}, {"op": "endblock"}]}
+{"name": "section-11", "operations": [{"op": "block", "line": "@block('main', ['class' => $class])"}, {"op": "append", "value": "body"}, {"op": "endblock"}]}
+{"name": "section-12", "operations": [{"op": "block", "line": "@block($dynamic)"}, {"op": "append", "value": "body"}, {"op": "endblock"}]}
+{"name": "section-13", "operations": [{"op": "endblock"}]}
+{"name": "section-14", "operations": [{"op": "section", "line": "broken"}, {"op": "block", "line": "broken"}]}
+{"name": "section-15", "operations": [{"op": "section", "line": "@section('outer')"}, {"op": "append", "value": "before"}, {"op": "section", "line": "@section('inner')"}, {"op": "append", "value": "inside"}, {"op": "endsection"}, {"op": "endsection"}]}

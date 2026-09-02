@@ -1,9 +1,10 @@
 # 01 — Kiến trúc
 
 > **Ghi chú vị trí (sau khi di trú thư viện):** các đường `compiler/src/*` bên dưới
-> là layout của bản Python/JS **cũ**. Bản Python nay chỉ còn làm oracle tại
-> `builder/.reference/python/src/`, còn `compiler/src/index.js` đã thành
-> `builder/src/index.js`. Thư mục `compiler/` hiện là package PHP `saola/compiler`.
+> là layout của bản Python/JS **cũ**. Bản Python **đã gỡ hẳn** — các cổng trong
+> `tests/Parity/` nay so với ảnh chụp golden thay vì với oracle Python, và dự án
+> chỉ còn PHP và JS/TS. `compiler/src/index.js` đã thành `builder/src/index.js`;
+> thư mục `compiler/` hiện là package PHP `saola/compiler`.
 
 ## 1. Pipeline hôm nay (Node + Python)
 

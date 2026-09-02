@@ -11,7 +11,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-"$DIR/cases.py" > "$WORK/cases.jsonl" 2>/dev/null
+cat "$DIR/cases.jsonl" > "$WORK/cases.jsonl" 2>/dev/null
 TOTAL=$(wc -l < "$WORK/cases.jsonl" | tr -d ' ')
 echo "Corpus: $TOTAL chuỗi × 5 phép quét = $((TOTAL * 5))"
 

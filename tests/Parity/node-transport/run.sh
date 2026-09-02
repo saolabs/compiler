@@ -29,7 +29,7 @@ fi
 SANDBOX="$(mktemp -d)"
 trap 'rm -rf "$SANDBOX"' EXIT
 
-"$DIR/make-corpus.py" "$SANDBOX" 2>&1 | sed 's/^/  /'
+"$DIR/make-corpus.js" "$SANDBOX" 2>&1 | sed 's/^/  /'
 echo "Corpus: $(find "$SANDBOX/resources/saola" -name '*.sao' | wc -l | tr -d ' ') view trong sandbox"
 
 ( cd "$SANDBOX" && node "$CLI" web ) > "$SANDBOX/build1.log" 2>&1 || {

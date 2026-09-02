@@ -1,0 +1,505 @@
+{"name": "synthetic-01", "source": "@auth"}
+{"name": "synthetic-02", "source": "@guest"}
+{"name": "synthetic-03", "source": "@endauth"}
+{"name": "synthetic-04", "source": "@endguest"}
+{"name": "synthetic-05", "source": "@can('edit')"}
+{"name": "synthetic-06", "source": "@cannot(\"delete\")"}
+{"name": "synthetic-07", "source": "@endcan"}
+{"name": "synthetic-08", "source": "@endcannot"}
+{"name": "synthetic-09", "source": "@csrf"}
+{"name": "synthetic-10", "source": "@method('put')"}
+{"name": "synthetic-11", "source": "@error('email')"}
+{"name": "synthetic-12", "source": "@enderror"}
+{"name": "synthetic-13", "source": "@hasSection('hero')"}
+{"name": "synthetic-14", "source": "@endhassection"}
+{"name": "synthetic-15", "source": "@empty($items)"}
+{"name": "synthetic-16", "source": "@isset($user)"}
+{"name": "synthetic-17", "source": "@unless($ready)"}
+{"name": "synthetic-18", "source": "@endunless"}
+{"name": "synthetic-19", "source": "@php"}
+{"name": "synthetic-20", "source": "@endphp"}
+{"name": "synthetic-21", "source": "@json(['test' => true])"}
+{"name": "synthetic-22", "source": "@json(['test' => $state, 'other' => \"$name\"])"}
+{"name": "synthetic-23", "source": "@json($value)"}
+{"name": "synthetic-24", "source": "@lang('hello.world')"}
+{"name": "synthetic-25", "source": "@choice('apples', 2)"}
+{"name": "synthetic-26", "source": "@exec($a = 1, fn($a, 2))"}
+{"name": "synthetic-27", "source": "@out($a + $b)"}
+{"name": "synthetic-28", "source": "@out('$ignored' . \"$used\")"}
+{"name": "synthetic-29", "source": "@wrapper('main')"}
+{"name": "synthetic-30", "source": "@view('section', attrs = ['x' => 1])"}
+{"name": "synthetic-31", "source": "@wrapper"}
+{"name": "synthetic-32", "source": "@endwrapper"}
+{"name": "synthetic-33", "source": "@let($a = 1; $b = 2)"}
+{"name": "synthetic-34", "source": "@const($a = fn(1, 2))"}
+{"name": "synthetic-35", "source": "@useState(0, $count, $setCount)"}
+{"name": "synthetic-36", "source": "@useState(fn(1, 2), $value, $setValue)"}
+{"name": "synthetic-37", "source": "plain text"}
+{"name": "synthetic-38", "source": "@json("}
+{"name": "synthetic-39", "source": "@method($dynamic)"}
+{"name": "synthetic-40", "source": "@choice('x', $count)"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:1", "source": "@states({"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:9", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:10", "source": "@block('content')"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:17", "source": "@endblock"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:1", "source": "@states({ n: 0 })"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:3", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:4", "source": "@block('content')"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:10", "source": "@endblock"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/sub/index.sao:2", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/sub/index.sao:3", "source": "@block('content')"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/sub/index.sao:8", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/components/code-block.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:9", "source": "@if(label || title)"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:13", "source": "@if(!dark)"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:15", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:17", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/layouts/base.sao:2", "source": "@pageStart"}
+{"name": "saola/resources/saola/web/views/layouts/base.sao:4", "source": "@useBlock('shell')"}
+{"name": "saola/resources/saola/web/views/layouts/base.sao:6", "source": "@pageEnd"}
+{"name": "saola/resources/saola/web/views/layouts/docs.sao:2", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/layouts/docs.sao:3", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/layouts/docs.sao:46", "source": "@useBlock('doc')"}
+{"name": "saola/resources/saola/web/views/layouts/docs.sao:58", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/layouts/public.sao:2", "source": "@extends(__layout__ + \"base\")"}
+{"name": "saola/resources/saola/web/views/layouts/public.sao:3", "source": "@block('shell')"}
+{"name": "saola/resources/saola/web/views/layouts/public.sao:40", "source": "@useBlock('content')"}
+{"name": "saola/resources/saola/web/views/layouts/public.sao:58", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/layouts/workspace.sao:2", "source": "@extends(__layout__ + \"base\")"}
+{"name": "saola/resources/saola/web/views/layouts/workspace.sao:3", "source": "@block('shell')"}
+{"name": "saola/resources/saola/web/views/layouts/workspace.sao:23", "source": "@useBlock('workspace')"}
+{"name": "saola/resources/saola/web/views/layouts/workspace.sao:26", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:1", "source": "@states({ n: 0 })"}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:3", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:4", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:11", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/abc/sub/index.sao:2", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/abc/sub/index.sao:3", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/abc/sub/index.sao:8", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:1", "source": "@import('web.modules.components.statcard')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:2", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:28", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:29", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:264", "source": "@if(status === 'ready')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:266", "source": "@elseif(status === 'building')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:268", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:270", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:293", "source": "@switch(runtime)"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:294", "source": "@case('blade')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:296", "source": "@break"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:297", "source": "@case('client')"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:299", "source": "@break"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:300", "source": "@default"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:302", "source": "@endswitch"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:325", "source": "@foreach(items as item)"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:326", "source": "@key(item['id'])"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:331", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:333", "source": "@if(items.length === 0)"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:335", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:406", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/components/statcard.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/components/statcard.sao:12", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:16", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:71", "source": "@media (max-width: 680px) {"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:1", "source": "@import('web.modules.demo.featurecard')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:3", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:20", "source": "@const(MAX_COUNT = 10)"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:21", "source": "@const(DEMO_SCRIPT = '<scr' + 'ipt type=\"module\" src=\"/static/saola/demo-module.js\"></scr' + 'ipt>')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:22", "source": "@let(featureTotal = 32)"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:25", "source": "@extends(__layout__ + 'base')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:26", "source": "@block('shell')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:103", "source": "@if(status === 'ready')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:105", "source": "@elseif(status === 'building')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:107", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:109", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:114", "source": "@for(i = 0; i < count; i++)"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:116", "source": "@endfor"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:119", "source": "@foreach(sampleItems as item)"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:120", "source": "@key(item['id'])"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:122", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:132", "source": "@switch(selectedRuntime)"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:133", "source": "@case('typescript')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:135", "source": "@break"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:136", "source": "@case('css')"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:138", "source": "@break"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:139", "source": "@default"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:141", "source": "@endswitch"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:206", "source": "@ssr"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:208", "source": "@endssr"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:217", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:419", "source": "@media (max-width: 980px) {"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:427", "source": "@media (max-width: 680px) {"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:53", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:104", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:112", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:138", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:158", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:166", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:173", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:221", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:229", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:254", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:271", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:316", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:389", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/build.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/build.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/build.sao:71", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:38", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:49", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/client-services.sao:63", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:12", "source": "@verbatim&lt;article class=\"card\"&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:14", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:21", "source": "@verbatim&lt;article class=\"card\"&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:28", "source": "@verbatimreturn this.wrapper(["}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:62", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:27", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:33", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:57", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:66", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:78", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:87", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/contexts.sao:98", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/core-kit.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/core-kit.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/core-kit.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/core-kit.sao:62", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:1", "source": "@import('web.components.code-block')"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:38", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:46", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:55", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:66", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:77", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:81", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:91", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:93", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:102", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:105", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:114", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:116", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:132", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:135", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:153", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:156", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:192", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:200", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:211", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:216", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:244", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:248", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:292", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:294", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:303", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:305", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:322", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:326", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:358", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:363", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:383", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:388", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:435", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:442", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:460", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:464", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:469", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:473", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:484", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:491", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:501", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:507", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:590", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:1", "source": "@import('web.components.code-block')"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:15", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:19", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:25", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:32", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:37", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:48", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:53", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:59", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:71", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/index.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/index.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/index.sao:191", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/lifecycle.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/lifecycle.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/lifecycle.sao:64", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:42", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:121", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:128", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:138", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:146", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:167", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:174", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:216", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:224", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:266", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/mask.sao:278", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/reactivity.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/reactivity.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/reactivity.sao:74", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:20", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:34", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:67", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:84", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:103", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:114", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:137", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:154", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:158", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:172", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:179", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:216", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:223", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:231", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:238", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:241", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/repository.sao:248", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:20", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:30", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:41", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:48", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:57", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:59", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/response.sao:77", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/router.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/router.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/router.sao:72", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:1", "source": "@states({ activePhase: 'hydrate' })"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:4", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:5", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:19", "source": "@if(activePhase === 'ssr')"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:21", "source": "@elseif(activePhase === 'reactive')"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:23", "source": "@elseif(activePhase === 'cache')"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:25", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:27", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:47", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:1", "source": "@import('web.components.code-block')"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:63", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:128", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:136", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:30", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:36", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:42", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:55", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/services.sao:74", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/status.sao:2", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/status.sao:3", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/status.sao:51", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:31", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:34", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:41", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:47", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:54", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:58", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:78", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:1", "source": "@import('web.components.code-window')"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:3", "source": "@extends(__layout__ + \"docs\")"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:4", "source": "@block('doc')"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:19", "source": "@verbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:30", "source": "@endverbatim"}
+{"name": "saola/resources/saola/web/views/modules/docs/validator.sao:62", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:1", "source": "@states({ activeValue: 0 })"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:4", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:5", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:16", "source": "@if(activeValue === 0)"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:18", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:22", "source": "@if(activeValue === 1)"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:24", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:28", "source": "@if(activeValue === 2)"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:30", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:34", "source": "@if(activeValue === 3)"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:36", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:43", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:1", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:12", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:13", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:22", "source": "@if(sent)"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:24", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:26", "source": "@if(attempted && (!name.trim() || !email.trim()))"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:28", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:31", "source": "@if(attempted && messageLength < 12)"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:33", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:35", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:38", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:2", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:3", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:4", "source": "@include('web.modules.home.parts.hero')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:5", "source": "@include('web.modules.home.parts.features')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:6", "source": "@include('web.modules.home.parts.architecture')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:7", "source": "@include('web.modules.home.parts.how')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:8", "source": "@include('web.modules.home.parts.usecase')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:9", "source": "@include('web.modules.home.parts.compare')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:10", "source": "@include('web.modules.home.parts.principle')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:11", "source": "@include('web.modules.home.parts.cta')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:12", "source": "@include('web.modules.home.parts.faq')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:13", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:1", "source": "@states({ openFaq: 0 })"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:12", "source": "@if(openFaq === 0)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:14", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:18", "source": "@if(openFaq === 1)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:20", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:25", "source": "@if(openFaq === 2)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:27", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/features.sao:1", "source": "@import('web.modules.home.parts.mapcard')"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/flowstep.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/flowstep.sao:10", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:1", "source": "@states({ demoStep: 1, likes: 12 })"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:20", "source": "@if(demoStep === 1)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:28", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:30", "source": "@if(demoStep === 2)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:42", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:44", "source": "@if(demoStep === 3)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:60", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:13", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/ovcard.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/ovcard.sao:10", "source": "@children"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:1", "source": "@states({ activeUsecase: 0 })"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:46", "source": "@if(activeUsecase === 0)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:65", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:67", "source": "@if(activeUsecase === 1)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:98", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:100", "source": "@if(activeUsecase === 2)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:132", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:134", "source": "@if(activeUsecase === 3)"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:157", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:1", "source": "@states({ activeSection: 'collection' })"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:4", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:5", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:18", "source": "@if(activeSection === 'collection')"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:20", "source": "@elseif(activeSection === 'use')"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:22", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:24", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:27", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:1", "source": "@states({ accepted: false, expanded: 1 })"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:4", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:5", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:14", "source": "@if(expanded === 1)"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:16", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:20", "source": "@if(expanded === 2)"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:22", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:26", "source": "@if(expanded === 3)"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:28", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:32", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:1", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:15", "source": "@extends(__layout__ + \"workspace\")"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:16", "source": "@block('workspace')"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:44", "source": "@if(todos.length === 0)"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:50", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:51", "source": "@foreach(todos as todo)"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:52", "source": "@key(todo['id'])"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:53", "source": "@if(filter === 'all' || (filter === 'active' && !todo['completed']) || (filter === 'done' && todo['completed']))"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:56", "source": "@if(todo['completed'])"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:58", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:63", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:64", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:65", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:69", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:1", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:7", "source": "@extends(__layout__ + \"public\")"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:8", "source": "@block('content')"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:26", "source": "@for(i = 0; i < count; i++)"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:28", "source": "@endfor"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:31", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/posts/list.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/posts/list.sao:8", "source": "@foreach(posts as post)"}
+{"name": "saola/resources/saola/web/views/modules/posts/list.sao:10", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:1", "source": "@import('web.modules.roster.item' as rosteritem)"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:2", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:16", "source": "@extends(__layout__ + \"workspace\")"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:17", "source": "@block('workspace')"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:42", "source": "@if(lastSync === '')"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:44", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:46", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:50", "source": "@if(syncError !== '')"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:52", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:95", "source": "@foreach(ids as id)"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:96", "source": "@key(id)"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:102", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:105", "source": "@if(ids.length === 0)"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:107", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:109", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:1", "source": "@props({"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:6", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:19", "source": "@if(editing)"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:21", "source": "@if(record === null)"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:31", "source": "@elseif(base !== null && record['updated_at'] !== base['updated_at'])"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:36", "source": "@if(record['name'] !== base['name'])"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:42", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:43", "source": "@if(record['email'] !== base['email'])"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:49", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:50", "source": "@if(record['gender'] !== base['gender'])"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:56", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:57", "source": "@if(record['birthdate'] !== base['birthdate'])"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:63", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:70", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:96", "source": "@if(base !== null)"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:98", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:102", "source": "@if(record !== null)"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:105", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:108", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:109", "source": "@if(record === null)"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:117", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:134", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:135", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:137", "source": "@if(note !== '')"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:139", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:1", "source": "@import('web.modules.stress.usercard')"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:2", "source": "@states({"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:16", "source": "@computed(activeCount = users.filter(u => u.active).length)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:17", "source": "@computed(totalRoles = users.reduce((n, u) => n + u.roles.length, 0))"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:20", "source": "@extends(__layout__ + \"workspace\")"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:21", "source": "@block('workspace')"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:43", "source": "@if(banner !== '')"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:45", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:48", "source": "@key giữ nguyên → đường bị lỗi trước đây là view con biến mất --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:50", "source": "@foreach(users as user)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:51", "source": "@key(user['id'])"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:57", "source": "@if(user['roles'].length > 0)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:60", "source": "@foreach(user['roles'] as role)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:62", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:64", "source": "@else"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:66", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:71", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:77", "source": "@foreach(tags as tag)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:79", "source": "@endforeach"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:89", "source": "@if(modalOpen)"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:97", "source": "@endif"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:98", "source": "@endblock"}
+{"name": "saola/resources/saola/web/views/modules/stress/usercard.sao:1", "source": "@props({"}

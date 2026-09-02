@@ -1,0 +1,249 @@
+{"fn": "scope_class_for", "args": [[".a { color: red }"]]}
+{"fn": "scope_css", "args": [".a { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { color: red }</style><style>.a { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a .b { color: red }"]]}
+{"fn": "scope_css", "args": [".a .b { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a .b { color: red }</style><style>.a .b { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a, .b { color: red }"]]}
+{"fn": "scope_css", "args": [".a, .b { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a, .b { color: red }</style><style>.a, .b { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a:hover { color: red }"]]}
+{"fn": "scope_css", "args": [".a:hover { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a:hover { color: red }</style><style>.a:hover { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a::before { content: '' }"]]}
+{"fn": "scope_css", "args": [".a::before { content: '' }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::before { content: '' }</style><style>.a::before { content: '' }</style>"]}
+{"fn": "scope_class_for", "args": [[".a > .b + .c ~ .d { color: red }"]]}
+{"fn": "scope_css", "args": [".a > .b + .c ~ .d { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a > .b + .c ~ .d { color: red }</style><style>.a > .b + .c ~ .d { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [["@media (min-width: 100px) { .a { color: red } }"]]}
+{"fn": "scope_css", "args": ["@media (min-width: 100px) { .a { color: red } }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@media (min-width: 100px) { .a { color: red } }</style><style>@media (min-width: 100px) { .a { color: red } }</style>"]}
+{"fn": "scope_class_for", "args": [["@keyframes k { from { opacity: 0 } to { opacity: 1 } }"]]}
+{"fn": "scope_css", "args": ["@keyframes k { from { opacity: 0 } to { opacity: 1 } }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@keyframes k { from { opacity: 0 } to { opacity: 1 } }</style><style>@keyframes k { from { opacity: 0 } to { opacity: 1 } }</style>"]}
+{"fn": "scope_class_for", "args": [["@font-face { font-family: x }"]]}
+{"fn": "scope_css", "args": ["@font-face { font-family: x }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@font-face { font-family: x }</style><style>@font-face { font-family: x }</style>"]}
+{"fn": "scope_class_for", "args": [["@supports (display: grid) { .a { color: red } }"]]}
+{"fn": "scope_css", "args": ["@supports (display: grid) { .a { color: red } }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@supports (display: grid) { .a { color: red } }</style><style>@supports (display: grid) { .a { color: red } }</style>"]}
+{"fn": "scope_class_for", "args": [["@import url('x.css');"]]}
+{"fn": "scope_css", "args": ["@import url('x.css');", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@import url('x.css');</style><style>@import url('x.css');</style>"]}
+{"fn": "scope_class_for", "args": [[".a[data-x='y'] { color: red }"]]}
+{"fn": "scope_css", "args": [".a[data-x='y'] { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a[data-x='y'] { color: red }</style><style>.a[data-x='y'] { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a:not(.b, .c) { color: red }"]]}
+{"fn": "scope_css", "args": [".a:not(.b, .c) { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a:not(.b, .c) { color: red }</style><style>.a:not(.b, .c) { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[""]]}
+{"fn": "scope_css", "args": ["", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped></style><style></style>"]}
+{"fn": "scope_class_for", "args": [["  "]]}
+{"fn": "scope_css", "args": ["  ", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>  </style><style>  </style>"]}
+{"fn": "scope_class_for", "args": [[".a { }"]]}
+{"fn": "scope_css", "args": [".a { }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { }</style><style>.a { }</style>"]}
+{"fn": "scope_class_for", "args": [["@media screen { @media print { .a { color: red } } }"]]}
+{"fn": "scope_css", "args": ["@media screen { @media print { .a { color: red } } }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@media screen { @media print { .a { color: red } } }</style><style>@media screen { @media print { .a { color: red } } }</style>"]}
+{"fn": "scope_class_for", "args": [[".a\\:b { color: red }"]]}
+{"fn": "scope_css", "args": [".a\\:b { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a\\:b { color: red }</style><style>.a\\:b { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a::after { content: 'Xin chào' }"]]}
+{"fn": "scope_css", "args": [".a::after { content: 'Xin chào' }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::after { content: 'Xin chào' }</style><style>.a::after { content: 'Xin chào' }</style>"]}
+{"fn": "scope_class_for", "args": [[".tên-lớp { color: red }"]]}
+{"fn": "scope_css", "args": [".tên-lớp { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.tên-lớp { color: red }</style><style>.tên-lớp { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [["/* chú thích tiếng Việt có dấu */ .a { color: red }"]]}
+{"fn": "scope_css", "args": ["/* chú thích tiếng Việt có dấu */ .a { color: red }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>/* chú thích tiếng Việt có dấu */ .a { color: red }</style><style>/* chú thích tiếng Việt có dấu */ .a { color: red }</style>"]}
+{"fn": "scope_class_for", "args": [[".a { font-family: 'Đường Kẻ' }"]]}
+{"fn": "scope_css", "args": [".a { font-family: 'Đường Kẻ' }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { font-family: 'Đường Kẻ' }</style><style>.a { font-family: 'Đường Kẻ' }</style>"]}
+{"fn": "scope_class_for", "args": [[".a::before { content: '🎉' }"]]}
+{"fn": "scope_css", "args": [".a::before { content: '🎉' }", "s123"]}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::before { content: '🎉' }</style><style>.a::before { content: '🎉' }</style>"]}
+{"fn": "extract_scoped_css", "args": ["{{-- <style scoped>.gia{color:red}</style> --}}"]}
+{"fn": "extract_scoped_css", "args": ["{{-- <style scoped>.gia{}</style> --}}<style scoped>.that{}</style>"]}
+{"fn": "extract_scoped_css", "args": ["@verbatim <style scoped>.gia{color:red}</style> @endverbatim"]}
+{"fn": "extract_scoped_css", "args": ["@verbatim <style scoped>.gia{}</style> @endverbatim<style scoped>.that{}</style>"]}
+{"fn": "scope_class_for", "args": [[".a { color: red }", ".a .b { color: red }", ".a, .b { color: red }"]]}
+{"fn": "scope_class_for", "args": [[]]}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>{{ $children }}</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>{{ $children }}</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{{ $children }}</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>{{ $children }}</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>{!! $children !!}</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>{!! $children !!}</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{!! $children !!}</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>{!! $children !!}</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>@children()</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@children()</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children()</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@children()</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>@children ( )</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@children ( )</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children ( )</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@children ( )</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>@CHILDREN</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@CHILDREN</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@CHILDREN</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@CHILDREN</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>không có gì</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>không có gì</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>không có gì</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>không có gì</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div><div>@children</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div><div>@children</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div><div>@children</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div><div>@children</div>"]}
+{"fn": "count_children_placeholders", "args": ["@verbatim <code>@children</code> @endverbatim"]}
+{"fn": "replace_children_for_blade", "args": ["@verbatim <code>@children</code> @endverbatim"]}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim <code>@children</code> @endverbatim"]}
+{"fn": "validate_children_placeholders", "args": ["@verbatim <code>@children</code> @endverbatim"]}
+{"fn": "count_children_placeholders", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}
+{"fn": "replace_children_for_blade", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}
+{"fn": "validate_children_placeholders", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}
+{"fn": "count_children_placeholders", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}
+{"fn": "replace_children_for_blade", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}
+{"fn": "validate_children_placeholders", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}
+{"fn": "count_children_placeholders", "args": ["<div>@childrenXyz</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@childrenXyz</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@childrenXyz</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@childrenXyz</div>"]}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}
+{"fn": "count_children_placeholders", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}
+{"fn": "replace_children_for_blade", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}
+{"fn": "validate_children_placeholders", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}
+{"fn": "count_children_placeholders", "args": ["<div>{{ $children }}</div><div>@children</div>"]}
+{"fn": "replace_children_for_blade", "args": ["<div>{{ $children }}</div><div>@children</div>"]}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{{ $children }}</div><div>@children</div>"]}
+{"fn": "validate_children_placeholders", "args": ["<div>{{ $children }}</div><div>@children</div>"]}
+{"fn": "is_children_expression", "args": ["$children"]}
+{"fn": "is_children_expression", "args": [" $children "]}
+{"fn": "is_children_expression", "args": ["$children2"]}
+{"fn": "is_children_expression", "args": ["children"]}
+{"fn": "is_children_expression", "args": ["$other"]}
+{"fn": "is_children_expression", "args": [""]}
+{"fn": "parse_imports", "args": ["@import('a')"]}
+{"fn": "remove_imports", "args": ["@import('a')"]}
+{"fn": "parse_imports", "args": ["@import(\"b.d\")"]}
+{"fn": "remove_imports", "args": ["@import(\"b.d\")"]}
+{"fn": "parse_imports", "args": ["@import($__template__.'sessions.tasks')"]}
+{"fn": "remove_imports", "args": ["@import($__template__.'sessions.tasks')"]}
+{"fn": "parse_imports", "args": ["@import($__layout__.'base' as baseLayout)"]}
+{"fn": "remove_imports", "args": ["@import($__layout__.'base' as baseLayout)"]}
+{"fn": "parse_imports", "args": ["@import($__blade_custom_path__)"]}
+{"fn": "remove_imports", "args": ["@import($__blade_custom_path__)"]}
+{"fn": "parse_imports", "args": ["@import($__blade_custom_path__ as alert)"]}
+{"fn": "remove_imports", "args": ["@import($__blade_custom_path__ as alert)"]}
+{"fn": "parse_imports", "args": ["@import($x as $y)"]}
+{"fn": "remove_imports", "args": ["@import($x as $y)"]}
+{"fn": "parse_imports", "args": ["@import(['counter' => 'a.b', 'demo' => $__template__.'c'])"]}
+{"fn": "remove_imports", "args": ["@import(['counter' => 'a.b', 'demo' => $__template__.'c'])"]}
+{"fn": "parse_imports", "args": ["@import({ counter: \"a.b\", demo: 'c' })"]}
+{"fn": "remove_imports", "args": ["@import({ counter: \"a.b\", demo: 'c' })"]}
+{"fn": "parse_imports", "args": ["@import([\n  'a' => 'x',  // chú thích\n  'b' => 'y',\n])"]}
+{"fn": "remove_imports", "args": ["@import([\n  'a' => 'x',  // chú thích\n  'b' => 'y',\n])"]}
+{"fn": "parse_imports", "args": ["@import(['a' => 'x'] ) {{-- chú thích sau --}}\n<div>x</div>"]}
+{"fn": "remove_imports", "args": ["@import(['a' => 'x'] ) {{-- chú thích sau --}}\n<div>x</div>"]}
+{"fn": "parse_imports", "args": ["@import('a')\n@import('b')\n<div>hai import</div>"]}
+{"fn": "remove_imports", "args": ["@import('a')\n@import('b')\n<div>hai import</div>"]}
+{"fn": "parse_imports", "args": ["@verbatim @import('trong-verbatim') @endverbatim @import('that')"]}
+{"fn": "remove_imports", "args": ["@verbatim @import('trong-verbatim') @endverbatim @import('that')"]}
+{"fn": "parse_imports", "args": ["@verbatim\n  @import('tiếng Việt có dấu')\n@endverbatim\n@import('sau')"]}
+{"fn": "remove_imports", "args": ["@verbatim\n  @import('tiếng Việt có dấu')\n@endverbatim\n@import('sau')"]}
+{"fn": "parse_imports", "args": ["@import(  )"]}
+{"fn": "remove_imports", "args": ["@import(  )"]}
+{"fn": "parse_imports", "args": ["@import("]}
+{"fn": "remove_imports", "args": ["@import("]}
+{"fn": "parse_imports", "args": ["không có import nào"]}
+{"fn": "remove_imports", "args": ["không có import nào"]}
+{"fn": "parse_imports", "args": ["@IMPORT('hoa')"]}
+{"fn": "remove_imports", "args": ["@IMPORT('hoa')"]}
+{"fn": "parse_imports", "args": ["@import('a.b.c.d')"]}
+{"fn": "remove_imports", "args": ["@import('a.b.c.d')"]}
+{"fn": "parse_imports", "args": ["@import(['x' => 'p', 'x' => 'q'])"]}
+{"fn": "remove_imports", "args": ["@import(['x' => 'p', 'x' => 'q'])"]}
+{"fn": "parse_imports", "args": ["@import('có-gạch-nối')"]}
+{"fn": "remove_imports", "args": ["@import('có-gạch-nối')"]}
+{"fn": "parse_imports", "args": ["@import('tên_có_gạch_dưới')"]}
+{"fn": "remove_imports", "args": ["@import('tên_có_gạch_dưới')"]}
+{"fn": "extract_tag_from_path", "args": ["'a'"]}
+{"fn": "extract_tag_from_path", "args": ["\"b.d\""]}
+{"fn": "extract_tag_from_path", "args": ["$__template__.'x.y'"]}
+{"fn": "extract_tag_from_path", "args": ["$__custom__"]}
+{"fn": "extract_tag_from_path", "args": ["a-b"]}
+{"fn": "extract_tag_from_path", "args": [""]}
+{"fn": "extract_tag_from_path", "args": ["''"]}
+{"fn": "extract_tag_from_path", "args": ["$x.'a.'"]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter />", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter />", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter/>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter/>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter >", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter >", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["</counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["</counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><counter></counter></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><counter></counter></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><other></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><other></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></other>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></other>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><demo></counter></demo>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><demo></counter></demo>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<div>Tiếng Việt có dấu ở đây rất dài</div>\n<counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<div>Tiếng Việt có dấu ở đây rất dài</div>\n<counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["dòng 1\ndòng 2 tiếng Việt\n<counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["dòng 1\ndòng 2 tiếng Việt\n<counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<script><counter></script><counter/>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<script><counter></script><counter/>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<style><counter></style>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<style><counter></style>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<textarea><counter></textarea>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<textarea><counter></textarea>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<title><counter></title>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<title><counter></title>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- <counter> --}}<counter/>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- <counter> --}}<counter/>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- <counter> --><counter/>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- <counter> --><counter/>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- chưa đóng comment <counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- chưa đóng comment <counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- chưa đóng <counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- chưa đóng <counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a>b'></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a>b'></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr=\"a>b\"></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr=\"a>b\"></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a\\'b'></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a\\'b'></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["< counter></counter>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["< counter></counter>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<3invalid>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<3invalid>", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<counter", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["không có thẻ nào", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["không có thẻ nào", {}]}
+{"fn": "validate_imported_tag_structure", "args": ["<demo/>", {"counter": "a.b", "demo": "c.d"}]}
+{"fn": "validate_imported_tag_structure", "args": ["<demo/>", {}]}
