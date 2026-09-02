@@ -1,0 +1,111 @@
+{"name": "synthetic-01", "event": "click", "expression": "handleClick", "states": []}
+{"name": "synthetic-02", "event": "click", "expression": "handleClick()", "states": []}
+{"name": "synthetic-03", "event": "click", "expression": "handleClick(@event, 'x')", "states": []}
+{"name": "synthetic-04", "event": "change", "expression": "$event->target->value", "states": []}
+{"name": "synthetic-05", "event": "input", "expression": "$Event.target.value", "states": []}
+{"name": "synthetic-06", "event": "click", "expression": "$count++", "states": ["count"]}
+{"name": "synthetic-07", "event": "click", "expression": "$count += 2", "states": ["count"]}
+{"name": "synthetic-08", "event": "click", "expression": "$count = $count + 1", "states": ["count"]}
+{"name": "synthetic-09", "event": "click", "expression": "$count($count + 1)", "states": ["count"]}
+{"name": "synthetic-10", "event": "click", "expression": "$setCount($count + 1)", "states": ["count"]}
+{"name": "synthetic-11", "event": "submit", "expression": "save($form, @event)", "states": ["form"]}
+{"name": "synthetic-12", "event": "click", "expression": "first(), second($id), $count++", "states": ["count"]}
+{"name": "synthetic-13", "event": "click", "expression": "first(); second(); $count++", "states": ["count"]}
+{"name": "synthetic-14", "event": "change", "expression": "update(['x' => $x, 'nested' => ['y' => 2]])", "states": ["x"]}
+{"name": "synthetic-15", "event": "click", "expression": "outer(inner($id), @attr(\"data-id\"), @event)", "states": []}
+{"name": "synthetic-16", "event": "click", "expression": "(event) => run(event)", "states": []}
+{"name": "synthetic-17", "event": "click", "expression": "event => run(event)", "states": []}
+{"name": "synthetic-18", "event": "click", "expression": "true", "states": []}
+{"name": "synthetic-19", "event": "click", "expression": "42", "states": []}
+{"name": "synthetic-20", "event": "click", "expression": "'literal'", "states": []}
+{"name": "synthetic-21", "event": "click", "expression": "", "states": []}
+{"name": "synthetic-22", "event": "keydown", "expression": "handle(@event->key)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:70", "event": "click", "expression": "setSelectedPanel('state')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:71", "event": "click", "expression": "setSelectedPanel('binding')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:72", "event": "click", "expression": "setSelectedPanel('flow')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:90", "event": "click", "expression": "setIsVisible(!isVisible)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:99", "event": "click", "expression": "setStatus('ready')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:100", "event": "click", "expression": "setStatus('building')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:101", "event": "click", "expression": "setStatus('error')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:147", "event": "click", "expression": "setCount(count - 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:149", "event": "click", "expression": "setCount(count + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:157", "event": "click", "expression": "setCount(3)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:158", "event": "dblclick", "expression": "setCount(MAX_COUNT)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:15", "event": "click", "expression": "setActiveValue(0)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:21", "event": "click", "expression": "setActiveValue(1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:27", "event": "click", "expression": "setActiveValue(2)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/about.sao:33", "event": "click", "expression": "setActiveValue(3)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:21", "event": "submit", "expression": "sendContact(event)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:23", "event": "click", "expression": "resetForm()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:30", "event": "input", "expression": "trackLength(event)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:13", "event": "click", "expression": "setActiveSection('collection')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:14", "event": "click", "expression": "setActiveSection('use')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/privacy.sao:15", "event": "click", "expression": "setActiveSection('control')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:13", "event": "click", "expression": "setExpanded(expanded === 1 ? 0 : 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:19", "event": "click", "expression": "setExpanded(expanded === 2 ? 0 : 2)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/terms.sao:25", "event": "click", "expression": "setExpanded(expanded === 3 ? 0 : 3)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:28", "event": "submit", "expression": "addTodo(event)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:37", "event": "click", "expression": "setFilter('all')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:38", "event": "click", "expression": "setFilter('active')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:39", "event": "click", "expression": "setFilter('done')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:41", "event": "click", "expression": "clearCompleted()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:55", "event": "click", "expression": "toggleTodo(todo['id'])", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:61", "event": "click", "expression": "deleteTodo(todo['id'])", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:11", "event": "click", "expression": "setOpenFaq(0)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:17", "event": "click", "expression": "setOpenFaq(1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/faq.sao:24", "event": "click", "expression": "setOpenFaq(2)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:14", "event": "click", "expression": "setDemoStep(1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:15", "event": "click", "expression": "setDemoStep(2)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:16", "event": "click", "expression": "setDemoStep(3)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:55", "event": "click", "expression": "setLikes(likes + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:15", "event": "click", "expression": "setActiveUsecase(0)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:22", "event": "click", "expression": "setActiveUsecase(1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:29", "event": "click", "expression": "setActiveUsecase(2)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/home/parts/usecase.sao:36", "event": "click", "expression": "setActiveUsecase(3)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:9", "event": "click", "expression": "setN(n + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:14", "event": "click", "expression": "setCount(count + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:15", "event": "click", "expression": "reset()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:24", "event": "click", "expression": "addPing()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:59", "event": "submit", "expression": "createUser(event)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:90", "event": "click", "expression": "load()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:26", "event": "click", "expression": "recreate()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:27", "event": "click", "expression": "cancelEdit()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:66", "event": "click", "expression": "takeTheirs()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:67", "event": "click", "expression": "keepMine()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:72", "event": "submit", "expression": "save(event)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:103", "event": "click", "expression": "cancelEdit()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:130", "event": "click", "expression": "beginEdit()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:131", "event": "click", "expression": "remove()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:13", "event": "click", "expression": "setActivePhase('ssr')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:14", "event": "click", "expression": "setActivePhase('hydrate')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:15", "event": "click", "expression": "setActivePhase('reactive')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/docs/runtime.sao:16", "event": "click", "expression": "setActivePhase('cache')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:62", "event": "click", "expression": "setCount(count - 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:63", "event": "click", "expression": "setCount(count + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:64", "event": "click", "expression": "setCount(0)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:84", "event": "click", "expression": "setOnceLeft(0)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:87", "event": "click", "expression": "setSelfHits(selfHits + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:89", "event": "click", "expression": "setClicks(clicks + 1)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:144", "event": "click", "expression": "setName('Saola')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:204", "event": "click", "expression": "setTextSize('sm')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:205", "event": "click", "expression": "setTextSize('md')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:206", "event": "click", "expression": "setTextSize('lg')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:227", "event": "click", "expression": "setVisible(!visible)", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:260", "event": "click", "expression": "setStatus('ready')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:261", "event": "click", "expression": "setStatus('building')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:262", "event": "click", "expression": "setStatus('error')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:289", "event": "click", "expression": "setRuntime('blade')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:290", "event": "click", "expression": "setRuntime('client')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:291", "event": "click", "expression": "setRuntime('api')", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:322", "event": "click", "expression": "addItem()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:329", "event": "click", "expression": "removeItem(item['id'])", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:34", "event": "submit", "expression": "applyQuery()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:37", "event": "click", "expression": "refreshFromServer()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:40", "event": "click", "expression": "showBannerOnce()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:52", "event": "click", "expression": "selectUser(user['id'])", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:69", "event": "click", "expression": "removeUser(user['id'])", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:84", "event": "click", "expression": "openModal()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:90", "event": "click", "expression": "closeModal()", "states": []}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:94", "event": "click", "expression": "closeModal()", "states": []}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:8", "event": "click", "expression": "setN(n + 1)", "states": []}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:14", "event": "click", "expression": "setCount(count + 1)", "states": []}

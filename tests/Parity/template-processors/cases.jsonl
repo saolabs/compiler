@@ -1,0 +1,172 @@
+{"name": "synthetic-01", "source": "@yield('content')"}
+{"name": "synthetic-02", "source": "@yield($slot)"}
+{"name": "synthetic-03", "source": "x @out($a + fn($b, 2)) y"}
+{"name": "synthetic-04", "source": "@include('parts.card')"}
+{"name": "synthetic-05", "source": "@include('parts.card', ['x' => 1])"}
+{"name": "synthetic-06", "source": "@include($path)"}
+{"name": "synthetic-07", "source": "@include($path, ['x' => $x])"}
+{"name": "synthetic-08", "source": "<div @attr('data-x', $x)></div>"}
+{"name": "synthetic-09", "source": "<div @attr(['class' => $class, 'title' => 'hello'])></div>"}
+{"name": "synthetic-10", "source": "@attr()"}
+{"name": "synthetic-11", "source": "<div @wrap></div>"}
+{"name": "synthetic-12", "source": "@viewId"}
+{"name": "synthetic-13", "source": "{!! $html !!}"}
+{"name": "synthetic-14", "source": "{{ $name }}"}
+{"name": "synthetic-15", "source": "{{ ['a' => 1] }}"}
+{"name": "synthetic-16", "source": "{ $plain }"}
+{"name": "synthetic-17", "source": "@useState(0, $x, $setX)"}
+{"name": "synthetic-18", "source": "@ssr"}
+{"name": "synthetic-19", "source": "@SSR"}
+{"name": "synthetic-20", "source": "@serverside"}
+{"name": "synthetic-21", "source": "@csr"}
+{"name": "synthetic-22", "source": "@clientSide"}
+{"name": "synthetic-23", "source": "plain"}
+{"name": "synthetic-24", "source": "@template()"}
+{"name": "synthetic-25", "source": "@view()"}
+{"name": "synthetic-26", "source": "@wrapper()"}
+{"name": "synthetic-27", "source": "@endwrapper"}
+{"name": "synthetic-28", "source": "<div @yieldattr('class', 'theme')></div>"}
+{"name": "synthetic-29", "source": "<div @yieldattr('class', 'theme', 'base') @yieldattr('title', 'heading')></div>"}
+{"name": "synthetic-30", "source": "<div @yieldon('class', 'theme')></div>"}
+{"name": "synthetic-31", "source": "<div @yieldWatch('title', 'heading', 'untitled')></div>"}
+{"name": "synthetic-32", "source": "<div @yieldon(['class' => 'theme', '#content' => 'body', '#children' => 'items'])></div>"}
+{"name": "synthetic-33", "source": "@subscribe($stateKey)"}
+{"name": "synthetic-34", "source": "@subscribe($stateKey, 'class')"}
+{"name": "synthetic-35", "source": "@subscribe([$stateKey, $contentState])"}
+{"name": "synthetic-36", "source": "@subscribe(['class' => $stateKey, '#children' => [$a, $b]])"}
+{"name": "synthetic-37", "source": "@subscribe([$stateKey, $contentState], '#children')"}
+{"name": "synthetic-38", "source": "@template(tag: 'section', subscribe: [$stateKey, $user], class: 'hero')"}
+{"name": "synthetic-39", "source": "@view(['tag' => 'main', 'subscribe' => false, 'id' => 'root'])"}
+{"name": "synthetic-40", "source": "@wrap('article', ['class' => 'card', 'follow' => [$stateKey]])"}
+{"name": "synthetic-41", "source": "@wrapper(['id' => 'shell'])"}
+{"name": "saola/resources/saola/web/views/components/code-block.sao:7", "source": "        <pre><code class=\"language-{{ lang }}\">@children</code></pre>"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:11", "source": "                <span>{{ label }}</span>"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:12", "source": "                <b>{{ title }}</b>"}
+{"name": "saola/resources/saola/web/views/components/code-window.sao:18", "source": "        <pre><code class=\"language-{{ lang }}\">@children</code></pre>"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:11", "source": "            <span>{{ number }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:12", "source": "            <h3>{{ title }}</h3>"}
+{"name": "saola/resources/saola/web/views/modules/demo/featurecard.sao:14", "source": "        <code>{!! source !!}</code>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:50", "source": "                    <strong>{{ featureTotal }}</strong>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:79", "source": "                            <p class=\"live-output\">Xin chào, <strong data-demo-name-output>{{ name }}</strong>.</p>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:93", "source": "                            <a @attr({href: '/compiler', title: `Compiler cho ${name}`})>Mở trang compiler</a>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:115", "source": "                                    <span>{{ i + 1 }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:121", "source": "                                    <li @class({'is-enabled': item['enabled']})>{{ item['label'] }}</li>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:148", "source": "                                <strong data-demo-count-output>{{ count }}</strong>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:152", "source": "                            <small>Giới hạn mẫu: 0–{{ MAX_COUNT }}</small>"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:206", "source": "                @ssr"}
+{"name": "saola/resources/saola/web/views/modules/demo/index.sao:215", "source": "            {!! DEMO_SCRIPT !!}"}
+{"name": "saola/resources/saola/web/views/modules/home/contact.sao:30", "source": "                    <label><span>Context</span><textarea maxlength=\"500\" placeholder=\"What is the application doing today, and where does it become difficult?\" @bind(message) @input(trackLength(event))></textarea><small>{{ messageLength }} / 500</small></label>"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:4", "source": "        @include('web.modules.home.parts.hero')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:5", "source": "        @include('web.modules.home.parts.features')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:6", "source": "        @include('web.modules.home.parts.architecture')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:7", "source": "        @include('web.modules.home.parts.how')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:8", "source": "        @include('web.modules.home.parts.usecase')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:9", "source": "        @include('web.modules.home.parts.compare')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:10", "source": "        @include('web.modules.home.parts.principle')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:11", "source": "        @include('web.modules.home.parts.cta')"}
+{"name": "saola/resources/saola/web/views/modules/home/index.sao:12", "source": "        @include('web.modules.home.parts.faq')"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:23", "source": "                <strong>{{ completedCount }}/{{ todos.length }}</strong><span>complete</span>"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:37", "source": "                    <button @class({'active': filter === 'all'}) @click(setFilter('all'))>All <span>{{ todos.length }}</span></button>"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:38", "source": "                    <button @class({'active': filter === 'active'}) @click(setFilter('active'))>Active <span>{{ activeCount }}</span></button>"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:39", "source": "                    <button @class({'active': filter === 'done'}) @click(setFilter('done'))>Done <span>{{ completedCount }}</span></button>"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:60", "source": "                                <div><strong>{{ todo['text'] }}</strong><small>SAOLA DEMO · TASK {{ todo['id'] }}</small></div>"}
+{"name": "saola/resources/saola/web/views/modules/home/todo.sao:67", "source": "            <footer class=\"todo-summary\"><p><span>{{ activeCount }}</span> items still need attention.</p><a href=\"/about\">Why Saola handles this differently →</a></footer>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/flowstep.sao:8", "source": "        <span>{{ step }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/flowstep.sao:12", "source": "        <code>{{ cmd }}</code>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/how.sao:55", "source": "                            <button type=\"button\" class=\"dx-heart\" @click(setLikes(likes + 1))>♥ {{ likes }}</button>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:10", "source": "    <a @class({'map-card', 'map-card-dark': variant === 'dark'}) @attr({href: href})>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:11", "source": "        <span>{{ eyebrow }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:12", "source": "        <h3>{{ title }}</h3>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/mapcard.sao:14", "source": "        <i>{{ link }}</i>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/ovcard.sao:8", "source": "        <span>{{ eyebrow }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/home/parts/ovcard.sao:9", "source": "        <h3>{{ title }}</h3>"}
+{"name": "saola/resources/saola/web/views/modules/abc/index.sao:9", "source": "            <button @click(setN(n + 1))>n = {{ n }}</button>"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:11", "source": "            <p>Hello, {{ name }}! 👋</p>"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:16", "source": "                <span>Count: {{ count }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/ping/index.sao:27", "source": "                    <li>Ping #{{ i + 1 }}</li>"}
+{"name": "saola/resources/saola/web/views/modules/posts/list.sao:6", "source": "    <h1>{{ title }}</h1>"}
+{"name": "saola/resources/saola/web/views/modules/posts/list.sao:9", "source": "            <li>{{ post.title }}</li>"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:25", "source": "                    <strong>{{ ids.length }}</strong><span>users</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:34", "source": "                    <dd>{{ ids.length }}</dd>"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:45", "source": "                        <dd>{{ lastSync }}</dd>"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:51", "source": "                <p class=\"rs-alert rs-alert--danger rs-alert--error\">{{ syncError }}</p>"}
+{"name": "saola/resources/saola/web/views/modules/roster/index.sao:98", "source": "                        {{-- record đổi ref ⇒ Component đẩy prop mới vào ĐÚNG instance con"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:20", "source": "            {{-- Bị người khác XOÁ khi đang sửa: parent giữ hàng lại, record = null --}}"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:30", "source": "            {{-- Bị người khác SỬA khi đang sửa: version lệch so với lúc mở form --}}"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:39", "source": "                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>{{ record['name'] }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:40", "source": "                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>{{ fName }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:46", "source": "                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>{{ record['email'] }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:47", "source": "                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>{{ fEmail }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:53", "source": "                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>{{ record['gender'] }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:54", "source": "                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>{{ fGender }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:60", "source": "                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>{{ record['birthdate'] }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:61", "source": "                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>{{ fBirthdate }}</b></span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:97", "source": "                        <span class=\"rs-ver\">base v{{ base['updated_at'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:100", "source": "                    {{-- Bản ghi đã biến mất thì Lưu chỉ ăn 404 — chỉ còn đường tạo lại"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:121", "source": "                        <strong>{{ record['name'] }}</strong>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:122", "source": "                        <span>{{ record['email'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:125", "source": "                        <span class=\"rs-tag rs-tag--brand\">{{ record['gender'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:126", "source": "                        <span class=\"rs-tag\">{{ record['birthdate'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:127", "source": "                        <span class=\"rs-ver\">v{{ record['updated_at'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/roster/item.sao:138", "source": "            <p class=\"rs-note\">{{ note }}</p>"}
+{"name": "saola/resources/saola/web/views/modules/docs/architecture.sao:263", "source": "                <div><div class=\"dt-key\"><code>@include('web.partials.head')</code></div><span>Nạp một partial template tĩnh hoặc snippet dùng chung vào view.</span><b>include</b></div>"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:13", "source": "  &lt;h2&gt;{{ title }}&lt;/h2&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:22", "source": "  &lt;h2&gt;{{ $title }}&lt;/h2&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/compiler.sao:23", "source": "  {!! $__ONE_CHILDREN_CONTENT__ !!}"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:42", "source": "&lt;p&gt;Tổng số: {{ total }}&lt;/p&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:44", "source": "    &lt;li&gt;{{ row.title }}&lt;/li&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:59", "source": "&lt;div class=\"card card--{{ tone }}\"&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:60", "source": "    &lt;span&gt;{{ label }}&lt;/span&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:61", "source": "    &lt;strong&gt;{{ value }}&lt;/strong&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:65", "source": "&lt;statcard label=\"Lượt bấm\" value=\"{{ count }}\" tone=\"emerald\" /&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:80", "source": "&lt;button &#64;click(setCount(count + 1))&gt;{{ count }}&lt;/button&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:154", "source": "&lt;h1&gt;{{ user['name'] }}&lt;/h1&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:155", "source": "&lt;span&gt;{{ price * qty }}&lt;/span&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:214", "source": "    &lt;li&gt;{{ item['label'] }}&lt;/li&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:246", "source": "    &lt;li&gt;Ping #{{ i + 1 }}&lt;/li&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:472", "source": "&#64;extends(layout)          {{-- y hệt &#64;extends(__layout__ + 'docs') --}}"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:488", "source": "    {{-- hoặc, sau &#64;import(... as rosteritem): --}}"}
+{"name": "saola/resources/saola/web/views/modules/docs/directives.sao:503", "source": "&lt;article class=\"card\"&gt;&lt;h3&gt;{{ title }}&lt;/h3&gt;&#64;children&lt;/article&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/getting-started.sao:44", "source": "            Count: {{ count }}"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:76", "source": "        &lt;div class=\"profile-card profile-card--{{ theme }}\"&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:77", "source": "            &lt;user-avatar user=\"{{ currentUser }}\" size=\"large\" /&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:78", "source": "            &lt;h2&gt;{{ currentUser.name }}&lt;/h2&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:79", "source": "            &lt;p class=\"title\"&gt;{{ title }}&lt;/p&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:82", "source": "                &lt;p class=\"bio\"&gt;{{ currentUser.bio }}&lt;/p&gt;"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:87", "source": "                    👍 Lượt thích: {{ count }}"}
+{"name": "saola/resources/saola/web/views/modules/docs/sao-file.sao:91", "source": "                        {{ isEditing ? 'Đóng' : 'Chỉnh sửa' }}"}
+{"name": "saola/resources/saola/web/views/modules/docs/system-vars.sao:56", "source": "    &lt;li&gt;{{ __loop.iteration }}. {{ item['name'] }}&lt;/li&gt;"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:60", "source": "                                    <div class=\"cmp-num\">{{ count }}</div>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:85", "source": "                                        <span class=\"cmp-chip cmp-chip--slate\">còn lại: {{ onceLeft }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:92", "source": "                                    <p class=\"cmp-note\">nền: {{ selfHits }} · nút con: {{ clicks }}</p>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:114", "source": "                                    <div class=\"cmp-out\">Thành tiền: {{ price * qty }}</div>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:146", "source": "                                    <div class=\"cmp-out\">Xin chào, {{ name }}.</div>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:174", "source": "                                        <span @class({'cmp-chip', 'cmp-chip--sky': tone === 'sky', 'cmp-chip--indigo': tone === 'indigo', 'cmp-chip--slate': tone === 'slate'})>tone = {{ tone }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:208", "source": "                                    <div @class({'cmp-box', 'txt-sm': textSize === 'sm', 'txt-lg': textSize === 'lg'})>Cỡ chữ hiện tại: {{ textSize }}.</div>"}
+{"name": "saola/resources/saola/web/views/modules/components/index.sao:328", "source": "                                                <span>{{ item['label'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/components/statcard.sao:9", "source": "        <span>{{ label }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/components/statcard.sao:10", "source": "        <strong>{{ value }}</strong>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:28", "source": "                <strong>{{ activeCount }}/{{ users.length }}</strong><span>active</span>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:33", "source": "            {{-- Event modifiers: .prevent thay cho event.preventDefault() thủ công --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:38", "source": "                    Refresh từ server <span>({{ refreshCount }})</span>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:44", "source": "                <p class=\"stress__banner\">{{ banner }}</p>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:47", "source": "            {{-- GAP-10: mỗi item include một view con; refresh sinh ref MỚI nhưng"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:53", "source": "                        {{-- Thẻ tuỳ chỉnh nhận biểu thức qua tiền tố ':' — compiler suy stateKeys y như @include --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:56", "source": "                        {{-- @if trong loop → Reactive theo từng item (record marker riêng) --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:59", "source": "                                {{-- @foreach lồng, bọc trong thẻ → chạy ngoài cửa sổ cache loop ngoài --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:61", "source": "                                    <span class=\"chip\">{{ role['name'] }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:68", "source": "                        {{-- .stop: bấm xoá không được kích hoạt selectUser của hàng --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:74", "source": "            {{-- GAP-18: loop KHÔNG có @key — hậu tố id marker là chỉ số vòng lặp,"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:78", "source": "                    <span class=\"chip chip--tag\">{{ tag }}</span>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:83", "source": "                <span>{{ totalRoles }} vai trò</span>"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:88", "source": "        {{-- .self: chỉ đóng khi bấm ĐÚNG nền, không đóng khi bấm vào hộp bên trong --}}"}
+{"name": "saola/resources/saola/web/views/modules/stress/index.sao:108", "source": "         * Đây là đường từng làm view con của @include biến mất khỏi DOM."}
+{"name": "saola/resources/saola/web/views/modules/stress/usercard.sao:8", "source": "        <div class=\"ucard__id\">#{{ user['id'] }}</div>"}
+{"name": "saola/resources/saola/web/views/modules/stress/usercard.sao:10", "source": "            <strong>{{ user['name'] }}</strong>"}
+{"name": "saola/resources/saola/web/views/modules/stress/usercard.sao:11", "source": "            <small>{{ user['email'] }}</small>"}
+{"name": "saola/resources/saola/web/views/modules/stress/usercard.sao:13", "source": "        <div class=\"ucard__rev\">rev {{ user['rev'] }}</div>"}
+{"name": "saola/resources/saola/web/views/partials/head.sao:1", "source": "    {{-- <head> meta riêng cho context web. CSS/JS load qua _system/partials/assets"}
+{"name": "saola/resources/saola/themes/demo/views/modules/abc/index.sao:8", "source": "            <button @click(setN(n + 1))>n = {{ n }}</button>"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:6", "source": "    {{-- __layout__ là biến của CẢ context nên nó trỏ themes.aurora.layouts.*"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:13", "source": "            <p>Xin chào, {{ name }}. Trang này đến từ themes/aurora.</p>"}
+{"name": "saola/resources/saola/themes/aurora/views/modules/ping/index.sao:15", "source": "            <span>Count: {{ count }}</span>"}

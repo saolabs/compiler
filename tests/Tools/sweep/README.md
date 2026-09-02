@@ -1,18 +1,18 @@
 # Sweep — săn lỗi im lặng ngoài tầm cổng parity
 
-Cổng parity chứng minh **"port giống bản gốc"**, KHÔNG chứng minh **"bản gốc
-đúng"**. Cả 5 bug ở docs/05-roadmap.md §15 đều xanh parity suốt vì Python và
-PHP sai giống hệt nhau. Công cụ này để tìm đúng loại đó.
+Cổng golden chứng minh **"compiler không đổi hành vi ngoài ý muốn"**, KHÔNG
+chứng minh **hành vi đó đúng**. Cả 5 bug ở docs/05-roadmap.md §15 đều xanh suốt
+vì ảnh chụp cũng chụp luôn cái sai. Công cụ này để tìm đúng loại đó.
 
 ```bash
-python3 gen.py     # sinh cases/*.sao (86 tổ hợp cú pháp)
-python3 check.py   # soát bất biến SSR↔CSR, in ca nghi vấn
-rm -rf cases       # dọn
+./sweep.php cases   # sinh cases/*.sao từ cases.json (86 tổ hợp cú pháp)
+./sweep.php check   # soát bất biến SSR↔CSR, in ca nghi vấn
+./sweep.php clean   # dọn cases/
 
-python3 leak.py    # 48 ca: mã trong {{-- --}} / @verbatim có thành mã thật không
+./sweep.php leak    # 48 ca: mã trong {{-- --}} / @verbatim có thành mã thật không
 ```
 
-`leak.py` không cần `gen.py` — nó tự sinh ca. Bug "mã trong chú thích" đã xuất
+`leak` không cần `cases` — nó tự sinh ca. Bug "mã trong chú thích" đã xuất
 hiện ở **sáu** khâu quét khác nhau (§16, §20, §21), mỗi lần vá một chỗ lại lộ
 chỗ kế. Chạy lại nó sau mỗi lần thêm khâu quét mới.
 

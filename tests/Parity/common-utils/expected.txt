@@ -1,0 +1,249 @@
+{"fn": "scope_class_for", "args": [[".a { color: red }"]]}	{"ok":true,"value":"s253a6098"}
+{"fn": "scope_css", "args": [".a { color: red }", "s123"]}	{"ok":true,"value":".a.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { color: red }</style><style>.a { color: red }</style>"]}	{"ok":true,"value":[".a { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a .b { color: red }"]]}	{"ok":true,"value":"s155eb2b4"}
+{"fn": "scope_css", "args": [".a .b { color: red }", "s123"]}	{"ok":true,"value":".a .b.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a .b { color: red }</style><style>.a .b { color: red }</style>"]}	{"ok":true,"value":[".a .b { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a, .b { color: red }"]]}	{"ok":true,"value":"s9c20fc18"}
+{"fn": "scope_css", "args": [".a, .b { color: red }", "s123"]}	{"ok":true,"value":".a.s123, .b.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a, .b { color: red }</style><style>.a, .b { color: red }</style>"]}	{"ok":true,"value":[".a, .b { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a:hover { color: red }"]]}	{"ok":true,"value":"s826dd6c4"}
+{"fn": "scope_css", "args": [".a:hover { color: red }", "s123"]}	{"ok":true,"value":".a.s123:hover { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a:hover { color: red }</style><style>.a:hover { color: red }</style>"]}	{"ok":true,"value":[".a:hover { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a::before { content: '' }"]]}	{"ok":true,"value":"sd871ca86"}
+{"fn": "scope_css", "args": [".a::before { content: '' }", "s123"]}	{"ok":true,"value":".a.s123::before { content: '' }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::before { content: '' }</style><style>.a::before { content: '' }</style>"]}	{"ok":true,"value":[".a::before { content: '' }"]}
+{"fn": "scope_class_for", "args": [[".a > .b + .c ~ .d { color: red }"]]}	{"ok":true,"value":"s65bdf958"}
+{"fn": "scope_css", "args": [".a > .b + .c ~ .d { color: red }", "s123"]}	{"ok":true,"value":".a > .b + .c ~ .d.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a > .b + .c ~ .d { color: red }</style><style>.a > .b + .c ~ .d { color: red }</style>"]}	{"ok":true,"value":[".a > .b + .c ~ .d { color: red }"]}
+{"fn": "scope_class_for", "args": [["@media (min-width: 100px) { .a { color: red } }"]]}	{"ok":true,"value":"s6c8fbaf9"}
+{"fn": "scope_css", "args": ["@media (min-width: 100px) { .a { color: red } }", "s123"]}	{"ok":true,"value":"@media (min-width: 100px) { .a.s123 { color: red } }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@media (min-width: 100px) { .a { color: red } }</style><style>@media (min-width: 100px) { .a { color: red } }</style>"]}	{"ok":true,"value":["@media (min-width: 100px) { .a { color: red } }"]}
+{"fn": "scope_class_for", "args": [["@keyframes k { from { opacity: 0 } to { opacity: 1 } }"]]}	{"ok":true,"value":"sf4bb291d"}
+{"fn": "scope_css", "args": ["@keyframes k { from { opacity: 0 } to { opacity: 1 } }", "s123"]}	{"ok":true,"value":"@keyframes k { from { opacity: 0 } to { opacity: 1 } }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@keyframes k { from { opacity: 0 } to { opacity: 1 } }</style><style>@keyframes k { from { opacity: 0 } to { opacity: 1 } }</style>"]}	{"ok":true,"value":["@keyframes k { from { opacity: 0 } to { opacity: 1 } }"]}
+{"fn": "scope_class_for", "args": [["@font-face { font-family: x }"]]}	{"ok":true,"value":"s6f81f976"}
+{"fn": "scope_css", "args": ["@font-face { font-family: x }", "s123"]}	{"ok":true,"value":"@font-face { font-family: x }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@font-face { font-family: x }</style><style>@font-face { font-family: x }</style>"]}	{"ok":true,"value":["@font-face { font-family: x }"]}
+{"fn": "scope_class_for", "args": [["@supports (display: grid) { .a { color: red } }"]]}	{"ok":true,"value":"s6af03bbb"}
+{"fn": "scope_css", "args": ["@supports (display: grid) { .a { color: red } }", "s123"]}	{"ok":true,"value":"@supports (display: grid) { .a.s123 { color: red } }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@supports (display: grid) { .a { color: red } }</style><style>@supports (display: grid) { .a { color: red } }</style>"]}	{"ok":true,"value":["@supports (display: grid) { .a { color: red } }"]}
+{"fn": "scope_class_for", "args": [["@import url('x.css');"]]}	{"ok":true,"value":"s7c8a54fc"}
+{"fn": "scope_css", "args": ["@import url('x.css');", "s123"]}	{"ok":true,"value":"@import url('x.css');"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@import url('x.css');</style><style>@import url('x.css');</style>"]}	{"ok":true,"value":["@import url('x.css');"]}
+{"fn": "scope_class_for", "args": [[".a[data-x='y'] { color: red }"]]}	{"ok":true,"value":"sdd5b265f"}
+{"fn": "scope_css", "args": [".a[data-x='y'] { color: red }", "s123"]}	{"ok":true,"value":".a[data-x='y'].s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a[data-x='y'] { color: red }</style><style>.a[data-x='y'] { color: red }</style>"]}	{"ok":true,"value":[".a[data-x='y'] { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a:not(.b, .c) { color: red }"]]}	{"ok":true,"value":"s5498ce3b"}
+{"fn": "scope_css", "args": [".a:not(.b, .c) { color: red }", "s123"]}	{"ok":true,"value":".a.s123:not(.b, .c) { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a:not(.b, .c) { color: red }</style><style>.a:not(.b, .c) { color: red }</style>"]}	{"ok":true,"value":[".a:not(.b, .c) { color: red }"]}
+{"fn": "scope_class_for", "args": [[""]]}	{"ok":true,"value":"s1505"}
+{"fn": "scope_css", "args": ["", "s123"]}	{"ok":true,"value":""}
+{"fn": "extract_scoped_css", "args": ["<style scoped></style><style></style>"]}	{"ok":true,"value":[""]}
+{"fn": "scope_class_for", "args": [["  "]]}	{"ok":true,"value":"s596605"}
+{"fn": "scope_css", "args": ["  ", "s123"]}	{"ok":true,"value":"  "}
+{"fn": "extract_scoped_css", "args": ["<style scoped>  </style><style>  </style>"]}	{"ok":true,"value":["  "]}
+{"fn": "scope_class_for", "args": [[".a { }"]]}	{"ok":true,"value":"sc46fc90c"}
+{"fn": "scope_css", "args": [".a { }", "s123"]}	{"ok":true,"value":".a.s123 { }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { }</style><style>.a { }</style>"]}	{"ok":true,"value":[".a { }"]}
+{"fn": "scope_class_for", "args": [["@media screen { @media print { .a { color: red } } }"]]}	{"ok":true,"value":"sccd7c25"}
+{"fn": "scope_css", "args": ["@media screen { @media print { .a { color: red } } }", "s123"]}	{"ok":true,"value":"@media screen { @media print { .a.s123 { color: red } } }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>@media screen { @media print { .a { color: red } } }</style><style>@media screen { @media print { .a { color: red } } }</style>"]}	{"ok":true,"value":["@media screen { @media print { .a { color: red } } }"]}
+{"fn": "scope_class_for", "args": [[".a\\:b { color: red }"]]}	{"ok":true,"value":"s379b811c"}
+{"fn": "scope_css", "args": [".a\\:b { color: red }", "s123"]}	{"ok":true,"value":".a\\:b.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a\\:b { color: red }</style><style>.a\\:b { color: red }</style>"]}	{"ok":true,"value":[".a\\:b { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a::after { content: 'Xin chào' }"]]}	{"ok":true,"value":"s6a5492a0"}
+{"fn": "scope_css", "args": [".a::after { content: 'Xin chào' }", "s123"]}	{"ok":true,"value":".a.s123::after { content: 'Xin chào' }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::after { content: 'Xin chào' }</style><style>.a::after { content: 'Xin chào' }</style>"]}	{"ok":true,"value":[".a::after { content: 'Xin chào' }"]}
+{"fn": "scope_class_for", "args": [[".tên-lớp { color: red }"]]}	{"ok":true,"value":"s424e77c3"}
+{"fn": "scope_css", "args": [".tên-lớp { color: red }", "s123"]}	{"ok":true,"value":".tên-lớp.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.tên-lớp { color: red }</style><style>.tên-lớp { color: red }</style>"]}	{"ok":true,"value":[".tên-lớp { color: red }"]}
+{"fn": "scope_class_for", "args": [["/* chú thích tiếng Việt có dấu */ .a { color: red }"]]}	{"ok":true,"value":"sc8ecf9f0"}
+{"fn": "scope_css", "args": ["/* chú thích tiếng Việt có dấu */ .a { color: red }", "s123"]}	{"ok":true,"value":"/* chú thích tiếng Việt có dấu */ .a.s123 { color: red }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>/* chú thích tiếng Việt có dấu */ .a { color: red }</style><style>/* chú thích tiếng Việt có dấu */ .a { color: red }</style>"]}	{"ok":true,"value":["/* chú thích tiếng Việt có dấu */ .a { color: red }"]}
+{"fn": "scope_class_for", "args": [[".a { font-family: 'Đường Kẻ' }"]]}	{"ok":true,"value":"seb06b53a"}
+{"fn": "scope_css", "args": [".a { font-family: 'Đường Kẻ' }", "s123"]}	{"ok":true,"value":".a.s123 { font-family: 'Đường Kẻ' }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a { font-family: 'Đường Kẻ' }</style><style>.a { font-family: 'Đường Kẻ' }</style>"]}	{"ok":true,"value":[".a { font-family: 'Đường Kẻ' }"]}
+{"fn": "scope_class_for", "args": [[".a::before { content: '🎉' }"]]}	{"ok":true,"value":"s99af2f6f"}
+{"fn": "scope_css", "args": [".a::before { content: '🎉' }", "s123"]}	{"ok":true,"value":".a.s123::before { content: '🎉' }"}
+{"fn": "extract_scoped_css", "args": ["<style scoped>.a::before { content: '🎉' }</style><style>.a::before { content: '🎉' }</style>"]}	{"ok":true,"value":[".a::before { content: '🎉' }"]}
+{"fn": "extract_scoped_css", "args": ["{{-- <style scoped>.gia{color:red}</style> --}}"]}	{"ok":true,"value":[]}
+{"fn": "extract_scoped_css", "args": ["{{-- <style scoped>.gia{}</style> --}}<style scoped>.that{}</style>"]}	{"ok":true,"value":[".that{}"]}
+{"fn": "extract_scoped_css", "args": ["@verbatim <style scoped>.gia{color:red}</style> @endverbatim"]}	{"ok":true,"value":[]}
+{"fn": "extract_scoped_css", "args": ["@verbatim <style scoped>.gia{}</style> @endverbatim<style scoped>.that{}</style>"]}	{"ok":true,"value":[".that{}"]}
+{"fn": "scope_class_for", "args": [[".a { color: red }", ".a .b { color: red }", ".a, .b { color: red }"]]}	{"ok":true,"value":"s5cbfa354"}
+{"fn": "scope_class_for", "args": [[]]}	{"ok":true,"value":""}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>{{ $children }}</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>{{ $children }}</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{{ $children }}</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>{{ $children }}</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>{!! $children !!}</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>{!! $children !!}</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{!! $children !!}</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>{!! $children !!}</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>@children()</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>@children()</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children()</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@children()</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>@children ( )</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>@children ( )</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children ( )</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@children ( )</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>@CHILDREN</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>@CHILDREN</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@CHILDREN</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@CHILDREN</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>không có gì</div>"]}	{"ok":true,"value":0}
+{"fn": "replace_children_for_blade", "args": ["<div>không có gì</div>"]}	{"ok":true,"value":"<div>không có gì</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>không có gì</div>"]}	{"ok":true,"value":"<div>không có gì</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>không có gì</div>"]}	{"ok":true,"value":0}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div><div>@children</div>"]}	{"ok":true,"value":2}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div><div>@children</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div><div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div><div>@children</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div><div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div><div>@children</div>"]}	{"ok":false,"value":"ChildrenSlotError"}
+{"fn": "count_children_placeholders", "args": ["@verbatim <code>@children</code> @endverbatim"]}	{"ok":true,"value":0}
+{"fn": "replace_children_for_blade", "args": ["@verbatim <code>@children</code> @endverbatim"]}	{"ok":true,"value":"@verbatim <code>@children</code> @endverbatim"}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim <code>@children</code> @endverbatim"]}	{"ok":true,"value":"@verbatim <code>@children</code> @endverbatim"}
+{"fn": "validate_children_placeholders", "args": ["@verbatim <code>@children</code> @endverbatim"]}	{"ok":true,"value":0}
+{"fn": "count_children_placeholders", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}	{"ok":true,"value":"@verbatim @children @endverbatim <div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}	{"ok":true,"value":"@verbatim @children @endverbatim <div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["@verbatim @children @endverbatim <div>@children</div>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}	{"ok":true,"value":0}
+{"fn": "replace_children_for_blade", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}	{"ok":true,"value":"@verbatim @children @endverbatim @verbatim @children @endverbatim"}
+{"fn": "replace_children_for_legacy_js", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}	{"ok":true,"value":"@verbatim @children @endverbatim @verbatim @children @endverbatim"}
+{"fn": "validate_children_placeholders", "args": ["@verbatim @children @endverbatim @verbatim @children @endverbatim"]}	{"ok":true,"value":0}
+{"fn": "count_children_placeholders", "args": ["<div>@childrenXyz</div>"]}	{"ok":true,"value":0}
+{"fn": "replace_children_for_blade", "args": ["<div>@childrenXyz</div>"]}	{"ok":true,"value":"<div>@childrenXyz</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@childrenXyz</div>"]}	{"ok":true,"value":"<div>@childrenXyz</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>@childrenXyz</div>"]}	{"ok":true,"value":0}
+{"fn": "count_children_placeholders", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>\n@verbatim\n{{ $children }}\n@endverbatim"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div>\n@verbatim\n{{ $children }}\n@endverbatim"}
+{"fn": "validate_children_placeholders", "args": ["<div>@children</div>\n@verbatim\n{{ $children }}\n@endverbatim"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}	{"ok":true,"value":1}
+{"fn": "replace_children_for_blade", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}	{"ok":true,"value":"<p>Nội dung tiếng Việt {!! $__ONE_CHILDREN_CONTENT__ !!}ở giữa</p>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}	{"ok":true,"value":"<p>Nội dung tiếng Việt ${__ONE_CHILDREN_CONTENT__??''}ở giữa</p>"}
+{"fn": "validate_children_placeholders", "args": ["<p>Nội dung tiếng Việt @children ở giữa</p>"]}	{"ok":true,"value":1}
+{"fn": "count_children_placeholders", "args": ["<div>{{ $children }}</div><div>@children</div>"]}	{"ok":true,"value":2}
+{"fn": "replace_children_for_blade", "args": ["<div>{{ $children }}</div><div>@children</div>"]}	{"ok":true,"value":"<div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div><div>{!! $__ONE_CHILDREN_CONTENT__ !!}</div>"}
+{"fn": "replace_children_for_legacy_js", "args": ["<div>{{ $children }}</div><div>@children</div>"]}	{"ok":true,"value":"<div>${__ONE_CHILDREN_CONTENT__??''}</div><div>${__ONE_CHILDREN_CONTENT__??''}</div>"}
+{"fn": "validate_children_placeholders", "args": ["<div>{{ $children }}</div><div>@children</div>"]}	{"ok":false,"value":"ChildrenSlotError"}
+{"fn": "is_children_expression", "args": ["$children"]}	{"ok":true,"value":true}
+{"fn": "is_children_expression", "args": [" $children "]}	{"ok":true,"value":true}
+{"fn": "is_children_expression", "args": ["$children2"]}	{"ok":true,"value":false}
+{"fn": "is_children_expression", "args": ["children"]}	{"ok":true,"value":false}
+{"fn": "is_children_expression", "args": ["$other"]}	{"ok":true,"value":false}
+{"fn": "is_children_expression", "args": [""]}	{"ok":true,"value":false}
+{"fn": "parse_imports", "args": ["@import('a')"]}	{"ok":true,"value":{"a":"'a'"}}
+{"fn": "remove_imports", "args": ["@import('a')"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import(\"b.d\")"]}	{"ok":true,"value":{"d":"\"b.d\""}}
+{"fn": "remove_imports", "args": ["@import(\"b.d\")"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import($__template__.'sessions.tasks')"]}	{"ok":true,"value":{"tasks":"$__template__.'sessions.tasks'"}}
+{"fn": "remove_imports", "args": ["@import($__template__.'sessions.tasks')"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import($__layout__.'base' as baseLayout)"]}	{"ok":true,"value":{"baseLayout":"$__layout__.'base'"}}
+{"fn": "remove_imports", "args": ["@import($__layout__.'base' as baseLayout)"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import($__blade_custom_path__)"]}	{"ok":true,"value":{"blade_custom_path":"$__blade_custom_path__"}}
+{"fn": "remove_imports", "args": ["@import($__blade_custom_path__)"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import($__blade_custom_path__ as alert)"]}	{"ok":true,"value":{"alert":"$__blade_custom_path__"}}
+{"fn": "remove_imports", "args": ["@import($__blade_custom_path__ as alert)"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import($x as $y)"]}	{"ok":true,"value":{"y":"$x"}}
+{"fn": "remove_imports", "args": ["@import($x as $y)"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import(['counter' => 'a.b', 'demo' => $__template__.'c'])"]}	{"ok":true,"value":{"counter":"'a.b'","demo":"$__template__.'c'"}}
+{"fn": "remove_imports", "args": ["@import(['counter' => 'a.b', 'demo' => $__template__.'c'])"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import({ counter: \"a.b\", demo: 'c' })"]}	{"ok":true,"value":{"counter":"\"a.b\"","demo":"'c'"}}
+{"fn": "remove_imports", "args": ["@import({ counter: \"a.b\", demo: 'c' })"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import([\n  'a' => 'x',  // chú thích\n  'b' => 'y',\n])"]}	{"ok":true,"value":{"a":"'x'","b":"'y'"}}
+{"fn": "remove_imports", "args": ["@import([\n  'a' => 'x',  // chú thích\n  'b' => 'y',\n])"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import(['a' => 'x'] ) {{-- chú thích sau --}}\n<div>x</div>"]}	{"ok":true,"value":{"a":"'x'"}}
+{"fn": "remove_imports", "args": ["@import(['a' => 'x'] ) {{-- chú thích sau --}}\n<div>x</div>"]}	{"ok":true,"value":"<div>x</div>"}
+{"fn": "parse_imports", "args": ["@import('a')\n@import('b')\n<div>hai import</div>"]}	{"ok":true,"value":{"a":"'a'","b":"'b'"}}
+{"fn": "remove_imports", "args": ["@import('a')\n@import('b')\n<div>hai import</div>"]}	{"ok":true,"value":"<div>hai import</div>"}
+{"fn": "parse_imports", "args": ["@verbatim @import('trong-verbatim') @endverbatim @import('that')"]}	{"ok":true,"value":{"that":"'that'"}}
+{"fn": "remove_imports", "args": ["@verbatim @import('trong-verbatim') @endverbatim @import('that')"]}	{"ok":true,"value":"@verbatim @import('trong-verbatim') @endverbatim "}
+{"fn": "parse_imports", "args": ["@verbatim\n  @import('tiếng Việt có dấu')\n@endverbatim\n@import('sau')"]}	{"ok":true,"value":{"sau":"'sau'"}}
+{"fn": "remove_imports", "args": ["@verbatim\n  @import('tiếng Việt có dấu')\n@endverbatim\n@import('sau')"]}	{"ok":true,"value":"@verbatim\n  @import('tiếng Việt có dấu')\n@endverbatim\n"}
+{"fn": "parse_imports", "args": ["@import(  )"]}	{"ok":true,"value":{}}
+{"fn": "remove_imports", "args": ["@import(  )"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import("]}	{"ok":true,"value":{}}
+{"fn": "remove_imports", "args": ["@import("]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["không có import nào"]}	{"ok":true,"value":{}}
+{"fn": "remove_imports", "args": ["không có import nào"]}	{"ok":true,"value":"không có import nào"}
+{"fn": "parse_imports", "args": ["@IMPORT('hoa')"]}	{"ok":true,"value":{"hoa":"'hoa'"}}
+{"fn": "remove_imports", "args": ["@IMPORT('hoa')"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import('a.b.c.d')"]}	{"ok":true,"value":{"d":"'a.b.c.d'"}}
+{"fn": "remove_imports", "args": ["@import('a.b.c.d')"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import(['x' => 'p', 'x' => 'q'])"]}	{"ok":true,"value":{"x":"'q'"}}
+{"fn": "remove_imports", "args": ["@import(['x' => 'p', 'x' => 'q'])"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import('có-gạch-nối')"]}	{"ok":true,"value":{"có-gạch-nối":"'có-gạch-nối'"}}
+{"fn": "remove_imports", "args": ["@import('có-gạch-nối')"]}	{"ok":true,"value":""}
+{"fn": "parse_imports", "args": ["@import('tên_có_gạch_dưới')"]}	{"ok":true,"value":{"tên_có_gạch_dưới":"'tên_có_gạch_dưới'"}}
+{"fn": "remove_imports", "args": ["@import('tên_có_gạch_dưới')"]}	{"ok":true,"value":""}
+{"fn": "extract_tag_from_path", "args": ["'a'"]}	{"ok":true,"value":"a"}
+{"fn": "extract_tag_from_path", "args": ["\"b.d\""]}	{"ok":true,"value":"d"}
+{"fn": "extract_tag_from_path", "args": ["$__template__.'x.y'"]}	{"ok":true,"value":"y"}
+{"fn": "extract_tag_from_path", "args": ["$__custom__"]}	{"ok":true,"value":"custom"}
+{"fn": "extract_tag_from_path", "args": ["a-b"]}	{"ok":true,"value":"ab"}
+{"fn": "extract_tag_from_path", "args": [""]}	{"ok":true,"value":null}
+{"fn": "extract_tag_from_path", "args": ["''"]}	{"ok":true,"value":null}
+{"fn": "extract_tag_from_path", "args": ["$x.'a.'"]}	{"ok":true,"value":""}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter />", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter />", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter/>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter/>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter >", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["<counter >", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["</counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["</counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><counter></counter></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><counter></counter></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><other></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><other></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></other>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["<counter></other>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><demo></counter></demo>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["<counter><demo></counter></demo>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<div>Tiếng Việt có dấu ở đây rất dài</div>\n<counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["<div>Tiếng Việt có dấu ở đây rất dài</div>\n<counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["dòng 1\ndòng 2 tiếng Việt\n<counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["dòng 1\ndòng 2 tiếng Việt\n<counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<script><counter></script><counter/>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<script><counter></script><counter/>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<style><counter></style>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<style><counter></style>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<textarea><counter></textarea>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<textarea><counter></textarea>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<title><counter></title>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<title><counter></title>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- <counter> --}}<counter/>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- <counter> --}}<counter/>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- <counter> --><counter/>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- <counter> --><counter/>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- chưa đóng comment <counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["{{-- chưa đóng comment <counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- chưa đóng <counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<!-- chưa đóng <counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a>b'></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a>b'></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr=\"a>b\"></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr=\"a>b\"></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a\\'b'></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter attr='a\\'b'></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["< counter></counter>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["< counter></counter>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<3invalid>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<3invalid>", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<counter", {"counter": "a.b", "demo": "c.d"}]}	{"ok":false,"value":"TemplateStructureError"}
+{"fn": "validate_imported_tag_structure", "args": ["<counter", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["không có thẻ nào", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["không có thẻ nào", {}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<demo/>", {"counter": "a.b", "demo": "c.d"}]}	{"ok":true,"value":null}
+{"fn": "validate_imported_tag_structure", "args": ["<demo/>", {}]}	{"ok":true,"value":null}

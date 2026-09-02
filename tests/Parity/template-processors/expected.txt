@@ -1,0 +1,172 @@
+{"name":"synthetic-01","result":{"client":false,"server":false,"template":"${App.Helper.yield('content')}"}}
+{"name":"synthetic-02","result":{"client":false,"server":false,"template":"${App.Helper.yield(slot)}"}}
+{"name":"synthetic-03","result":{"client":false,"server":false,"template":"x ${this.__output(['a','b'], () => (a + App.Helper.fn(b, 2)))} y"}}
+{"name":"synthetic-04","result":{"client":false,"server":false,"template":"${App.View.renderView(this.__include(\"parts.card\", {}))}"}}
+{"name":"synthetic-05","result":{"client":false,"server":false,"template":"${App.View.renderView(this.__include('parts.card', {\"x\":1}))}"}}
+{"name":"synthetic-06","result":{"client":false,"server":false,"template":"${App.View.renderView(this.__include(path))}"}}
+{"name":"synthetic-07","result":{"client":false,"server":false,"template":"${App.View.renderView(this.__include(path, Warning: Undefined variable x in Command line code on line 1\n{\"x\":null}))}"}}
+{"name":"synthetic-08","result":{"client":false,"server":false,"template":"<div ${this.__attr({\"data-x\": {\"states\": [\"x\"], \"render\": () => x}})}></div>"}}
+{"name":"synthetic-09","result":{"client":false,"server":false,"template":"<div ${this.__attr({\"class\": {\"states\": [\"class\"], \"render\": () => class}, \"title\": {\"states\": [], \"render\": () => 'hello'}})}></div>"}}
+{"name":"synthetic-10","result":{"client":false,"server":false,"template":"${this.__attr({})}"}}
+{"name":"synthetic-11","result":{"client":false,"server":false,"template":"<div  ${this.wrapattr()}></div>"}}
+{"name":"synthetic-12","result":{"client":false,"server":false,"template":"${App.Helper.generateViewId()}"}}
+{"name":"synthetic-13","result":{"client":false,"server":false,"template":"${html}"}}
+{"name":"synthetic-14","result":{"client":false,"server":false,"template":"${App.Helper.escString(name)}"}}
+{"name":"synthetic-15","result":{"client":false,"server":false,"template":"${{\"a\": 1}}"}}
+{"name":"synthetic-16","result":{"client":false,"server":false,"template":"${plain}"}}
+{"name":"synthetic-17","result":{"client":false,"server":false,"template":""}}
+{"name":"synthetic-18","result":{"client":false,"server":"skip_until_@endserverside","template":"@ssr"}}
+{"name":"synthetic-19","result":{"client":false,"server":"skip_until_@endserverside","template":"@SSR"}}
+{"name":"synthetic-20","result":{"client":false,"server":"skip_until_@endserverside","template":"@serverside"}}
+{"name":"synthetic-21","result":{"client":"remove_directive_markers_until_@endclientside","server":false,"template":"@csr"}}
+{"name":"synthetic-22","result":{"client":"remove_directive_markers_until_@endclientside","server":false,"template":"@clientSide"}}
+{"name":"synthetic-23","result":{"client":false,"server":false,"template":"plain"}}
+{"name":"synthetic-24","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true };"}}
+{"name":"synthetic-25","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true };"}}
+{"name":"synthetic-26","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true };"}}
+{"name":"synthetic-27","result":{"client":false,"server":false,"template":"__WRAPPER_END__"}}
+{"name":"synthetic-28","result":{"client":false,"server":false,"template":"<div  class=\"${App.Helper.yieldContent('theme', null)}\" data-yield-attr=\"class:theme\"></div>"}}
+{"name":"synthetic-29","result":{"client":false,"server":false,"template":"<div   class=\"${App.Helper.yieldContent('theme', 'base')}\" title=\"${App.Helper.yieldContent('heading', null)}\" data-yield-attr=\"class:theme,title:heading\"></div>"}}
+{"name":"synthetic-30","result":{"client":false,"server":false,"template":"<div class=\"${App.Helper.yieldContent('theme', null)}\" data-yield-attr=\"class:theme\"></div>"}}
+{"name":"synthetic-31","result":{"client":false,"server":false,"template":"<div title=\"${App.Helper.yieldContent('heading', 'untitled')}\" data-yield-attr=\"title:heading\"></div>"}}
+{"name":"synthetic-32","result":{"client":false,"server":false,"template":"<div class=\"${App.Helper.yieldContent('theme', null)}\" data-yield-content=\"body\" data-yield-children=\"items\" data-yield-attr=\"class:theme\"></div>"}}
+{"name":"synthetic-33","result":{"client":false,"server":false,"template":"${this.__subscribe({\"#all\": [\"stateKey\"]})}"}}
+{"name":"synthetic-34","result":{"client":false,"server":false,"template":"${this.__subscribe({\"class\": [\"stateKey\"]})}"}}
+{"name":"synthetic-35","result":{"client":false,"server":false,"template":"${this.__subscribe({\"#all\": [\"stateKey\", \"contentState\"]})}"}}
+{"name":"synthetic-36","result":{"client":false,"server":false,"template":"${this.__subscribe({\"class\": [\"stateKey\"], \"#children\": [\"a\", \"b\"]})}"}}
+{"name":"synthetic-37","result":{"client":false,"server":false,"template":"${this.__subscribe({\"#children\": [\"stateKey\", \"contentState\"]})}"}}
+{"name":"synthetic-38","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true, tag: \"section\", subscribe: [\"stateKey\", \"user\"], attributes: {'class': 'hero'} };"}}
+{"name":"synthetic-39","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true, tag: \"main\", subscribe: false, attributes: {'id': 'root'} };"}}
+{"name":"synthetic-40","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true, tag: \"article\", subscribe: [\"stateKey\"], attributes: {'class': 'card'} };"}}
+{"name":"synthetic-41","result":{"client":false,"server":false,"template":"__WRAPPER_CONFIG__ = { enable: true, tag: null, attributes: {'id': 'shell'} };"}}
+{"name":"saola/resources/saola/web/views/components/code-block.sao:7","result":{"client":false,"server":false,"template":"        <pre><code class=\"language-${App.Helper.escString(lang)}\">@children</code></pre>"}}
+{"name":"saola/resources/saola/web/views/components/code-window.sao:11","result":{"client":false,"server":false,"template":"                <span>${App.Helper.escString(label)}</span>"}}
+{"name":"saola/resources/saola/web/views/components/code-window.sao:12","result":{"client":false,"server":false,"template":"                <b>${App.Helper.escString(title)}</b>"}}
+{"name":"saola/resources/saola/web/views/components/code-window.sao:18","result":{"client":false,"server":false,"template":"        <pre><code class=\"language-${App.Helper.escString(lang)}\">@children</code></pre>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/featurecard.sao:11","result":{"client":false,"server":false,"template":"            <span>${App.Helper.escString(number)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/featurecard.sao:12","result":{"client":false,"server":false,"template":"            <h3>${App.Helper.escString(title)}</h3>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/featurecard.sao:14","result":{"client":false,"server":false,"template":"        <code>${source}</code>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:50","result":{"client":false,"server":false,"template":"                    <strong>${App.Helper.escString(featureTotal)}</strong>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:79","result":{"client":false,"server":false,"template":"                            <p class=\"live-output\">Xin chào, <strong data-demo-name-output>${App.Helper.escString(name)}</strong>.</p>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:93","result":{"client":false,"server":false,"template":"                            <a @attr({href: '/compiler', title: `Compiler cho ${name}`})>Mở trang compiler</a>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:115","result":{"client":false,"server":false,"template":"                                    <span>${App.Helper.escString(i + 1)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:121","result":{"client":false,"server":false,"template":"                                    <li @class({'is-enabled': item['enabled']})>${App.Helper.escString(item['label'])}</li>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:148","result":{"client":false,"server":false,"template":"                                <strong data-demo-count-output>${App.Helper.escString(count)}</strong>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:152","result":{"client":false,"server":false,"template":"                            <small>Giới hạn mẫu: 0–${App.Helper.escString(MAX_COUNT)}</small>"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:206","result":{"client":false,"server":false,"template":"                @ssr"}}
+{"name":"saola/resources/saola/web/views/modules/demo/index.sao:215","result":{"client":false,"server":false,"template":"            ${DEMO_SCRIPT}"}}
+{"name":"saola/resources/saola/web/views/modules/home/contact.sao:30","result":{"client":false,"server":false,"template":"                    <label><span>Context</span><textarea maxlength=\"500\" placeholder=\"What is the application doing today, and where does it become difficult?\" @bind(message) @input(trackLength(event))></textarea><small>${App.Helper.escString(messageLength)} / 500</small></label>"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:4","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.hero\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:5","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.features\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:6","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.architecture\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:7","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.how\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:8","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.usecase\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:9","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.compare\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:10","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.principle\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:11","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.cta\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/index.sao:12","result":{"client":false,"server":false,"template":"        ${App.View.renderView(this.__include(\"web.modules.home.parts.faq\", {}))}"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:23","result":{"client":false,"server":false,"template":"                <strong>${App.Helper.escString(completedCount)}/${App.Helper.escString(todos.length)}</strong><span>complete</span>"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:37","result":{"client":false,"server":false,"template":"                    <button @class({'active': filter === 'all'}) @click(setFilter('all'))>All <span>${App.Helper.escString(todos.length)}</span></button>"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:38","result":{"client":false,"server":false,"template":"                    <button @class({'active': filter === 'active'}) @click(setFilter('active'))>Active <span>${App.Helper.escString(activeCount)}</span></button>"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:39","result":{"client":false,"server":false,"template":"                    <button @class({'active': filter === 'done'}) @click(setFilter('done'))>Done <span>${App.Helper.escString(completedCount)}</span></button>"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:60","result":{"client":false,"server":false,"template":"                                <div><strong>${App.Helper.escString(todo['text'])}</strong><small>SAOLA DEMO · TASK ${App.Helper.escString(todo['id'])}</small></div>"}}
+{"name":"saola/resources/saola/web/views/modules/home/todo.sao:67","result":{"client":false,"server":false,"template":"            <footer class=\"todo-summary\"><p><span>${App.Helper.escString(activeCount)}</span> items still need attention.</p><a href=\"/about\">Why Saola handles this differently →</a></footer>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/flowstep.sao:8","result":{"client":false,"server":false,"template":"        <span>${App.Helper.escString(step)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/flowstep.sao:12","result":{"client":false,"server":false,"template":"        <code>${App.Helper.escString(cmd)}</code>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/how.sao:55","result":{"client":false,"server":false,"template":"                            <button type=\"button\" class=\"dx-heart\" @click(setLikes(likes + 1))>♥ ${App.Helper.escString(likes)}</button>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/mapcard.sao:10","result":{"client":false,"server":false,"template":"    <a @class({'map-card', 'map-card-dark': variant === 'dark'}) @attr({href: href})>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/mapcard.sao:11","result":{"client":false,"server":false,"template":"        <span>${App.Helper.escString(eyebrow)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/mapcard.sao:12","result":{"client":false,"server":false,"template":"        <h3>${App.Helper.escString(title)}</h3>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/mapcard.sao:14","result":{"client":false,"server":false,"template":"        <i>${App.Helper.escString(link)}</i>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/ovcard.sao:8","result":{"client":false,"server":false,"template":"        <span>${App.Helper.escString(eyebrow)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/home/parts/ovcard.sao:9","result":{"client":false,"server":false,"template":"        <h3>${App.Helper.escString(title)}</h3>"}}
+{"name":"saola/resources/saola/web/views/modules/abc/index.sao:9","result":{"client":false,"server":false,"template":"            <button @click(setN(n + 1))>n = ${App.Helper.escString(n)}</button>"}}
+{"name":"saola/resources/saola/web/views/modules/ping/index.sao:11","result":{"client":false,"server":false,"template":"            <p>Hello, ${App.Helper.escString(name)}! 👋</p>"}}
+{"name":"saola/resources/saola/web/views/modules/ping/index.sao:16","result":{"client":false,"server":false,"template":"                <span>Count: ${App.Helper.escString(count)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/ping/index.sao:27","result":{"client":false,"server":false,"template":"                    <li>Ping #${App.Helper.escString(i + 1)}</li>"}}
+{"name":"saola/resources/saola/web/views/modules/posts/list.sao:6","result":{"client":false,"server":false,"template":"    <h1>${App.Helper.escString(title)}</h1>"}}
+{"name":"saola/resources/saola/web/views/modules/posts/list.sao:9","result":{"client":false,"server":false,"template":"            <li>${App.Helper.escString(post.title)}</li>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/index.sao:25","result":{"client":false,"server":false,"template":"                    <strong>${App.Helper.escString(ids.length)}</strong><span>users</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/index.sao:34","result":{"client":false,"server":false,"template":"                    <dd>${App.Helper.escString(ids.length)}</dd>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/index.sao:45","result":{"client":false,"server":false,"template":"                        <dd>${App.Helper.escString(lastSync)}</dd>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/index.sao:51","result":{"client":false,"server":false,"template":"                <p class=\"rs-alert rs-alert--danger rs-alert--error\">${App.Helper.escString(syncError)}</p>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/index.sao:98","result":{"client":false,"server":false,"template":"                        {{-- record đổi ref ⇒ Component đẩy prop mới vào ĐÚNG instance con"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:20","result":{"client":false,"server":false,"template":"            ${App.Helper.escString(-- Bị người khác XOÁ khi đang sửa: parent giữ hàng lại, record = null --)}"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:30","result":{"client":false,"server":false,"template":"            ${App.Helper.escString(-- Bị người khác SỬA khi đang sửa: version lệch so với lúc mở form --)}"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:39","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>${App.Helper.escString(record['name'])}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:40","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>${App.Helper.escString(fName)}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:46","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>${App.Helper.escString(record['email'])}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:47","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>${App.Helper.escString(fEmail)}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:53","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>${App.Helper.escString(record['gender'])}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:54","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>${App.Helper.escString(fGender)}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:60","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-theirs\"><em>Của họ</em><b>${App.Helper.escString(record['birthdate'])}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:61","result":{"client":false,"server":false,"template":"                                <span class=\"rs-diff-mine\"><em>Của bạn</em><b>${App.Helper.escString(fBirthdate)}</b></span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:97","result":{"client":false,"server":false,"template":"                        <span class=\"rs-ver\">base v${App.Helper.escString(base['updated_at'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:100","result":{"client":false,"server":false,"template":"                    {{-- Bản ghi đã biến mất thì Lưu chỉ ăn 404 — chỉ còn đường tạo lại"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:121","result":{"client":false,"server":false,"template":"                        <strong>${App.Helper.escString(record['name'])}</strong>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:122","result":{"client":false,"server":false,"template":"                        <span>${App.Helper.escString(record['email'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:125","result":{"client":false,"server":false,"template":"                        <span class=\"rs-tag rs-tag--brand\">${App.Helper.escString(record['gender'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:126","result":{"client":false,"server":false,"template":"                        <span class=\"rs-tag\">${App.Helper.escString(record['birthdate'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:127","result":{"client":false,"server":false,"template":"                        <span class=\"rs-ver\">v${App.Helper.escString(record['updated_at'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/roster/item.sao:138","result":{"client":false,"server":false,"template":"            <p class=\"rs-note\">${App.Helper.escString(note)}</p>"}}
+{"name":"saola/resources/saola/web/views/modules/docs/architecture.sao:263","result":{"client":false,"server":false,"template":"                <div><div class=\"dt-key\"><code>${App.View.renderView(this.__include(\"web.partials.head\", {}))}</code></div><span>Nạp một partial template tĩnh hoặc snippet dùng chung vào view.</span><b>include</b></div>"}}
+{"name":"saola/resources/saola/web/views/modules/docs/compiler.sao:13","result":{"client":false,"server":false,"template":"  &lt;h2&gt;${App.Helper.escString(title)}&lt;/h2&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/compiler.sao:22","result":{"client":false,"server":false,"template":"  &lt;h2&gt;${App.Helper.escString(title)}&lt;/h2&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/compiler.sao:23","result":{"client":false,"server":false,"template":"  ${__ONE_CHILDREN_CONTENT__}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:42","result":{"client":false,"server":false,"template":"&lt;p&gt;Tổng số: ${App.Helper.escString(total)}&lt;/p&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:44","result":{"client":false,"server":false,"template":"    &lt;li&gt;${App.Helper.escString(row.title)}&lt;/li&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:59","result":{"client":false,"server":false,"template":"&lt;div class=\"card card--${App.Helper.escString(tone)}\"&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:60","result":{"client":false,"server":false,"template":"    &lt;span&gt;${App.Helper.escString(label)}&lt;/span&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:61","result":{"client":false,"server":false,"template":"    &lt;strong&gt;${App.Helper.escString(value)}&lt;/strong&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:65","result":{"client":false,"server":false,"template":"&lt;statcard label=\"Lượt bấm\" value=\"${App.Helper.escString(count)}\" tone=\"emerald\" /&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:80","result":{"client":false,"server":false,"template":"&lt;button &#64;click(setCount(count + 1))&gt;${App.Helper.escString(count)}&lt;/button&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:154","result":{"client":false,"server":false,"template":"&lt;h1&gt;${App.Helper.escString(user['name'])}&lt;/h1&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:155","result":{"client":false,"server":false,"template":"&lt;span&gt;${App.Helper.escString(price * qty)}&lt;/span&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:214","result":{"client":false,"server":false,"template":"    &lt;li&gt;${App.Helper.escString(item['label'])}&lt;/li&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:246","result":{"client":false,"server":false,"template":"    &lt;li&gt;Ping #${App.Helper.escString(i + 1)}&lt;/li&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:472","result":{"client":false,"server":false,"template":"&#64;extends(layout)          ${App.Helper.escString(-- y hệt &#64;extends(__layout__ + 'docs') --)}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:488","result":{"client":false,"server":false,"template":"    ${App.Helper.escString(-- hoặc, sau &#64;import(.. + as rosteritem): --)}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/directives.sao:503","result":{"client":false,"server":false,"template":"&lt;article class=\"card\"&gt;&lt;h3&gt;${App.Helper.escString(title)}&lt;/h3&gt;&#64;children&lt;/article&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/getting-started.sao:44","result":{"client":false,"server":false,"template":"            Count: ${App.Helper.escString(count)}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:76","result":{"client":false,"server":false,"template":"        &lt;div class=\"profile-card profile-card--${App.Helper.escString(theme)}\"&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:77","result":{"client":false,"server":false,"template":"            &lt;user-avatar user=\"${App.Helper.escString(currentUser)}\" size=\"large\" /&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:78","result":{"client":false,"server":false,"template":"            &lt;h2&gt;${App.Helper.escString(currentUser.name)}&lt;/h2&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:79","result":{"client":false,"server":false,"template":"            &lt;p class=\"title\"&gt;${App.Helper.escString(title)}&lt;/p&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:82","result":{"client":false,"server":false,"template":"                &lt;p class=\"bio\"&gt;${App.Helper.escString(currentUser.bio)}&lt;/p&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:87","result":{"client":false,"server":false,"template":"                    👍 Lượt thích: ${App.Helper.escString(count)}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/sao-file.sao:91","result":{"client":false,"server":false,"template":"                        ${App.Helper.escString(isEditing ? 'Đóng' : 'Chỉnh sửa')}"}}
+{"name":"saola/resources/saola/web/views/modules/docs/system-vars.sao:56","result":{"client":false,"server":false,"template":"    &lt;li&gt;${App.Helper.escString(__loop.iteration)}. ${App.Helper.escString(item['name'])}&lt;/li&gt;"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:60","result":{"client":false,"server":false,"template":"                                    <div class=\"cmp-num\">${App.Helper.escString(count)}</div>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:85","result":{"client":false,"server":false,"template":"                                        <span class=\"cmp-chip cmp-chip--slate\">còn lại: ${App.Helper.escString(onceLeft)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:92","result":{"client":false,"server":false,"template":"                                    <p class=\"cmp-note\">nền: ${App.Helper.escString(selfHits)} · nút con: ${App.Helper.escString(clicks)}</p>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:114","result":{"client":false,"server":false,"template":"                                    <div class=\"cmp-out\">Thành tiền: ${App.Helper.escString(price * qty)}</div>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:146","result":{"client":false,"server":false,"template":"                                    <div class=\"cmp-out\">Xin chào, ${App.Helper.escString(name)}.</div>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:174","result":{"client":false,"server":false,"template":"                                        <span @class({'cmp-chip', 'cmp-chip--sky': tone === 'sky', 'cmp-chip--indigo': tone === 'indigo', 'cmp-chip--slate': tone === 'slate'})>tone = ${App.Helper.escString(tone)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:208","result":{"client":false,"server":false,"template":"                                    <div @class({'cmp-box', 'txt-sm': textSize === 'sm', 'txt-lg': textSize === 'lg'})>Cỡ chữ hiện tại: ${App.Helper.escString(textSize)}.</div>"}}
+{"name":"saola/resources/saola/web/views/modules/components/index.sao:328","result":{"client":false,"server":false,"template":"                                                <span>${App.Helper.escString(item['label'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/components/statcard.sao:9","result":{"client":false,"server":false,"template":"        <span>${App.Helper.escString(label)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/components/statcard.sao:10","result":{"client":false,"server":false,"template":"        <strong>${App.Helper.escString(value)}</strong>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:28","result":{"client":false,"server":false,"template":"                <strong>${App.Helper.escString(activeCount)}/${App.Helper.escString(users.length)}</strong><span>active</span>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:33","result":{"client":false,"server":false,"template":"            ${App.Helper.escString(-- Event modifiers: + prevent thay cho event.preventDefault() thủ công --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:38","result":{"client":false,"server":false,"template":"                    Refresh từ server <span>(${App.Helper.escString(refreshCount)})</span>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:44","result":{"client":false,"server":false,"template":"                <p class=\"stress__banner\">${App.Helper.escString(banner)}</p>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:47","result":{"client":false,"server":false,"template":"            {{-- GAP-10: mỗi item include một view con; refresh sinh ref MỚI nhưng"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:53","result":{"client":false,"server":false,"template":"                        ${App.Helper.escString(-- Thẻ tuỳ chỉnh nhận biểu thức qua tiền tố ':' — compiler suy stateKeys y như @include --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:56","result":{"client":false,"server":false,"template":"                        ${App.Helper.escString(-- @if trong __loop → Reactive theo từng App.Helper.item(record marker riêng) --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:59","result":{"client":false,"server":false,"template":"                                ${App.Helper.escString(-- @foreach lồng, bọc trong thẻ → chạy ngoài cửa sổ cache __loop ngoài --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:61","result":{"client":false,"server":false,"template":"                                    <span class=\"chip\">${App.Helper.escString(role['name'])}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:68","result":{"client":false,"server":false,"template":"                        ${App.Helper.escString(-- + stop: bấm xoá không được kích hoạt selectUser của hàng --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:74","result":{"client":false,"server":false,"template":"            {{-- GAP-18: loop KHÔNG có @key — hậu tố id marker là chỉ số vòng lặp,"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:78","result":{"client":false,"server":false,"template":"                    <span class=\"chip chip--tag\">${App.Helper.escString(tag)}</span>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:83","result":{"client":false,"server":false,"template":"                <span>${App.Helper.escString(totalRoles)} vai trò</span>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:88","result":{"client":false,"server":false,"template":"        ${App.Helper.escString(-- + self: chỉ đóng khi bấm ĐÚNG nền, không đóng khi bấm vào hộp bên trong --)}"}}
+{"name":"saola/resources/saola/web/views/modules/stress/index.sao:108","result":{"client":false,"server":false,"template":"         * Đây là đường từng làm view con của @include biến mất khỏi DOM."}}
+{"name":"saola/resources/saola/web/views/modules/stress/usercard.sao:8","result":{"client":false,"server":false,"template":"        <div class=\"ucard__id\">#${App.Helper.escString(user['id'])}</div>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/usercard.sao:10","result":{"client":false,"server":false,"template":"            <strong>${App.Helper.escString(user['name'])}</strong>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/usercard.sao:11","result":{"client":false,"server":false,"template":"            <small>${App.Helper.escString(user['email'])}</small>"}}
+{"name":"saola/resources/saola/web/views/modules/stress/usercard.sao:13","result":{"client":false,"server":false,"template":"        <div class=\"ucard__rev\">rev ${App.Helper.escString(user['rev'])}</div>"}}
+{"name":"saola/resources/saola/web/views/partials/head.sao:1","result":{"client":false,"server":false,"template":"    {{-- <head> meta riêng cho context web. CSS/JS load qua _system/partials/assets"}}
+{"name":"saola/resources/saola/themes/demo/views/modules/abc/index.sao:8","result":{"client":false,"server":false,"template":"            <button @click(setN(n + 1))>n = ${App.Helper.escString(n)}</button>"}}
+{"name":"saola/resources/saola/themes/aurora/views/modules/ping/index.sao:6","result":{"client":false,"server":false,"template":"    {{-- __layout__ là biến của CẢ context nên nó trỏ themes.aurora.layouts.*"}}
+{"name":"saola/resources/saola/themes/aurora/views/modules/ping/index.sao:13","result":{"client":false,"server":false,"template":"            <p>Xin chào, ${App.Helper.escString(name)}. Trang này đến từ themes/aurora.</p>"}}
+{"name":"saola/resources/saola/themes/aurora/views/modules/ping/index.sao:15","result":{"client":false,"server":false,"template":"            <span>Count: ${App.Helper.escString(count)}</span>"}}

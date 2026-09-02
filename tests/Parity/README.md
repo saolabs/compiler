@@ -1,10 +1,11 @@
-# Cổng parity
+# Cổng golden
 
-Bản PHP phải cho ra kết quả **giống hệt từng byte** với compiler Python đang chạy
-production. Thư mục này là chỗ chứng minh điều đó.
+Compiler PHP không được đổi hành vi ngoài ý muốn. Thư mục này là chỗ chứng minh
+điều đó.
 
 ```bash
-./run-all.sh
+./run-all.sh       # chạy mọi cổng
+./regenerate.sh    # ghi lại ảnh chụp — CHỈ khi output đổi có chủ ý
 ```
 
 ## Cách hoạt động
@@ -13,12 +14,35 @@ Mỗi cổng có ba phần cùng chung một hợp đồng stdin/stdout:
 
 | File | Vai trò |
 |---|---|
-| `oracle.py` | Chạy bằng **compiler Python thật** trong `builder/.reference/python/src/` — đây là chuẩn |
-| `subject.php` | Chạy bằng bản PHP trong `src/` |
-| `run.sh` | Nạp input cho cả hai, `diff` kết quả. Lệch một byte là hỏng |
+| `expected*.txt` | Ảnh chụp output, do CHÍNH compiler sinh — đây là chuẩn |
+| `subject.php` | Chạy bản PHP trong `src/` |
+| `run.sh` | Nạp input cho subject, `diff` với ảnh chụp. Lệch một byte là hỏng |
 
-Bản Python không phải nợ kỹ thuật trong giai đoạn này — **nó là bộ test**. Chỉ
-gỡ đi sau khi parity sạch qua một chu kỳ release (Phase 7).
+`_golden.sh` phát lại ảnh chụp, đứng đúng chỗ `oracle.py` ngày trước.
+
+## Vì sao không còn oracle Python
+
+Các cổng này từng so PHP với compiler Python trong `builder/.reference/python`.
+Bảo chứng đó là **"PHP làm giống Python"** — đúng cho giai đoạn di trú, hết giá
+trị khi Python thôi làm nguồn sự thật, và tới lúc đó thì nó **cản đường**: một
+bản vá sửa đúng trong PHP bị đánh đỏ chỉ vì bản Python còn giữ lỗi cũ. Đó chính
+là chuyện đã xảy ra với `@transition` và event có modifier.
+
+Golden đổi bảo chứng thành **"PHP không đổi ngoài ý muốn"** — thứ còn giá trị
+mãi. Corpus giữ nguyên (26.960 ca hydrate-id, 750 biểu thức, 103 file…), chỉ đổi
+cái đem ra so. Dự án giờ chỉ còn PHP và JS/TS.
+
+Ảnh chụp do compiler sinh, không viết tay: output viết tay chỉ chứng minh người
+viết nghĩ gì, không chứng minh compiler làm gì. Đổi output có chủ ý → chạy
+`./regenerate.sh` rồi review `git diff` — diff đó chính là bản mô tả thay đổi
+hành vi.
+
+Hai cổng KHÔNG dùng ảnh chụp vì chúng hỏi câu khác:
+
+- `marker-sync` so BLADE với JS trong cùng một lần biên dịch — "SSR và CSR có
+  nói cùng một ngôn ngữ không". Golden không trả lời được: sai đều hai phía thì
+  ảnh chụp vẫn xanh.
+- `node-transport` kiểm tính toàn vẹn và tái lập của đường ống Node.
 
 ## Các cổng hiện có
 

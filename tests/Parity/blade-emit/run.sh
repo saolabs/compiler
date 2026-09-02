@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Cổng parity cho Blade emitter (docs/05-roadmap.md — Phase 3).
+# Cổng golden cho Blade emitter (docs/05-roadmap.md — Phase 3).
 #
 # sao2blade KHÔNG nhận .sao thô — nó nhận chuỗi blade đã ráp mà
 # index.js::processSaoFile dựng lên. corpus.js tái dựng đúng chuỗi đó bằng bản
@@ -11,7 +11,7 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$DIR"
-while [[ "$ROOT" != "/" && ! -d "$ROOT/builder/.reference/python/src" ]]; do
+while [[ "$ROOT" != "/" && ! -d "$ROOT/compiler/src" ]]; do
     ROOT="$(dirname "$ROOT")"
 done
 WORK="$(mktemp -d)"
@@ -31,15 +31,20 @@ if grep -q '__CORPUS_ERROR__' "$WORK/corpus.tsv"; then
     exit 1
 fi
 
-"$DIR/oracle.py"   < "$WORK/corpus.tsv" > "$WORK/oracle.txt" 2>/dev/null
+"$DIR/../_golden.sh" "$DIR"   < "$WORK/corpus.tsv" > "$WORK/oracle.txt" 2>/dev/null
 "$DIR/subject.php" < "$WORK/corpus.tsv" > "$WORK/subject.txt" 2>/dev/null
 
+if [[ "${SAOLA_GOLDEN_REGENERATE:-}" == "1" ]]; then
+    cp "$WORK/subject.txt" "$DIR/expected.txt"
+    echo "📸 golden: ghi lại expected.txt"
+    exit 0
+fi
 if diff -u "$WORK/oracle.txt" "$WORK/subject.txt" > "$WORK/diff.txt"; then
-    echo "✅ PARITY: khớp $TOTAL/$TOTAL file"
+    echo "✅ GOLDEN: khớp $TOTAL/$TOTAL file"
     exit 0
 fi
 
-echo "❌ PARITY HỎNG: $(grep -c '^-[a-z]' "$WORK/diff.txt" || true) / $TOTAL file lệch"
+echo "❌ GOLDEN LỆCH: $(grep -c '^-[a-z]' "$WORK/diff.txt" || true) / $TOTAL file lệch"
 echo
 grep -E '^[-+][a-z]' "$WORK/diff.txt" | head -2 | cut -c1-400
 exit 1

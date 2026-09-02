@@ -1,0 +1,13 @@
+{"name": "conditional-01", "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "append", "value": "yes"}, {"op": "endif"}]}
+{"name": "conditional-02", "states": ["ready"], "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "append", "value": "yes"}, {"op": "endif"}]}
+{"name": "conditional-03", "states": ["ready"], "typescript": true, "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "endif"}]}
+{"name": "conditional-04", "states": ["ready"], "ops": [{"op": "if", "line": "@if($ready)", "attribute": true}, {"op": "else"}, {"op": "endif"}]}
+{"name": "conditional-05", "states": ["ready", "other"], "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "elseif", "line": "@elseif($other)"}, {"op": "else"}, {"op": "endif"}]}
+{"name": "conditional-06", "stack": [["for", 0]], "states": ["ready"], "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "elseif", "line": "@elseif(!$ready)"}, {"op": "else"}, {"op": "break"}, {"op": "endif"}]}
+{"name": "conditional-07", "stack": [["foreach", 0]], "states": ["ready"], "ops": [{"op": "if", "line": "@if($ready)"}, {"op": "endif"}]}
+{"name": "conditional-08", "ops": [{"op": "if", "line": "broken"}, {"op": "elseif", "line": "broken"}, {"op": "endif"}]}
+{"name": "conditional-09", "states": ["status"], "ops": [{"op": "switch", "line": "@switch($status)"}, {"op": "case", "line": "@case('ok')"}, {"op": "append", "value": "OK"}, {"op": "break"}, {"op": "default"}, {"op": "append", "value": "NO"}, {"op": "break"}, {"op": "endswitch"}]}
+{"name": "conditional-10", "ops": [{"op": "switch", "line": "@switch(1)"}, {"op": "case", "line": "@case(fn(1, 2))"}, {"op": "break"}, {"op": "endswitch"}]}
+{"name": "conditional-11", "stack": [["while", 0]], "states": ["status"], "ops": [{"op": "switch", "line": "@switch($status)"}, {"op": "default"}, {"op": "break"}, {"op": "endswitch"}]}
+{"name": "conditional-12", "states": ["status"], "typescript": true, "ops": [{"op": "switch", "line": "@switch($status)", "attribute": true}, {"op": "endswitch"}]}
+{"name": "conditional-13", "ops": [{"op": "case", "line": "broken"}, {"op": "break"}, {"op": "endswitch"}]}

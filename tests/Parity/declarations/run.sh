@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Cổng parity cho DeclarationTracker (docs/05-roadmap.md — Phase 3).
+# Cổng golden cho DeclarationTracker (docs/05-roadmap.md — Phase 3).
 #
 # Oracle là PYTHON (builder/.reference/python/src/common/declaration_tracker.py).
 #
@@ -17,7 +17,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Đi ngược lên tới thư mục chứa builder/.reference/python/src — không phụ thuộc độ sâu
 ROOT="$DIR"
-while [[ "$ROOT" != "/" && ! -d "$ROOT/builder/.reference/python/src" ]]; do
+while [[ "$ROOT" != "/" && ! -d "$ROOT/compiler/src" ]]; do
     ROOT="$(dirname "$ROOT")"
 done
 WORK="$(mktemp -d)"
@@ -30,16 +30,21 @@ find "$DIR/../source-split/fixtures" -name '*.sao' | sort >> "$WORK/files.txt"
 TOTAL=$(wc -l < "$WORK/files.txt" | tr -d ' ')
 echo "Corpus: $REAL file .sao thật + $((TOTAL - REAL)) fixture = $TOTAL"
 
-"$DIR/oracle.py"   < "$WORK/files.txt" > "$WORK/oracle.txt"
+"$DIR/../_golden.sh" "$DIR"   < "$WORK/files.txt" > "$WORK/oracle.txt"
 "$DIR/subject.php" < "$WORK/files.txt" > "$WORK/subject.txt"
 
+if [[ "${SAOLA_GOLDEN_REGENERATE:-}" == "1" ]]; then
+    cp "$WORK/subject.txt" "$DIR/expected.txt"
+    echo "📸 golden: ghi lại expected.txt"
+    exit 0
+fi
 if diff -u "$WORK/oracle.txt" "$WORK/subject.txt" > "$WORK/diff.txt"; then
-    echo "✅ PARITY: khớp $TOTAL/$TOTAL file"
+    echo "✅ GOLDEN: khớp $TOTAL/$TOTAL file"
     exit 0
 fi
 
 MISMATCH=$(grep -c '^-[a-z]' "$WORK/diff.txt" || true)
-echo "❌ PARITY HỎNG: $MISMATCH / $TOTAL file lệch"
+echo "❌ GOLDEN LỆCH: $MISMATCH / $TOTAL file lệch"
 echo
 echo "File lệch đầu tiên:"
 grep -E '^[-+][a-z]' "$WORK/diff.txt" | head -2 | cut -c1-400

@@ -1,0 +1,18 @@
+{"name": "loop-01", "ops": [{"op": "foreach", "line": "@foreach($items as $item)"}, {"op": "append", "value": "x"}, {"op": "endforeach"}]}
+{"name": "loop-02", "states": ["items"], "ops": [{"op": "foreach", "line": "@foreach($items as $key => $value)"}, {"op": "endforeach"}]}
+{"name": "loop-03", "states": ["items"], "typescript": true, "ops": [{"op": "foreach", "line": "@foreach($items as $item)", "attribute": true}, {"op": "endforeach"}]}
+{"name": "loop-04", "stack": [["for", 0]], "states": ["items"], "ops": [{"op": "foreach", "line": "@foreach($items as $item)"}, {"op": "endforeach"}]}
+{"name": "loop-05", "ops": [{"op": "foreach", "line": "broken"}, {"op": "endforeach"}]}
+{"name": "loop-06", "ops": [{"op": "for", "line": "@for($i = 0; $i < 10; $i++)"}, {"op": "append", "value": "x"}, {"op": "endfor"}]}
+{"name": "loop-07", "states": ["max"], "ops": [{"op": "for", "line": "@for($i = 0; $i <= $max; $i++)"}, {"op": "endfor"}]}
+{"name": "loop-08", "states": ["max"], "typescript": true, "ops": [{"op": "for", "line": "@for($i = 0; $i < $max; $i++)", "attribute": true}, {"op": "endfor"}]}
+{"name": "loop-09", "stack": [["while", 0]], "states": ["max"], "ops": [{"op": "for", "line": "@for($i = 0; $i < $max; $i++)"}, {"op": "endfor"}]}
+{"name": "loop-10", "stack": [["while", 0]], "ops": [{"op": "for", "line": "@for($i = 0; $i < 3; $i++)"}, {"op": "endfor"}]}
+{"name": "loop-11", "ops": [{"op": "for", "line": "@for($i = 0; bad)"}, {"op": "endfor"}]}
+{"name": "loop-12", "ops": [{"op": "while", "line": "@while($ready)"}, {"op": "append", "value": "x"}, {"op": "endwhile"}]}
+{"name": "loop-13", "states": ["ready"], "ops": [{"op": "while", "line": "@while($ready && check($ready))"}, {"op": "endwhile"}]}
+{"name": "loop-14", "states": ["ready"], "typescript": true, "ops": [{"op": "while", "line": "@while($ready)", "attribute": true}, {"op": "endwhile"}]}
+{"name": "loop-15", "stack": [["for", 0]], "states": ["ready"], "ops": [{"op": "while", "line": "@while($ready)"}, {"op": "endwhile"}]}
+{"name": "loop-16", "stack": [["for", 0]], "ops": [{"op": "while", "line": "@while(true)"}, {"op": "endwhile"}]}
+{"name": "loop-17", "ops": [{"op": "while", "line": "broken"}, {"op": "endwhile"}]}
+{"name": "loop-18", "states": ["items", "max"], "ops": [{"op": "foreach", "line": "@foreach($items as $item)"}, {"op": "for", "line": "@for($i = 0; $i < $max; $i++)"}, {"op": "endfor"}, {"op": "endforeach"}]}

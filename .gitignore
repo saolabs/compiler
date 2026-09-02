@@ -3,10 +3,18 @@
 /.phpunit.cache/
 /.phpunit.result.cache
 
-# Bộ oracle/parity Python chỉ dùng cục bộ trong giai đoạn chuyển đổi.
-# Không publish và tuyệt đối không đưa vào Git; PHPUnit là test suite chính thức.
-/tests/Parity/
-/tests/Tools/
+# tests/Parity và tests/Tools NAY ĐƯỢC ĐƯA VÀO GIT.
+#
+# Luật cũ loại chúng ra vì đó là "bộ oracle Python chỉ dùng cục bộ trong giai
+# đoạn chuyển đổi". Cả hai vế nay đều hết đúng: không còn dòng Python nào, và
+# các cổng đổi vai từ oracle tạm thời (so PHP với Python) thành lưới chắn hồi
+# quy lâu dài (so PHP với ảnh chụp golden). Ảnh chụp chỉ có giá trị khi được
+# commit — `git diff` trên nó chính là bản mô tả thay đổi hành vi compiler.
+#
+# `*.py` giữ lại làm chốt chặn: dự án chỉ còn PHP và JS/TS.
 *.py
 *.py[cod]
 __pycache__/
+
+# Rác do cổng sinh lúc chạy
+/tests/Tools/sweep/cases/
