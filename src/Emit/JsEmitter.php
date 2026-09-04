@@ -53,8 +53,15 @@ final class JsEmitter
         $this->ids = new HydrateIdGenerator();
     }
 
-    /** @param iterable<string>|null $prerenderedSections */
-    public function generate(RootNode $root, bool $hasExtends = false, ?string $extendsExpression = null, ?string $extendsData = null, ?array $blockSections = null, ?iterable $prerenderedSections = null): string
+    /**
+     * @param iterable<string>|null $prerenderedSections
+     * @param bool $onlyPrerendered Đảo bộ lọc: emit ĐÚNG các section trong
+     *   `$prerenderedSections` thay vì bỏ chúng. Đây là thân của `prerender()`
+     *   cho trang `@await`/`@fetch` — phần tĩnh bị render() loại ra phải được
+     *   sinh Ở ĐÂY bằng chính các generator này, nếu không nội dung tới được
+     *   Blade mà không tới được JS (SSR hiện, CSR mất).
+     */
+    public function generate(RootNode $root, bool $hasExtends = false, ?string $extendsExpression = null, ?string $extendsData = null, ?array $blockSections = null, ?iterable $prerenderedSections = null, bool $onlyPrerendered = false): string
     {
         $this->ids->reset(); $this->loopScopes = []; $this->inWhileOrFor = false; $this->whileForVariables = [];
         $this->prerenderedSections = [];
@@ -63,9 +70,9 @@ final class JsEmitter
         $lines = ['let parentElement = this.parentElement;', 'let parentReactive = null;'];
         if ($hasExtends) {
             foreach ($root->children as $node) {
-                if ($node instanceof BlockSection && !isset($this->prerenderedSections[$node->name])) $lines[] = $this->genBlockSection($node, '');
-                elseif ($node instanceof SectionNode && !isset($this->prerenderedSections[$node->name])) $lines[] = $this->genSection($node, '');
-                elseif ($node instanceof LongSectionNode && !isset($this->prerenderedSections[$node->name])) $lines[] = $this->genLongSection($node, '');
+                if ($node instanceof BlockSection) { if ($this->wantsSection($node->name, $onlyPrerendered)) $lines[] = $this->genBlockSection($node, ''); }
+                elseif ($node instanceof SectionNode) { if ($this->wantsSection($node->name, $onlyPrerendered)) $lines[] = $this->genSection($node, ''); }
+                elseif ($node instanceof LongSectionNode) { if ($this->wantsSection($node->name, $onlyPrerendered)) $lines[] = $this->genLongSection($node, ''); }
             }
             if ($extendsExpression !== null && $extendsExpression !== '') {
                 $lines[] = 'this.superViewPath = ' . $extendsExpression . ';';
@@ -173,6 +180,9 @@ final class JsEmitter
     {
         $id=$this->ids->pushReactive('switch');$keys=array_keys($node->stateVars);sort($keys);$lines=[$indent.'this.reactive('.$this->formatId($id).', "switch", parentReactive, parentElement, '.$this->jsonList($keys).', '.$this->arrowReactive().' {',$indent.'    const reactiveContents = [];',$indent.'    switch ('.$node->exprJs.') {'];$case=0;foreach($node->cases as[$value,$children]){$this->ids->pushCase(++$case);$lines[]=$indent.($value!==null?'        case '.$value.':':'        default:');$items=[];foreach($children as$child)if(($code=$this->genNode($child,$indent.'            '))!==null)$items[]=$code;$this->ids->popScope();if($items!==[]){$lines[]=$indent.'            reactiveContents.push(';$lines[]=implode(",\n",$items);$lines[]=$indent.'            );';}$lines[]=$indent.'            break;';}$lines[]=$indent.'    }';$lines[]=$indent.'    return reactiveContents;';$lines[]=$indent.'})';$this->ids->popScope();return implode("\n",$lines);
     }
+
+    /** render() lấy phần KHÔNG prerender; prerender() lấy đúng phần còn lại. */
+    private function wantsSection(string $name, bool $onlyPrerendered): bool { return isset($this->prerenderedSections[$name]) === $onlyPrerendered; }
 
     private function genBlockSection(BlockSection $node,string $indent): string { $this->ids->pushBlock($node->name);$children=$this->genChildrenList($node->children,$indent.'    ');$this->ids->popScope();return $indent."this.block('block-{$node->name}', '{$node->name}', ".$this->arrowParent().' ['."\n".$children."\n".$indent.']);'; }
     private function genBlockOutlet(BlockOutlet $node,string $indent): string { return $indent.'this.blockOutlet('.$this->formatId($this->ids->nextBlockOutlet()).', "'.$node->name.'", parentElement)'; }

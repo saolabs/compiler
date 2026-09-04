@@ -31,28 +31,30 @@ final class FunctionGenerators
         ?array $sectionsInfo = null,
         ?array $conditionalContent = null,
         bool $hasPrerender = true,
+        ?string $staticBody = null,
     ): string {
         if (!$hasPrerender || (!$hasAwait && !$hasFetch)) {
             return "function() {\n    return null;\n}";
         }
 
-        // The structured renderer contract returns a Wrapper skeleton while data is pending.
-        // Static sections are registered before extending a layout.
-        $actions = [];
-        foreach ($sectionsInfo ?? [] as $section) {
-            if (!empty($section['useVars'])) {
-                continue;
-            }
-            $name = (string) ($section['name'] ?? '');
-            if ($name === '') continue;
-            $actions[] = "this.section('{$name}', { type: 'static', contentType: 'html', stateKeys: [] }, () => '');";
+        // Phần tĩnh do JsEmitter sinh (cùng generator với render()), kèm sẵn
+        // `extendView` ở cuối. Trước kia chỗ này tự viết tay một `this.section`
+        // rỗng cho mọi section, làm nội dung @block/@section tĩnh biến mất khỏi
+        // JS trong khi Blade vẫn có — SSR hiện, CSR mất.
+        if ($staticBody !== null && $staticBody !== '') {
+            $lines = array_map(
+                static fn (string $line): string => trim($line) === '' ? '' : '    '.$line,
+                explode("\n", $staticBody),
+            );
+
+            return "function() {\n".implode("\n", $lines)."\n}";
         }
 
         if ($extendedView !== null || $extendsExpression !== null) {
             $layout = $extendedView !== null ? "__layout__ + '{$extendedView}'" : $extendsExpression;
             $data = ($extendsData !== null && $extendsData !== '') ? $extendsData : '{}';
-            $body = $actions === [] ? '' : '    '.implode("\n    ", $actions)."\n";
-            return "function() {\n{$body}    this.superViewPath = {$layout};\n    return this.extendView(this.superViewPath, {$data});\n}";
+
+            return "function() {\n    this.superViewPath = {$layout};\n    return this.extendView(this.superViewPath, {$data});\n}";
         }
 
         return self::prerenderSkeleton();

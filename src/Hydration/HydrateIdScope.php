@@ -25,6 +25,8 @@ final class HydrateIdScope
 
     private int $yieldCounter = 0;
 
+    private int $blockOutletCounter = 0;
+
     /**
      * @param string      $prefix       Tiền tố id của scope này (vd "block-content", "div-1")
      * @param string|null $loopVar      Biểu thức chỉ số vòng lặp phía JS (vd "__loopIndex")
@@ -79,14 +81,23 @@ final class HydrateIdScope
     }
 
     /**
-     * Id cho @useBlock/@blockOutlet.
+     * Id cho @useBlock/@blockOutlet kế tiếp: "block-outlet-N".
      *
-     * KHÔNG có bộ đếm — mỗi scope chỉ có một block outlet. Giữ nguyên hành vi
-     * của bản Python; thêm số vào đây sẽ làm lệch id với SSR.
+     * Trước đây KHÔNG có bộ đếm, với giả định "mỗi scope chỉ có một block
+     * outlet". Giả định đó sai: layout có hai `@useBlock` sinh ra hai id
+     * TRÙNG nhau, marker thứ hai không tồn tại trong DOM nên outlet thứ hai
+     * không bao giờ mount. Chưa ai gặp vì mọi layout trong repo đúng một
+     * outlet (2026-09-03).
+     *
+     * Thêm số ở đây KHÔNG làm lệch SSR/CSR: Blade và JS cùng đi qua đúng bộ
+     * sinh này, nên hai bên dịch chuyển cùng nhau — cổng marker-sync là chỗ
+     * chứng minh điều đó.
      */
     public function nextBlockOutletId(): string
     {
-        return $this->withPrefix('block-outlet');
+        $this->blockOutletCounter++;
+
+        return $this->withPrefix('block-outlet-' . $this->blockOutletCounter);
     }
 
     /** Id cho @yield kế tiếp: "yield-N". */

@@ -211,8 +211,8 @@ final class MainCompiler
         $templateContent = (new StyleDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processStyleDirective($templateContent);
         $templateContent = (new ShowDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processShowDirective($templateContent);
 
-        $renderFunction = $this->generateStructuredRender($bladeForAst, $stateVariables, $variableList, $constDeclarations, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $hasPrerender, $hasAwait, $hasFetch);
-        $prerender = (new FunctionGenerators($this->isTypescript))->generatePrerenderFunction($hasAwait, $hasFetch, $varsDeclaration === '' ? '' : '    '.$varsDeclaration."\n", "    \n", $templateContent, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $conditionalContent, $hasPrerender);
+        [$renderFunction, $prerenderStaticBody] = $this->generateStructuredRender($bladeForAst, $stateVariables, $variableList, $constDeclarations, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $hasPrerender, $hasAwait, $hasFetch);
+        $prerender = (new FunctionGenerators($this->isTypescript))->generatePrerenderFunction($hasAwait, $hasFetch, $varsDeclaration === '' ? '' : '    '.$varsDeclaration."\n", "    \n", $templateContent, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $conditionalContent, $hasPrerender, $prerenderStaticBody);
 
         return $this->buildView(
             $viewName, $functionName, $factoryFunctionName, $registerData, $dataDeclarations,
@@ -269,7 +269,11 @@ final class MainCompiler
     }
 
     /** @param array<string,true> $stateVariables @param list<string> $variableList @param list<array<string,mixed>> $sectionsInfo */
-    private function generateStructuredRender(string $code, array $stateVariables, array $variableList, string $constDeclarations, ?string $extendedView, ?string $extendsExpression, ?string $extendsData, array $sectionsInfo, bool $hasPrerender, bool $hasAwait, bool $hasFetch): string
+    /**
+     * @return array{string,?string} [thân `render()`, thân `prerender()` cho phần
+     *   tĩnh khi có `@await`/`@fetch` — null nếu không có phần nào bị tách ra]
+     */
+    private function generateStructuredRender(string $code, array $stateVariables, array $variableList, string $constDeclarations, ?string $extendedView, ?string $extendsExpression, ?string $extendsData, array $sectionsInfo, bool $hasPrerender, bool $hasAwait, bool $hasFetch): array
     {
         foreach(['setup','import','imports','scope','scoped']as$type)$code=preg_replace('/<script\s+'.$type.'[^>]*>.*?<\/script>/is','',$code)??$code;
         $code=preg_replace('/@viewtype\s*\([^)]*\)/i','',$code)??$code;
@@ -293,9 +297,15 @@ final class MainCompiler
         $pre=[];if($hasPrerender&&($hasAwait||$hasFetch))foreach($sectionsInfo as$section)if(empty($section['useVars']))$pre[]=$section['name'];
         $hasExtends=$extendedView!==null||$extendsExpression!==null;
         $expression=$extendedView!==null?"__layout__ + '{$extendedView}'":$extendsExpression;
-        $body=(new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode))->generate($root,$hasExtends,$expression,$extendsData,null,$pre);
+        $emitter=fn():JsEmitter=>new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode);
+        $body=$emitter()->generate($root,$hasExtends,$expression,$extendsData,null,$pre);
         $lines=array_map(static fn(string$line):string=>trim($line)===''?'':'    '.$line,explode("\n",$body));
-        return "function () {\n".implode("\n",$lines)."\n}";
+        // Phần tĩnh bị `$pre` loại khỏi render() phải được sinh lại ở đây bằng
+        // chính các generator đó — trước kia FunctionGenerators tự viết tay
+        // `this.section(name, ..., () => '')` nên nội dung block/section tĩnh
+        // biến mất khỏi JS.
+        $preBody=($pre!==[]&&$hasExtends)?$emitter()->generate($root,$hasExtends,$expression,$extendsData,null,$pre,true):null;
+        return ["function () {\n".implode("\n",$lines)."\n}",$preBody];
     }
 
     /** @return list<array{int,int}> */
