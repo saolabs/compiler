@@ -118,15 +118,22 @@ class PropsChildrenView extends View {
             this.html(`e1`, "article", parentElement,
                 { classes: [{ type: 'static', value: "card" }, { type: 'binding', value: "card-accent", factory: () => tone === 'accent', stateKeys: ["tone"] }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "h2", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["title"], (parentElement) => title)
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e12`, "div", parentElement,
                     { classes: [{ type: 'static', value: "card-body" }] },
                     (parentElement) => [
                     ...this.__children(__ONE_CHILDREN_CONTENT__, parentElement)
-                    ])
-                ])
+                    ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

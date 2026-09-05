@@ -140,7 +140,8 @@ class ComputedView extends View {
             this.html(`e1`, "p", parentElement, {}, (parentElement) => [
                 this.text('Tổng: '),
                 this.text(String(total ?? ''))
-            ])
+            ]),
+            this.text('\n')
             ]);
             }
         });

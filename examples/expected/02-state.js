@@ -140,18 +140,25 @@ class StateView extends View {
             this.html(`e1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "counter" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "span", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["name"], (parentElement) => name),
                     this.text(' đã bấm '),
                     this.output(`e11o2`, parentElement, true, ["count"], (parentElement) => count),
                     this.text(' lần')
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e12`, "button", parentElement,
                     { events: { click: [(event) => setCount(count + 1)] } },
                     (parentElement) => [
                     this.text('Tăng')
-                    ])
-                ])
+                    ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

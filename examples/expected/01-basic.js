@@ -111,13 +111,20 @@ class BasicView extends View {
             this.html(`e1`, "section", parentElement,
                 { classes: [{ type: 'static', value: "hero" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "h1", parentElement, {}, (parentElement) => [
                     this.text('Xin chào Saola')
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e12`, "p", parentElement, {}, (parentElement) => [
                     this.text('Trang tĩnh đơn giản nhất.')
-                ])
-                ])
+                ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

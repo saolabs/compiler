@@ -157,12 +157,19 @@ class BindingsView extends View {
                 (parentElement) => [
                 this.text('Hộp')
                 ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e2`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "label" } }, bind: { key: 'label' } }),
+            this.text('\n'),
+            this.text('\n'),
+            this.text('    \n'),
+            this.text('    '),
             this.html(`e3`, "span", parentElement,
                 { attrs: { "title": { type: 'binding', value: label, factory: () => label, stateKeys: ["label"] } } },
                 (parentElement) => [
                 this.text('rút gọn hoạt động ở đây')
-                ])
+                ]),
+            this.text('\n')
             ]);
             }
         });

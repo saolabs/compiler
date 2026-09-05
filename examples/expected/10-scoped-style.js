@@ -116,7 +116,8 @@ class ScopedStyleView extends View {
                     (parentElement) => [
                     this.text('Có scope')
                     ])
-                ])
+                ]),
+            this.text('\n')
             ]);
             }
         });

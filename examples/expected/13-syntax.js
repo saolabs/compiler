@@ -118,31 +118,56 @@ class SyntaxView extends View {
             this.html(`e1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "my-4" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "label", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["label"], (parentElement) => label)
                 ]),
-                this.html(`e12`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } })
+                this.text('\n'),
+                this.text('        '),
+                this.html(`e12`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } }),
+                this.text('\n'),
+                this.text('    ')
                 ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e2`, "div", parentElement,
                 { classes: [{ type: 'static', value: "mt-4" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e21`, "ul", parentElement, {}, (parentElement) => [
+                    this.text('\n'),
+                    this.text('            '),
                     this.reactive(`e21l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                         return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                            this.text('                '),
                             this.html(`e21l11-${__loopIndex}`, "li", parentElement,
                                 { attrs: { "key": { type: 'binding', value: item, factory: () => item, stateKeys: [] } } },
                                 (parentElement) => [
                                 this.output(`e21l11o1-${__loopIndex}`, parentElement, true, [], (parentElement) => item)
-                                ])
+                                ]),
+                            this.text('\n'),
+                            this.text('            ')
                         ])
-                    })
-                ])
+                    }),
+                    this.text('        ')
                 ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e3`, "div", parentElement,
                 { classes: [{ type: 'binding', value: "bg-red-500", factory: () => value < 10, stateKeys: ["value"] }, { type: 'binding', value: "bg-green-500", factory: () => value >= 10, stateKeys: ["value"] }, { type: 'binding', value: "bg-blue-500", factory: () => value >= 20, stateKeys: ["value"] }], styles: { "color": { type: 'binding', value: value > 10 ? 'blue' : 'red', factory: () => value > 10 ? 'blue' : 'red', stateKeys: ["value"] }, "font-size": { type: 'binding', value: value+'px', factory: () => value+'px', stateKeys: ["value"] } } },
                 (parentElement) => [
-                this.output(`e3o1`, parentElement, true, ["value"], (parentElement) => value)
-                ])
+                this.text('\n'),
+                this.text('        '),
+                this.output(`e3o1`, parentElement, true, ["value"], (parentElement) => value),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

@@ -125,7 +125,9 @@ class VerbatimView extends View {
             this.html(`e1`, "p", parentElement, {}, (parentElement) => [
                 this.output(`e1o1`, parentElement, true, ["title"], (parentElement) => title)
             ]),
-            this.text('<pre><code>{{ title }} và @children giữ nguyên</code></pre>')
+            this.text('\n'),
+            this.text('    <pre><code>{{ title }} và @children giữ nguyên</code></pre>'),
+            this.text('\n')
             ]);
             }
         });

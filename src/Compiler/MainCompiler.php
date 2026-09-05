@@ -102,9 +102,13 @@ final class MainCompiler
         [$bladeCode, $verbatimBlocks] = $this->protectVerbatim($bladeCode);
         $bladeCode = preg_replace('/@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\b[\s\S]*?@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\b/i', '', $bladeCode) ?? $bladeCode;
         [$bladeCode, $setupBlocks] = $this->protectScriptSetup($bladeCode);
-        $sentinel = '@@@@@@@@@@@@@@@@@@@@@@@--------------------------------$$$$$$$$$$$$$$$$$$$$$$$$$$';
-        $bladeCode = str_replace(['\\`', '`'], [$sentinel, '\\`'], $bladeCode);
-        $bladeCode = str_replace($sentinel, '\\`', $bladeCode);
+        // KHÔNG escape backtick toàn cục ở đây. Bản cũ đổi mọi ` thành \` cho ngữ
+        // cảnh template literal, nhưng nó sai cả hai đầu:
+        //   - văn xuôi: text đi tiếp vào jsTextLiteral (chuỗi nháy đơn), nơi \ lại
+        //     thành \\ → người đọc thấy dấu \ thừa (`.sao` hiện ra \`.sao\`);
+        //   - biểu thức: template literal lồng trong id `${...}` là JS HỢP LỆ, còn
+        //     bản escape thì SyntaxError — hỏng đúng ca nó định bảo vệ.
+        // @verbatim và <script setup> vốn đã được bóc ra trước đó nên không liên quan.
         foreach ($setupBlocks as $placeholder => $content) $bladeCode = str_replace($placeholder, $content, $bladeCode);
 
         $this->registerParser->reset();

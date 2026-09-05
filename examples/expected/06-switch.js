@@ -127,23 +127,34 @@ class SwitchView extends View {
                 switch (runtime) {
                     case 'blade':
                         reactiveContents.push(
+                        this.text('            '),
                         this.html(`r1k11`, "span", parentElement, {}, (parentElement) => [
                             this.text('Server')
-                        ])
+                        ]),
+                        this.text('\n'),
+                        this.text('            '),
+                        this.text('        ')
                         );
                         break;
                     case 'js':
                         reactiveContents.push(
+                        this.text('            '),
                         this.html(`r1k21`, "span", parentElement, {}, (parentElement) => [
                             this.text('Client')
-                        ])
+                        ]),
+                        this.text('\n'),
+                        this.text('            '),
+                        this.text('        ')
                         );
                         break;
                     default:
                         reactiveContents.push(
+                        this.text('            '),
                         this.html(`r1k31`, "span", parentElement, {}, (parentElement) => [
                             this.text('Không rõ')
-                        ])
+                        ]),
+                        this.text('\n'),
+                        this.text('    ')
                         );
                         break;
                 }

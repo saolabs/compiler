@@ -94,24 +94,73 @@ final class Parser
         // Directive điều khiển phải đứng riêng dòng: cả hai emitter xử lý
         // theo DÒNG nên nội dung dính cùng dòng sẽ mất (§14).
         $templateContent = Html::splitInlineDirectives($templateContent);
+        // Phần rìa không có ở output server: MainCompiler đã bóc `<template>` và cắt
+        // các range `@props`/`@states`, để lại dòng trống ở đầu/cuối. Blade sinh lại
+        // header ở cột 0 nên chúng không ra HTML — giữ lại thì CSR dư newline ngay
+        // sau marker view.
+        $templateContent = trim($templateContent, " \t\n\r");
 
         foreach (explode("\n", $templateContent) as $line) {
             if ($this->rawtextTag !== null) {
+                // Nội dung rawtext (<pre>, <code>, <textarea>) giữ nguyên từng dòng
+                // kể cả xuống dòng — đây là vùng white-space: pre, mất một "\n" là
+                // thấy ngay trên màn hình.
                 $this->processContentLine($line, $stack);
+                $this->addText($stack, "\n");
                 continue;
             }
 
+            // Whitespace phải sống sót: sao2blade giữ nguyên từng dòng nguồn, nên
+            // DOM từ server có đúng thụt lề + xuống dòng của file .sao. Trước đây
+            // parser này strip từng dòng và bỏ dòng trống, nên CSR dựng ra DOM
+            // KHÁC SSR — thấy rõ nhất ở khoảng trắng giữa hai thẻ inline
+            // (`<b>a</b> <b>b</b>` thành `<b>a</b><b>b</b>`) và trong vùng
+            // white-space: pre. Quy tắc lấy từ HTML server thật:
+            //   dòng nội dung  → nguyên dòng + "\n"
+            //   dòng directive → chỉ thụt lề, KHÔNG "\n" (PHP nuốt newline ngay
+            //                      sau thẻ đóng của directive đã biên dịch)
+            //   dòng trống     → "\n"
             $stripped = self::pyStrip($line);
+            $indent = substr($line, 0, strlen($line) - strlen(ltrim($line)));
+
             if ($stripped === '') {
+                $this->addText($stack, $line . "\n");
                 continue;
             }
             if (str_starts_with($stripped, '{{--') && str_ends_with($stripped, '--}}')) {
+                // Blade thay comment bằng chuỗi rỗng, thụt lề và newline vẫn ra output.
+                $this->addText($stack, $indent . "\n");
                 continue;
             }
-            if ($this->tryDirective($stripped, $stack)) {
+            if (str_starts_with($stripped, '@')) {
+                // @key là metadata biên dịch: sao2blade XOÁ HẲN dòng này khỏi output
+                // (Blade đi thẳng từ @foreach sang <li>), nên nó không đóng góp cả
+                // thụt lề lẫn newline. Giữ lại thì mỗi vòng lặp dư đúng một mức thụt.
+                if (Re::match('/^@key\b/i', $stripped)) {
+                    $this->tryDirective($stripped, $stack);
+                    continue;
+                }
+                // Emit thụt lề TRƯỚC khi chạy directive: directive đóng (@endblock,
+                // @endif) pop stack, nên thụt lề của nó phải vào parent còn đang mở.
+                $this->addText($stack, $indent);
+                if ($this->tryDirective($stripped, $stack)) {
+                    // @children là placeholder NỘI DUNG, không phải directive điều
+                    // khiển: nó được thay bằng nội dung con ngay ở khâu tiền xử lý
+                    // nên không sinh thẻ PHP nào để nuốt newline — server vẫn xuất
+                    // "\n" cuối dòng này.
+                    if (Re::match('/^@children\b/i', $stripped)) {
+                        $this->addText($stack, "\n");
+                    }
+                    continue;
+                }
+                // Bắt đầu bằng '@' nhưng không phải directive (vd '@saolabs/client'
+                // trong văn xuôi) — thụt lề đã emit rồi, xử lý phần còn lại như nội dung.
+                $this->processContentLine(substr($line, strlen($indent)), $stack);
+                $this->addText($stack, "\n");
                 continue;
             }
-            $this->processContentLine($stripped, $stack);
+            $this->processContentLine($line, $stack);
+            $this->addText($stack, "\n");
         }
 
         return $root;
@@ -364,14 +413,8 @@ final class Parser
                 $pos = $this->consumeRawtext($line, $pos, $stack);
                 continue;
             }
-            if ($pos === 0 && ($line[$pos] === ' ' || $line[$pos] === "\t")) {
-                while ($pos < $length && ($line[$pos] === ' ' || $line[$pos] === "\t")) {
-                    $pos++;
-                }
-                if ($pos >= $length) {
-                    break;
-                }
-            }
+            // (Thụt lề đầu dòng KHÔNG còn bị bỏ ở đây — nó là text node thật trong
+            //  DOM của server, xem ghi chú whitespace ở parse().)
             if (substr($line, $pos, 4) === '<!--') {
                 $end = strpos($line, '-->', $pos + 4);
                 if ($end === false) {
@@ -416,7 +459,8 @@ final class Parser
                 continue;
             }
             $segment = substr($line, $pos, $nextTag - $pos);
-            if (trim($segment) !== '') {
+            // Segment chỉ có khoảng trắng VẪN là text node ở server — giữ lại.
+            if ($segment !== '') {
                 $this->parseInlineContent($segment, $stack);
             }
             $pos = $nextTag;
@@ -441,7 +485,7 @@ final class Parser
     /** @param list<array{Node, string, mixed}> $stack */
     private function emitRawtext(string $raw, array &$stack, string $tag): void
     {
-        if ($raw === '' || trim($raw) === '') {
+        if ($raw === '') {
             return;
         }
         if (isset(self::RCDATA_ELEMENTS[$tag])) {
@@ -777,6 +821,19 @@ final class Parser
             }, $value);
         }
         return [$value, $state];
+    }
+
+    /**
+     * Thêm text node nếu chuỗi không rỗng. Dùng cho whitespace cấu trúc
+     * (thụt lề, xuống dòng) mà server render ra nhưng parser trước đây vứt đi.
+     *
+     * @param list<array{Node, string, mixed}> $stack
+     */
+    private function addText(array &$stack, string $text): void
+    {
+        if ($text !== '') {
+            $this->addChild($stack, new TextNode($text));
+        }
     }
 
     /** @param list<array{Node, string, mixed}> $stack */

@@ -123,38 +123,51 @@ class ConditionalView extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`e1`, "div", parentElement, {}, (parentElement) => [
+                this.text('\n'),
+                this.text('    '),
                 this.reactive(`e1r1`, "if", parentReactive, parentElement, ["status"], (parentReactive, parentElement) => {
                     const reactiveContents = [];
                     if (status === 'ready') {
                         reactiveContents.push(
+                        this.text('        '),
                         this.html(`e1r1k11`, "p", parentElement,
                             { classes: [{ type: 'static', value: "ok" }] },
                             (parentElement) => [
                             this.text('Sẵn sàng')
-                            ])
+                            ]),
+                        this.text('\n'),
+                        this.text('    ')
                         );
                     }
                     else if (status === 'idle') {
                         reactiveContents.push(
+                        this.text('        '),
                         this.html(`e1r1k21`, "p", parentElement,
                             { classes: [{ type: 'static', value: "idle" }] },
                             (parentElement) => [
                             this.text('Đang chờ')
-                            ])
+                            ]),
+                        this.text('\n'),
+                        this.text('    ')
                         );
                     }
                     else {
                         reactiveContents.push(
+                        this.text('        '),
                         this.html(`e1r1k31`, "p", parentElement,
                             { classes: [{ type: 'static', value: "err" }] },
                             (parentElement) => [
                             this.text('Lỗi')
-                            ])
+                            ]),
+                        this.text('\n'),
+                        this.text('    ')
                         );
                     }
                     return reactiveContents;
-                })
-            ])
+                }),
+                this.text('    ')
+            ]),
+            this.text('\n')
             ]);
             }
         });

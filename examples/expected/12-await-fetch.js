@@ -121,7 +121,8 @@ class AwaitFetchView extends View {
                 this.text('Có '),
                 this.output(`e1o1`, parentElement, true, ["users"], (parentElement) => App.Helper.count(users)),
                 this.text(' người dùng')
-            ])
+            ]),
+            this.text('\n')
             ]);
             }
         });

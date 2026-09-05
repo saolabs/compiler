@@ -171,146 +171,239 @@ class DemoFullView extends View {
             this.html(`e1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "click-section" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "button", parentElement,
                     { attrs: { "type": { type: 'static', value: "button" } }, events: { click: [(event) => setCount(count + 1)] } },
                     (parentElement) => [
-                    this.text('Click me ('),
+                    this.text('\n'),
+                    this.text('            Click me ('),
                     this.output(`e11o1`, parentElement, true, ["count"], (parentElement) => count),
-                    this.text(')')
-                    ])
+                    this.text(')'),
+                    this.text('\n'),
+                    this.text('        ')
+                    ]),
+                this.text('\n'),
+                this.text('    ')
                 ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e2`, "div", parentElement, {}, (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.reactive(`e2r1`, "if", parentReactive, parentElement, ["editingMode"], (parentReactive, parentElement) => {
                     const reactiveContents = [];
                     if (editingMode) {
                         reactiveContents.push(
+                        this.text('            '),
                         this.html(`e2r1k11`, "div", parentElement,
                             { classes: [{ type: 'static', value: "editor-section" }] },
                             (parentElement) => [
+                            this.text('\n'),
+                            this.text('                '),
                             this.html(`e2r1k111`, "h1", parentElement, {}, (parentElement) => [
                                 this.output(`e2r1k111o1`, parentElement, true, ["name"], (parentElement) => name),
                                 this.text(' - '),
                                 this.output(`e2r1k111o2`, parentElement, true, ["age"], (parentElement) => age)
                             ]),
-                            this.include(`e2r1k11c1`, __template__+'forms.user-form', parentElement, ["age", "name"], (parentElement) => ({"user": {"name": name, "age": age}}))
-                            ])
+                            this.text('\n'),
+                            this.text('                '),
+                            this.include(`e2r1k11c1`, __template__+'forms.user-form', parentElement, ["age", "name"], (parentElement) => ({"user": {"name": name, "age": age}})),
+                            this.text('            ')
+                            ]),
+                        this.text('\n'),
+                        this.text('        ')
                         );
                     }
                     else {
                         reactiveContents.push(
+                        this.text('            '),
                         this.html(`e2r1k21`, "div", parentElement,
                             { classes: [{ type: 'static', value: "viewer-section" }] },
                             (parentElement) => [
+                            this.text('\n'),
+                            this.text('                '),
                             this.html(`e2r1k211`, "h1", parentElement, {}, (parentElement) => [
                                 this.output(`e2r1k211o1`, parentElement, true, ["name"], (parentElement) => name),
                                 this.text(' - '),
                                 this.output(`e2r1k211o2`, parentElement, true, ["age"], (parentElement) => age)
                             ]),
+                            this.text('\n'),
+                            this.text('                '),
                             this.html(`e2r1k212`, "ul", parentElement, {}, (parentElement) => [
+                                this.text('\n'),
+                                this.text('                    '),
                                 this.reactive(`e2r1k212l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                                     return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                                        this.text('                        '),
                                         this.html(`e2r1k212l11-${__loopIndex}`, "li", parentElement, {}, (parentElement) => [
                                             this.output(`e2r1k212l11o1-${__loopIndex}`, parentElement, true, [], (parentElement) => item)
-                                        ])
+                                        ]),
+                                        this.text('\n'),
+                                        this.text('                    ')
                                     ])
-                                })
-                            ])
-                            ])
+                                }),
+                                this.text('                ')
+                            ]),
+                            this.text('\n'),
+                            this.text('            ')
+                            ]),
+                        this.text('\n'),
+                        this.text('        ')
                         );
                     }
                     return reactiveContents;
-                })
+                }),
+                this.text('\n'),
+                this.text('    ')
             ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e3`, "div", parentElement,
                 { classes: [{ type: 'static', value: "users" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.reactive(`e3l1`, "foreach", parentReactive, parentElement, ["users"], (parentReactive, parentElement) => {
                     return this.__foreach(users, (user, __loopKey, __loopIndex, __loop) => [
-                        this.include(`e3l1c1-${user.id}`, __template__+'users.item', parentElement, ["editingMode"], (parentElement) => ({"user": user, "config": [editingMode]}))
+                        this.text('            '),
+                        this.include(`e3l1c1-${user.id}`, __template__+'users.item', parentElement, ["editingMode"], (parentElement) => ({"user": user, "config": [editingMode]})),
+                        this.text('        ')
                     ], (user) => user.id)
-                })
+                }),
+                this.text('    ')
                 ]),
+            this.text('\n'),
+            this.text('    '),
             this.include(`c1`, __template__+'users.list', parentElement, ["users"], (parentElement) => ({"users": users})),
+            this.text('    '),
             this.include(`c2`, __template__+'users.group', parentElement, ["users"], (parentElement) => ({
                     "users": users,
                     "title": "Nhóm người dùng",
                     __ONE_CHILDREN_CONTENT__: (parentElement) => [
                     this.reactive(`c2l1`, "foreach", parentReactive, parentElement, ["users"], (parentReactive, parentElement) => {
                         return this.__foreach(users, (user, __loopKey, __loopIndex, __loop) => [
-                            this.include(`c2l1c1-${user.id}`, __template__+'users.item', parentElement, [], (parentElement) => ({"user": user}))
+                            this.text('            '),
+                            this.include(`c2l1c1-${user.id}`, __template__+'users.item', parentElement, [], (parentElement) => ({"user": user})),
+                            this.text('        ')
                         ], (user) => user.id)
                     })
                 ]
                 })),
+            this.text('\n'),
+            this.text('    \n'),
+            this.text('    '),
             this.html(`e4`, "div", parentElement,
                 { classes: [{ type: 'static', value: "status-section" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.reactive(`e4r1`, "switch", parentReactive, parentElement, [], (parentReactive, parentElement) => {
                     const reactiveContents = [];
                     switch (status) {
                         case 1:
                             reactiveContents.push(
+                            this.text('                '),
                             this.html(`e4r1k11`, "span", parentElement,
                                 { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-draft" }] },
                                 (parentElement) => [
                                 this.text('Bản nháp')
-                                ])
+                                ]),
+                            this.text('\n'),
+                            this.text('                '),
+                            this.text('            ')
                             );
                             break;
                         case 2:
                             reactiveContents.push(
+                            this.text('                '),
                             this.html(`e4r1k21`, "span", parentElement,
                                 { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-published" }] },
                                 (parentElement) => [
                                 this.text('Đã xuất bản')
-                                ])
+                                ]),
+                            this.text('\n'),
+                            this.text('                '),
+                            this.text('            ')
                             );
                             break;
                         default:
                             reactiveContents.push(
+                            this.text('                '),
                             this.html(`e4r1k31`, "span", parentElement,
                                 { classes: [{ type: 'static', value: "status-badge" }] },
                                 (parentElement) => [
                                 this.text('Không rõ trạng thái')
-                                ])
+                                ]),
+                            this.text('\n'),
+                            this.text('        ')
                             );
                             break;
                     }
                     return reactiveContents;
                 }),
+                this.text('        '),
                 this.html(`e41`, "small", parentElement, {}, (parentElement) => [
                     this.text('('),
                     this.text(String(statusLabel ?? '')),
                     this.text(')')
-                ])
                 ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n'),
+            this.text('\n'),
+            this.text('    \n'),
+            this.text('    '),
             this.html(`e5`, "article", parentElement,
                 { classes: [{ type: 'static', value: "article-card" }, { type: 'binding', value: "article-card--long", factory: () => App.Helper.strlen(article.content) > 10, stateKeys: [] }], attrs: { "data-status": { type: 'binding', value: status, factory: () => status, stateKeys: [] }, "title": { type: 'binding', value: article.title, factory: () => article.title, stateKeys: ["title"] } }, styles: { "border-color": { type: 'binding', value: status === 1 ? 'orange' : 'green', factory: () => status === 1 ? 'orange' : 'green', stateKeys: [] } } },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e51`, "h2", parentElement, {}, (parentElement) => [
                     this.output(`e51o1`, parentElement, true, ["title"], (parentElement) => article.title)
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e52`, "p", parentElement, {}, (parentElement) => [
                     this.text(String(article.content ?? ''))
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e53`, "small", parentElement, {}, (parentElement) => [
                     this.text(String(article.author ?? '')),
                     this.text(' — '),
                     this.text(String(article.createdAt ?? ''))
-                ])
                 ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n'),
+            this.text('\n'),
+            this.text('    \n'),
+            this.text('    '),
             this.html(`e6`, "form", parentElement,
                 { events: { submit: [{"handler":"handleFormSubmit","params":[(event) => event]}] } },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e61`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "value": { type: 'binding', value: statusLabel, factory: () => statusLabel, stateKeys: [] } }, events: { input: [{"handler":"setStatus","params":[(event) => Number(event.target.value)]}] } }),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e62`, "button", parentElement,
                     { attrs: { "type": { type: 'static', value: "submit" }, "disabled": { type: 'binding', value: MAX_FOR_LOOP_COUNT < 1, factory: () => MAX_FOR_LOOP_COUNT < 1, stateKeys: [] } } },
                     (parentElement) => [
-                    this.text('Lưu ('),
+                    this.text('\n'),
+                    this.text('            Lưu ('),
                     this.text(String(status ?? '')),
-                    this.text(')')
-                    ])
-                ])
+                    this.text(')'),
+                    this.text('\n'),
+                    this.text('        ')
+                    ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

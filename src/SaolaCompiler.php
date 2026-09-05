@@ -11,6 +11,7 @@ use Saola\Compiler\Support\BladeComment;
 use Saola\Compiler\Support\Re;
 use Saola\Compiler\Emit\BladeBuiltinCheck;
 use Saola\Compiler\Emit\BladeInterpolationCheck;
+use Saola\Compiler\Emit\BladeTableNestingCheck;
 use Saola\Compiler\Emit\BladeEmitter;
 use Saola\Compiler\Hydration\IdMode;
 use Saola\Compiler\Preprocessor\Preprocessor;
@@ -102,6 +103,8 @@ final class SaolaCompiler
                     BladeBuiltinCheck::scan($compiledBlade, $options->viewPath),
                     // [sao2blade] nội suy "{$...}" PHP không parse nổi
                     BladeInterpolationCheck::scan($compiledBlade, $options->viewPath),
+                    // [sao2blade] <tr> trần trong <table> → parser chèn tbody, DOM API không
+                    BladeTableNestingCheck::scan($compiledBlade, $options->viewPath),
                 ),
             );
         } catch (CompileException $e) {

@@ -128,7 +128,8 @@ class ScriptSetupView extends View {
                 (parentElement) => [
                 this.text('Nhân đôi: '),
                 this.output(`e1o1`, parentElement, true, ["n"], (parentElement) => n)
-                ])
+                ]),
+            this.text('\n')
             ]);
             }
         });

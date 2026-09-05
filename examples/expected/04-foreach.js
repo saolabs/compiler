@@ -123,14 +123,21 @@ class ForeachView extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`e1`, "ul", parentElement, {}, (parentElement) => [
+                this.text('\n'),
+                this.text('    '),
                 this.reactive(`e1l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                     return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                        this.text('        '),
                         this.html(`e1l11-${item.id}`, "li", parentElement, {}, (parentElement) => [
                             this.output(`e1l11o1-${item.id}`, parentElement, true, [], (parentElement) => item.name)
-                        ])
+                        ]),
+                        this.text('\n'),
+                        this.text('    ')
                     ], (item) => item.id)
-                })
-            ])
+                }),
+                this.text('    ')
+            ]),
+            this.text('\n')
             ]);
             }
         });
