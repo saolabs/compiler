@@ -42,6 +42,9 @@ final class MainCompiler
         ?string $viewTemplate = null,
         private readonly IdMode $idMode = IdMode::Terse,
         ?string $wrapperTemplate = null,
+        private readonly array $declarationTypes = [],
+        private readonly array $nativeComputed = [],
+        private readonly array $emptyObjectDefaults = [],
     )
     {
         $this->expressions = new ExpressionCompiler();
@@ -49,7 +52,7 @@ final class MainCompiler
         $this->utils = new CompilerUtils();
         $this->wrapperParser = new WrapperParser($wrapperTemplate);
         $this->registerParser = new RegisterParser();
-        $this->declarations = new DeclarationTracker($this->expressions);
+        $this->declarations = new DeclarationTracker($this->expressions, $this->nativeComputed);
         $this->analyzer = new TemplateAnalyzer();
         $this->bindings = new BindingDirectiveService();
         $path = dirname(__DIR__, 2).'/resources/templates/view.js';
@@ -95,13 +98,18 @@ final class MainCompiler
     {
         $this->scopeClass = ScopedStyle::classFor(ScopedStyle::extract($bladeCode));
         $bladeCode = trim($bladeCode);
-        $bladeCode = preg_replace('/@state\b(?=\s*\()/i', '@states', $bladeCode) ?? $bladeCode;
         $functionName ??= $this->convertViewPathToFunctionName($viewName);
         $factoryFunctionName ??= $functionName;
 
         [$bladeCode, $verbatimBlocks] = $this->protectVerbatim($bladeCode);
         $bladeCode = preg_replace('/@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\b[\s\S]*?@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\b/i', '', $bladeCode) ?? $bladeCode;
         [$bladeCode, $setupBlocks] = $this->protectScriptSetup($bladeCode);
+        $bladeCode = preg_replace('/@state\b(?=\s*\()/i', '@states', $bladeCode) ?? $bladeCode;
+        // Inspect template flags while setup literals are still protected.
+        // A string containing @fetch/@await must not enable data requests.
+        $flagCode = preg_replace('/{{--.*?--}}/s', '', $bladeCode) ?? $bladeCode;
+        $hasAwait = str_contains($flagCode, '@await') && (str_contains($flagCode, '@await(') || preg_match('/@await\s*$/m', $flagCode) === 1 || preg_match('/@await\s+/', $flagCode) === 1);
+        $hasFetch = str_contains($flagCode, '@fetch(');
         // KHÔNG escape backtick toàn cục ở đây. Bản cũ đổi mọi ` thành \` cho ngữ
         // cảnh template literal, nhưng nó sai cả hai đầu:
         //   - văn xuôi: text đi tiếp vào jsTextLiteral (chuỗi nháy đơn), nơi \ lại
@@ -114,8 +122,6 @@ final class MainCompiler
         $this->registerParser->reset();
         [$wrapperFunction, $wrapperConfigContent] = $this->wrapperParser->parseWrapperFile();
         $bladeCode = preg_replace('/{{--.*?--}}/s', '', $bladeCode) ?? $bladeCode;
-        $hasAwait = str_contains($bladeCode, '@await') && (str_contains($bladeCode, '@await(') || preg_match('/@await\s*$/m', $bladeCode) === 1 || preg_match('/@await\s+/', $bladeCode) === 1);
-        $hasFetch = str_contains($bladeCode, '@fetch(');
 
         $registerData = null;
         $assetPattern = '/<script\b[^>]*>|<style\b[^>]*>|<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>/i';
@@ -125,6 +131,7 @@ final class MainCompiler
         $this->expressions->setUserMethods(array_keys($this->registerParser->getUserMethodNames()), $viewName);
         $this->isTypescript = $forceTypescript ?? (($registerData['setupLang'] ?? null) === 'typescript');
 
+        $this->expressions->setComputedNames([]);
         $tracked = array_map(static fn ($declaration): array => $declaration->toArray(), $this->declarations->parseAll($bladeCode));
         if (ChildrenSlot::has($bladeCode)) {
             $child = ['name' => '__ONE_CHILDREN_CONTENT__', 'hasDefault' => true, 'value' => "''"];
@@ -139,6 +146,20 @@ final class MainCompiler
             unset($declaration);
             if (!$found) array_unshift($tracked, ['type'=>'vars','variables'=>[$child]]);
         }
+        foreach ($tracked as &$declaration) {
+            foreach ($declaration['variables'] as &$var) {
+                if (isset($this->emptyObjectDefaults[$var['name'] ?? ''])) $var['value'] = '{}';
+            }
+            unset($var);
+        }
+        unset($declaration);
+        $computedNames = [];
+        foreach ($tracked as $declaration) {
+            if ($declaration['type'] === 'computed') {
+                foreach ($declaration['variables'] as $var) $computedNames[] = $var['name'];
+            }
+        }
+        $this->expressions->setComputedNames($computedNames);
         $dataDeclarations = $tracked;
 
         [$wrapperDeclarations, $variableList, $stateDeclarations] = $this->generateWrapperDeclarations($tracked);
@@ -240,7 +261,7 @@ final class MainCompiler
     private function protectScriptSetup(string $code): array
     {
         $blocks=[];$counter=0;
-        $code=preg_replace_callback('/<script\s+setup[^>]*>.*?<\/script>/is',static function(array$m)use(&$blocks,&$counter):string{$p='__SCRIPT_SETUP_BLOCK_'.$counter++.'__';$blocks[$p]=$m[0];return$p;},$code)??$code;
+        $code=preg_replace_callback('/<script\b(?=[^>]*\ssetup(?:\s|=|>))[^>]*>.*?<\/script>/is',static function(array$m)use(&$blocks,&$counter):string{$p='__SCRIPT_SETUP_BLOCK_'.$counter++.'__';$blocks[$p]=$m[0];return$p;},$code)??$code;
         return [$code,$blocks];
     }
 
@@ -364,16 +385,33 @@ final class MainCompiler
             if(in_array($type,['vars','props'],true))continue;
             if(in_array($type,['let','const','useState','states'],true)){
                 if(!empty($var['isDestructuring'])){
-                    if(!empty($var['isUseState'])){if(($info=$this->extractStateInfo($var))!==null){$states[]=$info;array_push($lines,...$this->generateStateRegistrationLines($info));}}
+                    if(!empty($var['isUseState'])){if(($info=$this->extractStateInfo($var))!==null){$info['initialValue']=isset($this->emptyObjectDefaults[$info['stateKey']])?'{}':$info['initialValue'];$states[]=$info;array_push($lines,...$this->generateStateRegistrationLines($info));}}
                     elseif(in_array($type,['let','const'],true)){$open=($var['destructuringType']??'array')==='array'?'[':'{';$close=$open==='['?']':'}';$lines[]='    '.($type==='const'?'const':'let').' '.$open.implode(', ',$var['names']).$close.' = '.$var['value'].';';}
-                }elseif($type==='let')$lines[]='    let '.$var['name'].(!empty($var['hasDefault'])?' = '.$var['value']:'').';';
-                elseif($type==='const'&&!empty($var['hasDefault']))$lines[]='    const '.$var['name'].' = '.$var['value'].';';
+                }elseif($type==='let')$lines[]='    let '.$var['name'].$this->typeAnnotation($var['name']).(!empty($var['hasDefault'])?' = '.$var['value']:'').';';
+                elseif($type==='const'&&!empty($var['hasDefault']))$lines[]='    const '.$var['name'].$this->typeAnnotation($var['name']).' = '.$var['value'].';';
                 continue;
             }
-            if($type==='computed'){$name=$var['name'];preg_match_all('/\$?([A-Za-z_]\w*)/',$var['valuePhp']??'',$m);$deps=[];foreach($m[1]??[]as$dep)if(isset($known[$dep])&&$dep!==$name)$deps[$dep]=true;$deps=array_keys($deps);sort($deps);$depsJson=json_encode($deps,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);$lines[]="    let {$name};";$lines[]="    const get\${$name} = __STATE__.__.computed('{$name}', () => {$var['value']}, {$depsJson});";$lines[]="    {$name} = get\${$name}();";if($deps!==[])$lines[]="    __STATE__.__.subscribe(['{$name}'], () => { {$name} = get\${$name}(); });";}
+            if ($type === 'computed') {
+                $name = $var['name'];
+                $deps = [];
+                foreach (token_get_all('<?php '.($var['valuePhp'] ?? '')) as $token) {
+                    if (is_array($token) && $token[0] === T_VARIABLE) {
+                        $dep = substr($token[1], 1);
+                        if (isset($known[$dep])) $deps[$dep] = true;
+                    }
+                }
+                $deps = array_keys($deps);
+                sort($deps);
+                $depsJson = json_encode($deps, JSON_THROW_ON_ERROR);
+                $value = isset($this->nativeComputed[$name])
+                    ? $this->expressions->compileNativeComputed($this->nativeComputed[$name])
+                    : $this->expressions->compile($var['valuePhp']);
+                $returnType = $this->typeAnnotation($name);
+                $lines[] = "    const get\${$name} = __STATE__.__.computed('{$name}', (){$returnType} => {$value}, {$depsJson});";
+            }
         }
         if(in_array($type,['vars','props'],true)){
-            $parts=[];foreach($declaration['variables']as$var){$name=$var['name'];$parts[]=$name.(!empty($var['hasDefault'])?' = '.$var['value']:'');$traits[]=$this->isTypescript?"    __UPDATE_DATA_TRAIT__.{$name} = (__next: any) => { {$name} = __next; updateStateByKey('{$name}', __next); };":"    __UPDATE_DATA_TRAIT__.{$name} = __next => { {$name} = __next; updateStateByKey('{$name}', __next); };";$variables[]=$name;}if($parts!==[])$lines[]='    let {'.implode(', ',$parts).'} = __data__;';foreach($declaration['variables']as$var)$lines[]="    __STATE__.__.register('{$var['name']}', {$var['name']});";}
+            $parts=[];foreach($declaration['variables']as$var){$name=$var['name'];$parts[]=$name.(!empty($var['hasDefault'])?' = '.$var['value']:'');$traits[]=$this->isTypescript?"    __UPDATE_DATA_TRAIT__.{$name} = (__next: any) => { {$name} = __next; updateStateByKey('{$name}', __next); };":"    __UPDATE_DATA_TRAIT__.{$name} = __next => { {$name} = __next; updateStateByKey('{$name}', __next); };";$variables[]=$name;}if($parts!==[])$lines[]='    let {'.implode(', ',$parts).'}'.$this->propsBindingType($declaration['variables']).' = __data__;';foreach($declaration['variables']as$var)$lines[]="    __STATE__.__.register('{$var['name']}', {$var['name']});";}
         }
         array_push($lines,...$traits);$quoted=array_map(static fn($v)=>'"'.$v.'"',$variables);$lines[]='    const __VARIABLE_LIST__'.($this->isTypescript?': any':'').' = ['.implode(', ',$quoted).'];';$this->dataVarNames=array_fill_keys($variables,true);return[implode("\n",$lines),$variables,$states];
     }
@@ -393,7 +431,7 @@ final class MainCompiler
     /** @param array{stateKey:string,setterName:string,initialValue:string} $state @return list<string> */
     private function generateStateRegistrationLines(array$state):array
     {
-        $key=$state['stateKey'];$setter=$state['setterName'];$seed=$state['initialValue']!==''?$state['initialValue']:'null';$type=$this->isTypescript?': any':'';return[
+        $key=$state['stateKey'];$setter=$state['setterName'];$seed=$state['initialValue']!==''?$state['initialValue']:'null';$type=$this->isTypescript?': '.($this->declarationTypes[$key]??'any'):'';return[
             "    const set\${$key} = __STATE__.__.register('{$key}');",
             "    let {$key}{$type} = {$seed};",
             "    const {$setter} = (state{$type}) => {",
@@ -406,7 +444,25 @@ final class MainCompiler
     /** @param list<array<string,mixed>> $declarations */
     private function generatePropsInterface(array$declarations,string$component):string
     {
-        if(!$this->isTypescript)return'';$fields=[];$seen=[];foreach($declarations as$decl)if(in_array($decl['type'],['vars','props'],true))foreach($decl['variables']as$var){$name=$var['name']??null;if(!$name||isset($seen[$name]))continue;$seen[$name]=true;$type=!empty($var['hasDefault'])?$this->inferPropType((string)($var['value']??'')):'any';$fields[]="    {$name}?: {$type};";}$body=$fields===[]?'':implode("\n",$fields)."\n";return "/**\n * Props của view — sinh tự động từ @props/@vars, không sửa tay.\n * Optional hết vì khai báo nào cũng có default.\n */\nexport interface {$component}Props {\n{$body}    /** viewId server gán khi hydrate */\n    __SSR_VIEW_ID__?: string;\n    [key: string]: any;\n}\n";
+        if(!$this->isTypescript)return'';$fields=[];$seen=[];foreach($declarations as$decl)if(in_array($decl['type'],['vars','props'],true))foreach($decl['variables']as$var){$name=$var['name']??null;if(!$name||isset($seen[$name]))continue;$seen[$name]=true;$type=$this->declarationTypes[$name]??(!empty($var['hasDefault'])?$this->inferPropType((string)($var['value']??'')):'any');$fields[]="    {$name}?: {$type};";}$body=$fields===[]?'':implode("\n",$fields)."\n";return "/**\n * Props của view — sinh tự động từ @props/@vars, không sửa tay.\n * Optional hết vì khai báo nào cũng có default.\n */\nexport interface {$component}Props {\n{$body}    /** viewId server gán khi hydrate */\n    __SSR_VIEW_ID__?: string;\n    [key: string]: any;\n}\n";
+    }
+
+    /** @param list<array<string, mixed>> $variables */
+    private function propsBindingType(array $variables): string
+    {
+        if (!$this->isTypescript || $this->declarationTypes === []) return '';
+        $fields = [];
+        foreach ($variables as $var) {
+            $name = $var['name'];
+            $type = $this->declarationTypes[$name] ?? 'any';
+            $fields[] = $name.(!empty($var['hasDefault']) ? '?' : '').': '.$type;
+        }
+        return ': { '.implode('; ', $fields).' }';
+    }
+
+    private function typeAnnotation(string $name): string
+    {
+        return $this->isTypescript && isset($this->declarationTypes[$name]) ? ': '.$this->declarationTypes[$name] : '';
     }
 
     private function inferPropType(string$value):string
@@ -452,7 +508,7 @@ final class MainCompiler
         [$scriptsLine,$stylesLine,$resourcesLine]=$this->buildAssets($registerData);
         $stateUpdates=$this->generateStateUpdates($stateDeclarations);$dataStateUpdates=$this->generateDataStateUpdates($stateDeclarations);$lock=$stateDeclarations===[]?'':'lockUpdateRealState();';
         $setupLang=$registerData['setupLang']??null;$ts=$setupLang==='typescript';$commitParams=$ts?'this: any':'';$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: any, data: any':$dataParam;$itemParams=$ts?'this: any, key: string, value: any':'key, value';
-        $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            this.data[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
+        $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            (this.data ??= {})[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
 
         $config="hasSuperView: {$hasSuper},\n    viewType: '{$viewType}',\n    sections: {$sectionsJson},\n    wrapperConfig: {$wrapperValue},{$wrapperProps}\n    hasAwaitData: ".$this->bool($hasAwait).",\n    hasFetchData: ".$this->bool($hasFetch).",\n    usesVars: ".$this->bool($varsDeclaration!=='').",\n    hasSections: ".$this->bool($sections!==[]).",\n    hasSectionPreload: ".$this->bool($this->anyPreloader($sectionsInfo)).",\n    hasPrerender: ".$this->bool($hasPrerender).",\n    renderLongSections: {$renderLong},\n    renderSections: {$renderSectionsJson},\n    prerenderSections: {$preSectionsJson}";
 

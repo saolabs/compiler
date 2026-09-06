@@ -6,7 +6,19 @@
 > chỉ còn PHP và JS/TS. `compiler/src/index.js` đã thành `builder/src/index.js`;
 > thư mục `compiler/` hiện là package PHP `saola/compiler`.
 
-## 1. Pipeline hôm nay (Node + Python)
+## Pipeline hiện tại
+
+`.sao` → `SaolaCompiler::compile()` → transform directive theo target →
+SourceSplitter / SetupDeclarations → TypedDeclarations → Preprocessor →
+BladeEmitter và MainCompiler/JsEmitter → CompileResult.
+
+Builder Node điều phối file, watcher, registry và Vite. PHP compiler xử lý cú pháp.
+Không có Python trên đường build. Hai target có thể có source khác nhau do custom
+directive; chúng dùng cùng cấu hình marker, được kiểm bằng contract tests.
+
+Các phần dưới lưu **thiết kế di trú cũ**, không dùng làm hướng dẫn pipeline hiện tại.
+
+## 1. Pipeline trước di trú (Node + Python)
 
 ```
                   .sao

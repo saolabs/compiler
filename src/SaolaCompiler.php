@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Saola\Compiler;
 
 use Saola\Compiler\Compiler\MainCompiler;
+use Saola\Compiler\Declaration\TypedDeclarations;
 use Saola\Compiler\Compiler\RegisterParser;
 use Saola\Compiler\Directive\DirectiveRegistry;
 use Saola\Compiler\Support\BladeComment;
@@ -64,8 +65,11 @@ final class SaolaCompiler
             $bladeSource = $this->directiveRegistry->transform($source, 'blade');
             $jsSource = $this->directiveRegistry->transform($source, 'js');
             $splitter = new SourceSplitter();
-            $bladeParts = (new Preprocessor($options->assetPrefix))->preprocess($splitter->split($bladeSource));
-            $jsParts = (new Preprocessor($options->assetPrefix))->preprocess($splitter->split($jsSource));
+            $typedBlade = new TypedDeclarations();
+            $typedJs = new TypedDeclarations();
+            $bladeParts = (new Preprocessor($options->assetPrefix))->preprocess($typedBlade->normalize($splitter->split($bladeSource)));
+            $jsParts = (new Preprocessor($options->assetPrefix))->preprocess($typedJs->normalize($splitter->split($jsSource)));
+            $lang = $typedJs->types !== [] ? Lang::Ts : $options->lang;
 
             $bladeInput = $this->buildBladeInput($bladeParts, $bladeSource);
             $jsInput = $this->buildJsInput($jsParts);
@@ -74,14 +78,14 @@ final class SaolaCompiler
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
             $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource);
-            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate);
+            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
                     $jsInput,
                     $options->viewPath,
                     $options->functionName,
                     $options->factoryName,
-                    $options->lang === Lang::Ts,
+                    $lang === Lang::Ts,
                 );
 
             $imports = (new ImportParser())->parseImports($jsInput);
@@ -89,6 +93,7 @@ final class SaolaCompiler
             $markers = $this->collectMarkers($compiledBlade, $compiledJs);
 
             return new CompileResult(
+                lang: $lang->value,
                 blade: $options->emit === Target::JsOnly ? null : $compiledBlade,
                 js: $options->emit === Target::BladeOnly ? null : $compiledJs,
                 css: $css,
@@ -128,7 +133,8 @@ final class SaolaCompiler
             $this->atomicWrite($options->bladeOutputPath, $result->blade);
         }
         if ($options->jsOutputPath !== null && $result->js !== null) {
-            $this->atomicWrite($options->jsOutputPath, $result->js);
+            $outputPath = Re::replace('/\.(?:js|ts)$/', '.'.$result->lang, $options->jsOutputPath);
+            $this->atomicWrite($outputPath, $result->js);
         }
         return $result;
     }
@@ -184,7 +190,7 @@ final class SaolaCompiler
             }
             try {
                 $results[$relative] = $this->compileFile($path, $fileOptions);
-                $url = rtrim($options->publicBaseUrl, '/').'/'.ltrim($stem.'.'.$options->lang->value, '/');
+                $url = rtrim($options->publicBaseUrl, '/').'/'.ltrim($stem.'.'.$results[$relative]->lang, '/');
                 $views[$viewPath] = $url;
             } catch (\Throwable $e) {
                 $errors[] = ['file' => $relative, 'message' => $e->getMessage()];

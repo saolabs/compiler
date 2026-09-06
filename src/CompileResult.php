@@ -19,6 +19,7 @@ final class CompileResult implements \JsonSerializable
         public readonly array $imports = [],
         public readonly array $markers = [],
         public readonly array $warnings = [],
+        public readonly string $lang = 'js',
     ) {
     }
 
@@ -32,6 +33,7 @@ final class CompileResult implements \JsonSerializable
             'imports' => $this->imports,
             'markers' => $this->markers,
             'warnings' => $this->warnings,
+            'lang' => $this->lang,
         ];
     }
 }

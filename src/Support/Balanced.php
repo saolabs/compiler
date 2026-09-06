@@ -86,7 +86,14 @@ final class Balanced
         $depth = 0;
         $contentStart = $startPos + 1;
 
+        $quote = '';
         for ($i = $startPos; $i < $length; $i++) {
+            if ($quote !== '') {
+                if ($text[$i] === '\\') $i++;
+                elseif ($text[$i] === $quote) $quote = '';
+                continue;
+            }
+            if (str_contains("\"'`", $text[$i])) { $quote = $text[$i]; continue; }
             if ($text[$i] === '(') {
                 $depth++;
             } elseif ($text[$i] === ')') {

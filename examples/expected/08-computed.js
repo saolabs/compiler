@@ -85,6 +85,7 @@ class ComputedView extends View {
                 qty = value;
             }
         };
+        const get$total = __STATE__.__.computed('total', () => price * qty, ["price","qty"]);
         const __VARIABLE_LIST__ = [];
 
 
@@ -125,7 +126,7 @@ class ComputedView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -139,7 +140,7 @@ class ComputedView extends View {
             return this.wrapper((parentElement) => [
             this.html(`e1`, "p", parentElement, {}, (parentElement) => [
                 this.text('Tổng: '),
-                this.text(String(total ?? ''))
+                this.output(`e1o1`, parentElement, true, ["total"], (parentElement) => get$total())
             ]),
             this.text('\n')
             ]);

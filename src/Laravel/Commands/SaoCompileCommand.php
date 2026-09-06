@@ -109,7 +109,8 @@ final class SaoCompileCommand extends Command
             lang: $view->lang,
         ));
 
-        foreach ([[$view->bladeOutput, $result->blade], [$view->jsOutput, $result->js]] as [$path, $content]) {
+        $jsOutput = \Saola\Compiler\Support\Re::replace('/\.(?:js|ts)$/', '.'.$result->lang, $view->jsOutput);
+        foreach ([[$view->bladeOutput, $result->blade], [$jsOutput, $result->js]] as [$path, $content]) {
             if ($content === null) {
                 continue;
             }

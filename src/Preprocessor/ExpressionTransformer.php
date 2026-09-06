@@ -78,6 +78,8 @@ final class ExpressionTransformer
 
     private ImportAliases $importAliases;
 
+    private bool $computedExpression = false;
+
     public function __construct(
         private readonly SymbolTable $symbols,
         string $assetPrefix = 'static/saola/assets/',
@@ -123,6 +125,15 @@ final class ExpressionTransformer
             return $this->transformAssignmentDeclaration('@let', $m[1]);
         }
 
+        if (Re::match('/^@computed\s*\(([\s\S]*)\)$/', $declaration, $m)) {
+            try {
+                $this->computedExpression = true;
+                return $this->transformAssignmentDeclaration('@computed', $m[1]);
+            } finally {
+                $this->computedExpression = false;
+            }
+        }
+
         if (Re::match('/^@const\s*\(([\s\S]*)\)$/', $declaration, $m)) {
             return $this->transformAssignmentDeclaration('@const', $m[1]);
         }
@@ -147,25 +158,32 @@ final class ExpressionTransformer
     /** Dịch cả khối template: `{{ }}`, `{!! !!}`, directive, binding thuộc tính. */
     public function transformTemplate(string $template): string
     {
-        // Comment Blade phải giữ NGUYÊN VĂN
-        $comments = [];
-        $result = Re::replaceCallback('/\{\{--[\s\S]*?--\}\}/', function (array $m) use (&$comments): string {
-            $placeholder = '__BLADE_COMMENT_' . count($comments) . '__';
-            $comments[] = $m[0];
+        // Che `{{-- … --}}` và `@verbatim … @endverbatim` trong MỘT lượt quét.
+        //
+        // Hai lượt riêng thì khối nào che sau sẽ nuốt placeholder của khối che
+        // trước khi hai thứ lồng nhau, và vòng khôi phục quét `$result` không
+        // còn gì để thay — placeholder rò thẳng ra trang. Đo được cả hai chiều:
+        // comment TRONG verbatim (thấy trên /demo/setup, 06/09/2026) và verbatim
+        // TRONG comment.
+        //
+        // Quét xen kẽ trái-sang-phải thì khối NGOÀI luôn khớp trước và nuốt trọn
+        // khối trong, nên không còn chuyện lồng nhau. Nội dung được cất giữ
+        // nguyên văn để các bước dịch bên dưới không đụng tới: `{{ title }}` trong
+        // khối code minh hoạ không bị thêm '$', comment giữ đúng chữ đã viết.
+        //
+        // Comment NGOÀI verbatim vẫn bị bỏ như cũ — việc đó do các khâu sau làm
+        // (MainCompiler và chính Blade), không phải ở đây.
+        $masked = [];
+        $result = Re::replaceCallback(
+            '/\{\{--[\s\S]*?--\}\}|@verbatim\b[\s\S]*?@endverbatim\b/i',
+            function (array $m) use (&$masked): string {
+                $placeholder = '__SAO_MASKED_' . count($masked) . '__';
+                $masked[] = $m[0];
 
-            return $placeholder;
-        }, $template);
-
-        // @verbatim nghĩa là "giữ nguyên văn". Không chặn thì `{{ title }}` trong
-        // khối code minh hoạ bị thêm '$' (thành `{{ $title }}`), còn `{{ $title }}`
-        // viết sẵn thành `{{ $$title }}` — sai nội dung ở CẢ Blade lẫn JS.
-        $verbatim = [];
-        $result = Re::replaceCallback('/@verbatim[\s\S]*?@endverbatim/', function (array $m) use (&$verbatim): string {
-            $placeholder = '__VERBATIM_RAW_' . count($verbatim) . '__';
-            $verbatim[] = $m[0];
-
-            return $placeholder;
-        }, $result);
+                return $placeholder;
+            },
+            $template,
+        );
 
         $result = Re::replaceCallback(
             '/\{\{\s*([\s\S]*?)\s*\}\}/',
@@ -186,12 +204,11 @@ final class ExpressionTransformer
         // thay-lần-đầu của JS. Bản JS phải dùng replacement dạng HÀM để tránh
         // `$$`/`$&` trong nội dung bị diễn giải; str_replace của PHP không có
         // vấn đề đó.
-        foreach ($comments as $i => $comment) {
-            $result = str_replace('__BLADE_COMMENT_' . $i . '__', $comment, $result);
-        }
-
-        foreach ($verbatim as $i => $block) {
-            $result = str_replace('__VERBATIM_RAW_' . $i . '__', $block, $result);
+        // Placeholder là duy nhất và không lồng nhau nên thay thẳng, thứ tự nào
+        // cũng đúng. `str_replace` của PHP không diễn giải `$$`/`$&` trong nội
+        // dung — bản JS phải dùng replacement dạng HÀM để tránh đúng chuyện đó.
+        foreach ($masked as $i => $block) {
+            $result = str_replace('__SAO_MASKED_' . $i . '__', $block, $result);
         }
 
         return $result;
@@ -554,6 +571,9 @@ final class ExpressionTransformer
         }
 
         if (! $hasParens) {
+            if ($this->computedExpression) {
+                return [substr($result, 0, strlen($result) - strlen($objExpr))."data_get({$objExpr}, '{$methodName}')", $methodIdx];
+            }
             return null;
         }
 
@@ -569,6 +589,10 @@ final class ExpressionTransformer
         }
 
         $args = trim($args);
+        if ($this->computedExpression && in_array($methodName, ['filter', 'map', 'reduce'], true)) {
+            $mapping = $this->computedCollection($methodName, $objExpr, $args);
+            return [substr($result, 0, strlen($result) - strlen($objExpr)).$mapping, $closeIdx];
+        }
         $phpArgs = $args === '' ? '' : $this->transformExpression($args);
         $mapping = JsMethodMap::map($methodName, $objExpr, $phpArgs);
 
@@ -577,6 +601,32 @@ final class ExpressionTransformer
         }
 
         return [substr($result, 0, strlen($result) - strlen($objExpr)) . $mapping, $closeIdx];
+    }
+
+    /** Collection callbacks use PHP arrow closures (capture inputs by value). */
+    private function computedCollection(string $method, string $object, string $arguments): string
+    {
+        $args = Balanced::splitTopLevelStripped($arguments, ',');
+        $callback = $args[0] ?? '';
+        if (!Re::match('/^\s*(?:\(([^()]*)\)|([A-Za-z_]\w*))\s*=>\s*([\s\S]+)$/', $callback, $m)) {
+            throw new \InvalidArgumentException('Computed .'.$method.' requires an expression arrow callback.');
+        }
+        $params = array_map('trim', explode(',', trim($m[1] !== '' ? $m[1] : $m[2])));
+        if (count($params) > 2 || str_starts_with(trim($m[3]), '{')) {
+            throw new \InvalidArgumentException('Computed callbacks support one or two parameters and an expression body.');
+        }
+        foreach ($params as $param) {
+            if (!Re::match('/^[A-Za-z_]\w*$/', $param)) throw new \InvalidArgumentException('Invalid computed callback parameter: '.$param);
+        }
+        $closure = 'fn('.implode(', ', array_map(static fn(string $p): string => '$'.$p, $params)).') => '.$this->transformExpression($m[3]);
+        $array = "array_values({$object})";
+        return match ($method) {
+            'filter' => "array_values(array_filter({$array}, {$closure}, ARRAY_FILTER_USE_BOTH))",
+            'map' => "array_map({$closure}, {$array}, array_keys({$array}))",
+            'reduce' => count($args) === 2
+                ? "array_reduce({$array}, {$closure}, ".$this->transformExpression($args[1]).')'
+                : throw new \InvalidArgumentException('Computed .reduce requires an explicit initial value.'),
+        };
     }
 
     /** Biểu thức đối tượng ngay trước dấu chấm, đọc ngược từ cuối kết quả. */

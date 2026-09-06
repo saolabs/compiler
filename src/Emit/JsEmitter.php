@@ -244,7 +244,36 @@ final class JsEmitter
     private function genAttrs(HtmlElement $node): ?string { $items=[];foreach($node->staticAttrs as$name=>$value)$items[]='"'.$name.'": { type: \'static\', value: '.($value===true?'true':'"'.str_replace('"','\\"',(string)$value).'"').' }';foreach($node->bindingAttrs as$name=>$info){$keys=array_keys($info['state_vars']??[]);sort($keys);$js=$info['js'];$whole=self::wholeInterpolation($js);$raw=$whole??(str_contains($js,'${')?'`'.$js.'`':$js);$expr=$raw;$factory='() => '.$raw;$yield=($info['is_yield']??false)?", yieldName: '".$info['yield_name']."'":'';$items[]='"'.$name.'": { type: \'binding\', value: '.$expr.', factory: '.$factory.', stateKeys: '.$this->jsonList($keys).$yield.' }';}return$items===[]?null:'{ '.implode(', ',$items).' }'; }
     private function genStyles(HtmlElement $node): ?string { $items=[];foreach($node->styles as$name=>$info){$keys=array_keys($info['state_vars']??[]);sort($keys);$php=trim($info['php']??'');$constant=$keys===[]&&strlen($php)>=2&&$php[0]===$php[strlen($php)-1]&&($php[0]==="'"||$php[0]==='"')&&!str_contains(substr($php,1,-1),$php[0]);if($constant){$items[]='"'.$name.'": { type: \'static\', value: "'.str_replace('"','\\"',substr($php,1,-1)).'" }';continue;}$js=$info['js'];$expr=str_contains($js,'${')?'`'.$js.'`':$js;$factory=str_contains($js,'${')?'() => `'.$js.'`':'() => '.$js;$items[]='"'.$name.'": { type: \'binding\', value: '.$expr.', factory: '.$factory.', stateKeys: '.$this->jsonList($keys).' }';}return$items===[]?null:'{ '.implode(', ',$items).' }'; }
     private function genProps(HtmlElement $node): ?string { $items=[];foreach($node->bindingProps as$name=>$info){$keys=array_keys($info['state_vars']??[]);sort($keys);$items[]='"'.$name.'": { type: \'binding\', factory: () => '.$info['js'].', stateKeys: '.$this->jsonList($keys).' }';}return$items===[]?null:'{ '.implode(', ',$items).' }'; }
-    private function genEvents(HtmlElement $node): ?string { $items=[];foreach($node->events as$name=>$handlers){$processed=[];foreach($handlers as$handler){$handler=trim($handler);if(str_starts_with($handler,'{')&&str_contains($handler,'"handler"')){$processed[]=$handler;continue;}if(str_contains($handler,'=>')){if($this->isTypescript)$handler=preg_replace('/^\(\s*event\s*\)\s*=>/','(event: any) =>',$handler)??$handler;$processed[]=$handler;continue;}$handler=preg_replace('/@event\b/i','event',$handler)??$handler;$processed[]=($this->isTypescript?'(event: any) =>':'(event) =>').' '.$handler;}$items[]=$name.': ['.implode(', ',$processed).']';}return$items===[]?null:'{ '.implode(', ',$items).' }'; }
+    private function genEvents(HtmlElement $node): ?string
+    {
+        $items = [];
+        foreach ($node->events as $name => $handlers) {
+            $processed = [];
+            foreach ($handlers as $handler) {
+                $handler = trim($handler);
+                if ($this->isTypescript) $handler = $this->typeEventCallbacks($handler);
+                if ((str_starts_with($handler, '{') && str_contains($handler, '"handler"'))
+                    || str_contains($handler, '=>')) {
+                    $processed[] = $handler;
+                    continue;
+                }
+                $handler = preg_replace('/@event\b/i', 'event', $handler) ?? $handler;
+                $processed[] = ($this->isTypescript ? '(event: any) =>' : '(event) =>') . ' ' . $handler;
+            }
+            $items[] = $name . ': [' . implode(', ', $processed) . ']';
+        }
+        return $items === [] ? null : '{ ' . implode(', ', $items) . ' }';
+    }
+
+    /** Type generated callbacks only after expression conversion has finished. */
+    private function typeEventCallbacks(string $handler): string
+    {
+        // Skip literals/comments: text such as "(event) =>" is application data.
+        $pattern = <<<'REGEX'
+~(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|/\*[\s\S]*?\*/|//[^\r\n]*)(*SKIP)(*F)|\(\s*event\s*\)\s*=>~
+REGEX;
+        return preg_replace($pattern, '(event: any) =>', $handler) ?? $handler;
+    }
 
     private function formatId(string $base): string { $parts=[];foreach($this->loopScopes as[, $expr])$parts[]='${'.$expr.'}';return '`'.HydrateId::hash($base, $this->idMode).($parts!==[]?'-'.implode('-',$parts):'').'`'; }
     /** @param list<string> $values */ private function jsonList(array $values): string { sort($values);return '['.implode(', ',array_map(static fn(string$value):string=>'"'.$value.'"',$values)).']'; }

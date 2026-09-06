@@ -1,6 +1,6 @@
 @exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 
-<?php if(!isset($users) || (!$users && $users !== false)) $users = []; ?>
+<?php if(!array_key_exists('users', get_defined_vars())) $users = []; ?>
 @wrapper
 @fetch('/api/users')
 @await

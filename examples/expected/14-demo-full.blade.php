@@ -1,9 +1,8 @@
-@exec($__ONE_COMPONENT_REGISTRY__ = ['UserItem' => $__template__ . 'users.item', 'UserList' => $__template__ . 'users.list', 'user-form' => $__template__ . 'forms.user-form', 'UserGroup' => $__template__ . 'users.group']) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 
-<?php if(!isset($name) || (!$name && $name !== false)) $name = 'Hello'; if(!isset($age) || (!$age && $age !== false)) $age = 18; if(!isset($items) || (!$items && $items !== false)) $items = []; ?>
+<?php if(!array_key_exists('name', get_defined_vars())) $name = 'Hello'; if(!array_key_exists('age', get_defined_vars())) $age = 18; if(!array_key_exists('items', get_defined_vars())) $items = []; ?>
 @vars($users = [['id'=> 1, 'name'=> 'Lâm', 'email'=> 'lam#domain.com'], ['id'=> 2,'name'=> 'Hồng', 'email'=> "hong#domain.com"]], $title = "Hồ sơ người dùng")
-@let($status = 1,
-    $article = [
+@let($status = 1)
+@let($article = [
         'title'=> "Bài viết đầu tiên",
         'content'=> "Nội dung bài viết",
         'author'=> "Lâm",
@@ -17,6 +16,8 @@
 @useState($count, 0)
 @const($MAX_FOR_LOOP_COUNT = 100)
 @const([$editingMode, $setEditingMode] = useState(false))
+@php($statusLabel = $status === 1 ? 'Nháp' : ($status === 2 ? 'Đã xuất bản' : 'Không rõ'))
+@exec($__ONE_COMPONENT_REGISTRY__ = ['UserItem' => $__template__ . 'users.item', 'UserList' => $__template__ . 'users.list', 'user-form' => $__template__ . 'forms.user-form', 'UserGroup' => $__template__ . 'users.group']) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 @wrapper
 <div @class([$__VIEW_ID__ . '-e1', 'click-section'])>
         <button @class([$__VIEW_ID__ . '-e11']) @attr(['type' => 'button'])>
@@ -89,7 +90,7 @@
                 <span @class([$__VIEW_ID__ . '-e4r1k31', 'status-badge'])>Không rõ trạng thái</span>
         @endswitch
         @endMarker('reactive', 'e4r1')
-        <small @class([$__VIEW_ID__ . '-e41'])>({{ $statusLabel }})</small>
+        <small @class([$__VIEW_ID__ . '-e41'])>(@startMarker('output', 'e41o1'){{ $statusLabel }}@endMarker('output', 'e41o1'))</small>
     </div>
 
     {{-- Tổ hợp @class + @style + @attr + :attr rút gọn CÙNG một element —

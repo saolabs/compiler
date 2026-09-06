@@ -958,6 +958,9 @@ final class Parser
         $path = trim($path);
         if ((str_starts_with($path, "'") && str_ends_with($path, "'") && substr_count($path, "'") === 2) || (str_starts_with($path, '"') && str_ends_with($path, '"') && substr_count($path, '"') === 2)) return $path;
         $js = str_contains($path, '+') && ! str_contains($path, '$') && ! str_contains($path, '->') ? $path : $this->expressions->compileStatement($path);
+        // Declared bindings carry a $ in the normalized source. Keep that
+        // distinction before expression compilation erases the variable marker.
+        if (str_contains($path, '$')) return $js;
         if (Re::match('/^[a-zA-Z_][\w.]*$/', $js) && str_contains($js, '.')) return "'{$js}'";
         if (Re::match('/^[a-zA-Z_]\w*$/', $js) && ! str_starts_with($js, '__')) return "'{$js}'";
         return $js;

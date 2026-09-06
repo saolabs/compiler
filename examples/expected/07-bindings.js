@@ -140,7 +140,7 @@ class BindingsView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }

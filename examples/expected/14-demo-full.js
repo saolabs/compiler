@@ -108,6 +108,7 @@ class DemoFullView extends View {
                 editingMode = value;
             }
         };
+        const get$statusLabel = __STATE__.__.computed('statusLabel', () => status === 1 ? 'Nháp' : (status === 2 ? 'Đã xuất bản' : 'Không rõ'), ["status"]);
         __UPDATE_DATA_TRAIT__.name = __next => { name = __next; updateStateByKey('name', __next); };
         __UPDATE_DATA_TRAIT__.age = __next => { age = __next; updateStateByKey('age', __next); };
         __UPDATE_DATA_TRAIT__.items = __next => { items = __next; updateStateByKey('items', __next); };
@@ -156,7 +157,7 @@ class DemoFullView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -345,7 +346,7 @@ class DemoFullView extends View {
                 this.text('        '),
                 this.html(`e41`, "small", parentElement, {}, (parentElement) => [
                     this.text('('),
-                    this.text(String(statusLabel ?? '')),
+                    this.output(`e41o1`, parentElement, true, ["statusLabel"], (parentElement) => get$statusLabel()),
                     this.text(')')
                 ]),
                 this.text('\n'),
@@ -387,7 +388,7 @@ class DemoFullView extends View {
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
-                this.html(`e61`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "value": { type: 'binding', value: statusLabel, factory: () => statusLabel, stateKeys: [] } }, events: { input: [{"handler":"setStatus","params":[(event) => Number(event.target.value)]}] } }),
+                this.html(`e61`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "value": { type: 'binding', value: get$statusLabel(), factory: () => get$statusLabel(), stateKeys: ["statusLabel"] } }, events: { input: [{"handler":"setStatus","params":[(event) => Number(event.target.value)]}] } }),
                 this.text('\n'),
                 this.text('        '),
                 this.html(`e62`, "button", parentElement,

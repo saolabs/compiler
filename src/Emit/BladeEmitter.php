@@ -132,7 +132,7 @@ BLADE;
         $wrappers = self::findWrapperSpans($contentWithoutSsr);
         $found = [];
 
-        foreach (['useState', 'states', 'const', 'let', 'var', 'vars', 'props'] as $type) {
+        foreach (['useState', 'states', 'const', 'let', 'var', 'vars', 'props', 'computed'] as $type) {
             $offset = 0;
             $length = strlen($contentWithoutSsr);
             while ($offset < $length) {
@@ -305,7 +305,14 @@ BLADE;
 
         // File template Python có newline cuối file; nó là một byte thuộc hợp
         // đồng output nên giữ tường minh thay vì phụ thuộc cú pháp nowdoc.
-        $output = str_replace('[ONE_COMPONENT_REGISTRY]', $registry, self::VIEW_TEMPLATE . "\n");
+        $viewTemplate = self::VIEW_TEMPLATE;
+        // Dynamic import paths may refer to @vars/@let/@computed bindings.
+        // Resolve the registry only after those bindings have been initialized.
+        if (preg_match('/\$[A-Za-z_]/', implode(' ', $componentImports))) {
+            [$registryLine, $viewTemplate] = explode("\n", $viewTemplate, 2);
+            $viewTemplate = str_replace('[BLADE_DECLARATIONS]', '[BLADE_DECLARATIONS]'."\n".$registryLine, $viewTemplate);
+        }
+        $output = str_replace('[ONE_COMPONENT_REGISTRY]', $registry, $viewTemplate . "\n");
         $declarationBlock = $declarations === [] ? '' : implode("\n", $declarations) . "\n";
         $output = str_replace("[BLADE_DECLARATIONS]\n", $declarationBlock, $output);
         $output = str_replace("[BLADE_SSR_CONTENT]\n", '', $output);
@@ -350,6 +357,11 @@ BLADE;
                 if ($php !== '') {
                     $result[] = $php;
                 }
+            } elseif (str_starts_with($stripped, '@computed(')) {
+                $inner = substr($stripped, 10, -1);
+                foreach (Balanced::splitTopLevelStripped($inner, ',') as $assignment) {
+                    $result[] = '@php('.$assignment.')';
+                }
             } elseif (str_starts_with($stripped, '@states(')) {
                 array_push($result, ...$this->statesToUseState($stripped));
             } else {
@@ -385,7 +397,7 @@ BLADE;
         foreach ($pairs as [$name, $default]) {
             if ($default !== null) {
                 $variable = '$' . $name;
-                $statements[] = "if(!isset({$variable}) || (!{$variable} && {$variable} !== false)) "
+                $statements[] = "if(!array_key_exists('{$name}', get_defined_vars())) "
                     . "{$variable} = {$default};";
             }
         }
