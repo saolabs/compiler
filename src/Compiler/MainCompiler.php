@@ -514,7 +514,12 @@ final class MainCompiler
 
         [$scriptsLine,$stylesLine,$resourcesLine]=$this->buildAssets($registerData);
         $stateUpdates=$this->generateStateUpdates($stateDeclarations);$dataStateUpdates=$this->generateDataStateUpdates($stateDeclarations);$lock=$stateDeclarations===[]?'':'lockUpdateRealState();';
-        $setupLang=$registerData['setupLang']??null;$ts=$setupLang==='typescript';
+        // Đầu ra .ts KHÔNG chỉ đến từ <script setup lang="ts">: @state(n: number)…
+        // cũng bật nó qua $forceTypescript. Dùng chung $this->isTypescript (nguồn
+        // sự thật ở dòng ~139) — bám riêng setupLang thì view khai kiểu mà không
+        // có <script setup> vẫn ra .ts nhưng thiếu `this: ViewConfigThis`, và
+        // `this.config` lọt xuống `any` qua index signature của ViewRuntimeConfig.
+        $ts=$this->isTypescript;
         // Tham số `this` là cú pháp CHỈ có ở TypeScript, bị xoá khi emit — không
         // bao giờ là đối số thật. Cần nó vì ViewController gọi mấy hàm này bằng
         // `fn.call(makeConfigThis(), …)`, tức receiver KHÔNG phải object chứa
