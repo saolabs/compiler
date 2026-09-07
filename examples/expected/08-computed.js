@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class ComputedViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -87,6 +86,7 @@ class ComputedView extends View {
         };
         const get$total = __STATE__.__.computed('total', () => price * qty, ["price","qty"]);
         const __VARIABLE_LIST__ = [];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

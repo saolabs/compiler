@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class PropsChildrenViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -65,6 +64,7 @@ class PropsChildrenView extends View {
         __UPDATE_DATA_TRAIT__.tone = __next => { tone = __next; updateStateByKey('tone', __next); };
         __UPDATE_DATA_TRAIT__.__ONE_CHILDREN_CONTENT__ = __next => { __ONE_CHILDREN_CONTENT__ = __next; updateStateByKey('__ONE_CHILDREN_CONTENT__', __next); };
         const __VARIABLE_LIST__ = ["title", "tone", "__ONE_CHILDREN_CONTENT__"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

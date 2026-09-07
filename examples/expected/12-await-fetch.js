@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class AwaitFetchViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -61,6 +60,7 @@ class AwaitFetchView extends View {
         __STATE__.__.register('users', users);
         __UPDATE_DATA_TRAIT__.users = __next => { users = __next; updateStateByKey('users', __next); };
         const __VARIABLE_LIST__ = ["users"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

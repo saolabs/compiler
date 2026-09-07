@@ -181,6 +181,92 @@ final class SaolaCompilerTest extends TestCase
         $this->assertSame([], $result->warnings);
     }
 
+    public function test_top_level_function_dung_duoc_voi_declaration_ssr_csr_hien_tai(): void
+    {
+        $source = <<<'SAO'
+<script setup lang="ts">
+@props({initial: 0}: {initial: number})
+@state(count: number = initial)
+@computed(doubled: number = count * 2)
+
+function nextCount() { return count + 1; }
+function increment() { setCount(nextCount()); }
+function started() { increment(); }
+</script>
+<template><button @click(increment())>{{ doubled }}</button></template>
+SAO;
+
+        $result = (new SaolaCompiler())->compile($source, $this->options());
+        $js = (string) $result->js;
+        $classAt = strpos($js, 'class TestViewView extends View');
+        $functionAt = strpos($js, 'function increment()');
+        $registerAt = strpos($js, 'this.__ctrl__.setUserDefinedConfig({');
+
+        $this->assertNotNull($result->blade);
+        $this->assertStringContainsString("array_key_exists('initial'", $result->blade);
+        $this->assertStringContainsString('@useState($count, $initial)', $result->blade);
+        $this->assertStringContainsString('@php($doubled = $count * 2)', $result->blade);
+        $this->assertIsInt($classAt);
+        $this->assertIsInt($functionAt);
+        $this->assertIsInt($registerAt);
+        $this->assertLessThan($functionAt, $classAt);
+        $this->assertLessThan($registerAt, $functionAt);
+        $this->assertMatchesRegularExpression('/setUserDefinedConfig\(\{\s*increment,\s*started\s*\}\)/s', $js);
+        $this->assertDoesNotMatchRegularExpression('/setUserDefinedConfig\(\{.*?nextCount/s', $js);
+        $this->assertStringContainsString('"handler":"increment"', $js);
+        $this->assertSame([], $result->warnings);
+    }
+
+    public function test_top_level_function_co_the_song_song_voi_export_default_cu(): void
+    {
+        $source = <<<'SAO'
+<script setup>
+@state(count = 0)
+function increment() { setCount(count + 1); }
+export default {
+    reset() { setCount(0); },
+};
+</script>
+<template><button @click(increment())>+</button><button @click(reset())>reset</button></template>
+SAO;
+
+        $js = (string) (new SaolaCompiler())->compile($source, $this->options())->js;
+
+        $this->assertMatchesRegularExpression('/setUserDefinedConfig\(\{\s*reset\(\).*?increment\s*\}\)/s', $js);
+        $this->assertStringNotContainsString('export default {', $js);
+    }
+
+    public function test_top_level_function_dung_trong_output_duoc_dang_ky_va_khong_canh_bao(): void
+    {
+        $source = <<<'SAO'
+<script setup>
+function formatCount(value) { return `#${value}`; }
+</script>
+<template><p>{{ formatCount(2) }}</p></template>
+SAO;
+
+        $result = (new SaolaCompiler())->compile($source, $this->options());
+
+        $this->assertStringContainsString('this.view.formatCount(2)', (string) $result->js);
+        $this->assertMatchesRegularExpression('/setUserDefinedConfig\(\{\s*formatCount\s*\}\)/s', (string) $result->js);
+        $this->assertSame([], $result->warnings);
+    }
+
+    public function test_trung_ten_giua_top_level_va_export_default_bi_tu_choi(): void
+    {
+        $source = <<<'SAO'
+<script setup>
+function save() {}
+export default { save() {} };
+</script>
+<template><button @click(save())>save</button></template>
+SAO;
+
+        $this->expectException(CompileException::class);
+        $this->expectExceptionMessage('Duplicate setup method "save"');
+        (new SaolaCompiler())->compile($source, $this->options());
+    }
+
     /** Arrow viết tay vẫn phải phân giải method component qua `this.view`. */
     public function test_event_arrow_phan_giai_method_cua_script_setup(): void
     {

@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class DemoFullViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -115,6 +114,7 @@ class DemoFullView extends View {
         __UPDATE_DATA_TRAIT__.users = __next => { users = __next; updateStateByKey('users', __next); };
         __UPDATE_DATA_TRAIT__.title = __next => { title = __next; updateStateByKey('title', __next); };
         const __VARIABLE_LIST__ = ["name", "age", "items", "users", "title"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

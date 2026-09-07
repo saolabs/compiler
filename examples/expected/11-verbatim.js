@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class VerbatimViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -72,6 +71,7 @@ class VerbatimView extends View {
             }
         };
         const __VARIABLE_LIST__ = [];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

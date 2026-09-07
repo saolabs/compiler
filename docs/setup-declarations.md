@@ -1,5 +1,10 @@
 # Declarations inside script setup
 
+> This page documents the current contract. Shared `@...` declarations inside
+> setup remain the supported syntax and continue to generate both SSR and CSR.
+> Changing them to a JavaScript/TypeScript macro has been deferred; see
+> [SAO_SYNTAX_UPGRADE_RFC.md](../../docs/SAO_SYNTAX_UPGRADE_RFC.md).
+
 Shared declarations can live at the top level of `<script setup>`, next to their
 TypeScript imports. Existing declarations outside the script remain supported;
 both forms use the same compilation pipeline and view scope.
@@ -15,10 +20,8 @@ import type { Status } from './types';
 @importView(cardPath as StatCard)
 @asset(logo = 'images/logo.svg')
 
-export default {
-    increment() { setCount(count + step); },
-    logTotal() { console.log(get$doubled()); },
-};
+function increment() { setCount(count + step); }
+function logTotal() { console.log(get$doubled()); }
 </script>
 
 @const(step: number = 1)
@@ -48,6 +51,9 @@ with the application's real type module. Types remain optional.
   in the template; put each imported component on its own line.
 - Template control directives such as `@if`, `@foreach`, `@extends`, `@block`,
   `@await` and `@fetch` keep their existing positions outside setup.
+- Top-level function declarations are instance-scoped and are registered for
+  template events and lifecycle hooks. The existing `export default { ... }`
+  object remains supported and can coexist when method names do not collide.
 
 Simple components still need no script:
 
@@ -65,9 +71,9 @@ values are initialized on the server and use cached getters on the client.
 An imported view path can use a shared binding such as `cardPath`; its server
 registry is evaluated after the shared bindings are initialized.
 
-Ordinary TypeScript imports, functions, local JavaScript statements and the
-exported methods remain client code. They are not automatically translated to
-PHP or exposed as shared bindings. For example, a shared computed declaration
+Ordinary TypeScript imports, functions, local JavaScript statements and legacy
+export-object methods remain client code. They are not automatically translated
+to PHP or exposed as shared bindings. For example, a shared computed declaration
 must not call a browser-only imported function. Use the existing server-only
 blocks for server-specific work.
 

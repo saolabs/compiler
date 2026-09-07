@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Saola\Compiler\Compiler;
 
+use Saola\Compiler\CompileException;
+use Saola\Compiler\Source\SetupFunctions;
 use Saola\Compiler\Support\BladeComment;
 use Saola\Compiler\Support\Balanced;
 
@@ -17,6 +19,8 @@ final class RegisterParser
     private string|array $userDefined = [];
     /** @var list<string> */
     private array $setupContent = [];
+    /** @var array<string, true> */
+    private array $setupFunctions = [];
     private ?string $setupLang = null;
     private ?string $mergedContent = null;
 
@@ -27,6 +31,7 @@ final class RegisterParser
         $this->styles = [];
         $this->userDefined = [];
         $this->setupContent = [];
+        $this->setupFunctions = [];
         $this->setupLang = null;
         $this->mergedContent = null;
     }
@@ -38,10 +43,18 @@ final class RegisterParser
         $this->scripts = [];
         $this->styles = [];
         $this->userDefined = [];
+        $this->setupContent = [];
+        $this->setupFunctions = [];
         $this->setupLang = null;
         $this->mergedContent = null;
         $this->parseScripts($content);
         $this->parseStyles($content);
+
+        $duplicates = array_intersect_key($this->objectMethodNames(), $this->setupFunctions);
+        if ($duplicates !== []) {
+            $name = (string) array_key_first($duplicates);
+            throw new CompileException('Duplicate setup method "'.$name.'" in export object and top-level function.', $viewName);
+        }
 
         return $this->getAllData();
     }
@@ -103,6 +116,9 @@ final class RegisterParser
 
             if ($isSetup) {
                 $this->setupContent[] = $scriptContent;
+                foreach ((new SetupFunctions())->names($scriptContent) as $name) {
+                    $this->setupFunctions[$name] = true;
+                }
             } elseif (trim($remaining) !== '') {
                 $item['content'] = $remaining;
                 $this->scripts[] = $item;
@@ -239,6 +255,18 @@ final class RegisterParser
     /** @return array<string, true> */
     public function getUserMethodNames(): array
     {
+        return $this->objectMethodNames() + $this->setupFunctions;
+    }
+
+    /** @return list<string> */
+    public function getSetupFunctionNames(): array
+    {
+        return array_keys($this->setupFunctions);
+    }
+
+    /** @return array<string, true> */
+    private function objectMethodNames(): array
+    {
         $raw = $this->getLifecycleObj();
         if ($raw === '' || $raw === '{}') {
             return [];
@@ -265,6 +293,7 @@ final class RegisterParser
             'scripts' => $this->scripts, 'styles' => $this->styles,
             'userDefined' => $lifecycle, 'lifecycle' => $lifecycle,
             'setup' => $this->getSetupScript(), 'setupContent' => $this->getSetupContent(),
+            'setupFunctions' => $this->getSetupFunctionNames(),
             'setupLang' => $this->setupLang, 'sections' => [],
             'css' => ['inline' => $this->getInlineCss(), 'external' => $this->getExternalCss()],
             'resources' => $this->getResources(),

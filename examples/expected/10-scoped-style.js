@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class ScopedStyleViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -58,6 +57,7 @@ class ScopedStyleView extends View {
 
         const __UPDATE_DATA_TRAIT__ = {};
         const __VARIABLE_LIST__ = [];
+
 
 
         this.__ctrl__.setUserDefinedConfig({

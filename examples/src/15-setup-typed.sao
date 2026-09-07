@@ -1,0 +1,46 @@
+{{-- Cú pháp chuẩn: khai báo CÓ KIỂU nằm trong <script setup>, method là
+     function ở cấp ngoài cùng. Dạng `export default {}` (xem 09) vẫn chạy. --}}
+<script setup lang="ts">
+    @props({initial: 0, title: 'Bộ đếm'}: {initial: number; title: string})
+    @let(cardPath: string = __base__ + 'components.card')
+    @importView(cardPath as Card)
+    @asset(logo = 'images/logo.svg')
+    @assets({icon: 'images/icon.svg'})
+    @state(count: number = initial, label: string = '')
+    @computed(doubled: number = count * 2)
+
+    {{-- let/const trong setup thuộc TỪNG instance view, hợp cho thứ không reactive --}}
+    let clicks = 0;
+
+    function increment() {
+        clicks++;
+        setCount(count + step);
+        setLabel(clicks + ' lần bấm');
+    }
+
+    function reset() {
+        clicks = 0;
+        setCount(initial);
+        setLabel('');
+    }
+</script>
+
+{{-- Khai báo ngoài setup dùng chung phạm vi với trong setup --}}
+@const(step: number = 1)
+
+<template>
+    <section>
+        <h1>{{ title }}</h1>
+        <img src="{{ logo }}" alt=""><img src="{{ icon }}" alt="">
+
+        <button @click(increment())>Tăng</button>
+        <button @click(reset())>Đặt lại</button>
+
+        <p>count = {{ count }} · doubled = {{ doubled }}</p>
+        @if(label !== '')
+            <p>{{ label }}</p>
+        @endif
+
+        <Card />
+    </section>
+</template>

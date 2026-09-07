@@ -25,6 +25,13 @@ use Saola\Compiler\Template\TemplateStructure;
 /** Pure-PHP orchestration port of sao2js/main_compiler.py::BladeCompiler. */
 final class MainCompiler
 {
+    private const LIFECYCLE_METHODS = [
+        'mounting', 'mounted', 'starting', 'started', 'pausing', 'paused',
+        'resuming', 'resumed', 'stopping', 'stopped', 'unmounting', 'unmounted',
+        'destroying', 'destroyed', 'onInit', 'onMounted', 'onUpdated', 'onDestroy',
+        'onActivated', 'onDeactivated', 'onPause', 'onResume',
+    ];
+
     private readonly ExpressionCompiler $expressions;
     private readonly DirectiveParsers $parsers;
     private readonly CompilerUtils $utils;
@@ -507,7 +514,14 @@ final class MainCompiler
 
         [$scriptsLine,$stylesLine,$resourcesLine]=$this->buildAssets($registerData);
         $stateUpdates=$this->generateStateUpdates($stateDeclarations);$dataStateUpdates=$this->generateDataStateUpdates($stateDeclarations);$lock=$stateDeclarations===[]?'':'lockUpdateRealState();';
-        $setupLang=$registerData['setupLang']??null;$ts=$setupLang==='typescript';$commitParams=$ts?'this: any':'';$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: any, data: any':$dataParam;$itemParams=$ts?'this: any, key: string, value: any':'key, value';
+        $setupLang=$registerData['setupLang']??null;$ts=$setupLang==='typescript';
+        // Tham số `this` là cú pháp CHỈ có ở TypeScript, bị xoá khi emit — không
+        // bao giờ là đối số thật. Cần nó vì ViewController gọi mấy hàm này bằng
+        // `fn.call(makeConfigThis(), …)`, tức receiver KHÔNG phải object chứa
+        // chúng; thiếu khai báo thì `tsc --strict` suy `this` = object literal và
+        // báo TS2339 ở `this.config`. Kiểu thật thay cho `any` để thân hàm vẫn
+        // được kiểm — xem ViewConfigThis trong @saolabs/client.
+        $configThis=$ts?'this: ViewConfigThis':'';$commitParams=$configThis;$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: ViewConfigThis, data: any':$dataParam;$itemParams=$ts?'this: ViewConfigThis, key: string, value: any':'key, value';
         $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            (this.data ??= {})[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
 
         $config="hasSuperView: {$hasSuper},\n    viewType: '{$viewType}',\n    sections: {$sectionsJson},\n    wrapperConfig: {$wrapperValue},{$wrapperProps}\n    hasAwaitData: ".$this->bool($hasAwait).",\n    hasFetchData: ".$this->bool($hasFetch).",\n    usesVars: ".$this->bool($varsDeclaration!=='').",\n    hasSections: ".$this->bool($sections!==[]).",\n    hasSectionPreload: ".$this->bool($this->anyPreloader($sectionsInfo)).",\n    hasPrerender: ".$this->bool($hasPrerender).",\n    renderLongSections: {$renderLong},\n    renderSections: {$renderSectionsJson},\n    prerenderSections: {$preSectionsJson}";
@@ -517,10 +531,15 @@ final class MainCompiler
         $raw=($wrapperFunction!==''?$wrapperFunction."\n":'').($wrapperDeclarations!==''?$wrapperDeclarations."\n":'');$wrapperContent=$this->indentNonEmpty($raw,'    ');
         $out=str_replace('[COMPONENT_DECLARE_VARIABLES_AND_STATES]',$wrapperContent,$out);
         $interface=$this->generatePropsInterface($dataDeclarations,$functionName);$out=$interface!==''?str_replace('[COMPONENT_PROPS_INTERFACE]',$interface,$out):str_replace(["[COMPONENT_PROPS_INTERFACE]\n",'[COMPONENT_PROPS_INTERFACE]'],'',$out);
-        $lifecycle=(string)($registerData['lifecycle']??'');$user=trim($lifecycle);if(str_starts_with($user,'{')&&str_ends_with($user,'}'))$user=trim(substr($user,1,-1));$user=$this->reindentBase($user,4,12);
+        $lifecycle=(string)($registerData['lifecycle']??'');$legacyUser=trim($lifecycle);if(str_starts_with($legacyUser,'{')&&str_ends_with($legacyUser,'}'))$legacyUser=trim(substr($legacyUser,1,-1));$userParts=[];if($legacyUser!=='')$userParts[]=$legacyUser;$usedCode=$renderFunction."\n".$prerender."\n".$setupConfig;foreach($this->usedSetupFunctions($registerData['setupFunctions']??[],$usedCode)as$name)$userParts[]=$name;$user=$this->reindentBase(implode(",\n",$userParts),4,12);
         $out=str_replace('[USER_DEFINED_PROPERTIES_PLACEHOLDER]',$user,$out);$out=str_replace('[VIEW_SETUP_CONFIG_PLACEHOLDER]',$this->reindentBase($setupConfig,8,12),$out);
 
-        [$imports,$contents]=$this->splitSetupScript((string)($registerData['setupContent']??''));$out=trim($imports)!==''?str_replace('[COMPONENT_IMPORTS]',$imports,$out):str_replace(["[COMPONENT_IMPORTS]\n",'[COMPONENT_IMPORTS]'],'',$out);$out=trim($contents)!==''?str_replace('[COMPONENT_SCRIPT_CONTENTS]',$contents,$out):str_replace(["[COMPONENT_SCRIPT_CONTENTS]\n",'[COMPONENT_SCRIPT_CONTENTS]'],'',$out);
+        // Import kiểu chỉ cho đầu ra .ts: `import type` là cú pháp TypeScript, để lọt
+        // vào file .js là lỗi cú pháp ngay khi trình duyệt nạp.
+        $out=$ts
+            ? str_replace('[TYPE_IMPORTS]', "import type { ViewConfigThis } from '@saolabs/client';", $out)
+            : str_replace(["[TYPE_IMPORTS]\n", '[TYPE_IMPORTS]'], '', $out);
+        [$imports,$contents]=$this->splitSetupScript((string)($registerData['setupContent']??''));$out=trim($imports)!==''?str_replace('[COMPONENT_IMPORTS]',$imports,$out):str_replace(["[COMPONENT_IMPORTS]\n",'[COMPONENT_IMPORTS]'],'',$out);$instanceContents=$this->indentBlock($contents,8);$out=trim($instanceContents)!==''?str_replace('[COMPONENT_SCRIPT_CONTENTS]',$instanceContents,$out):str_replace(["[COMPONENT_SCRIPT_CONTENTS]\n",'[COMPONENT_SCRIPT_CONTENTS]'],'',$out);
         foreach($verbatimBlocks as$placeholder=>$content){$out=str_replace("'{$placeholder}'","'".$this->jsTextLiteral($content)."'",$out);$out=str_replace($placeholder,$this->escapeTemplateContent($content),$out);}
         return $this->isTypescript?$this->processTypeMarkers($out):$this->removeTypeMarkers($out);
     }
@@ -541,6 +560,17 @@ final class MainCompiler
     private function pyString(mixed$value):string{return is_bool($value)?($value?'True':'False'):(is_null($value)?'None':(string)$value);}
     private function indentNonEmpty(string$text,string$prefix):string{$out=[];foreach(explode("\n",$text)as$line)$out[]=trim($line)===''?$line:$prefix.$line;return implode("\n",$out);}
     private function reindentBase(string$text,int$from,int$to):string{$out=[];foreach(explode("\n",$text)as$line){if(trim($line)===''){$out[]='';continue;}$leading=strlen($line)-strlen(ltrim($line));$extra=max(0,$leading-$from);$out[]=str_repeat(' ',$to+$extra).ltrim($line);}return implode("\n",$out);}
+
+    private function indentBlock(string$text,int$to):string
+    {
+        $min=null;foreach(explode("\n",$text)as$line){if(trim($line)==='')continue;$leading=strlen($line)-strlen(ltrim($line));$min=$min===null?$leading:min($min,$leading);}return$this->reindentBase($text,$min??0,$to);
+    }
+
+    /** @param list<string> $names @return list<string> */
+    private function usedSetupFunctions(array$names,string$generated):array
+    {
+        $used=[];foreach($names as$name){$name=(string)$name;if(in_array($name,self::LIFECYCLE_METHODS,true)||preg_match('/["\']handler["\']\s*:\s*["\']'.preg_quote($name,'/').'["\']|\bthis\.view\.'.preg_quote($name,'/').'\b/',$generated)===1)$used[]=$name;}return$used;
+    }
 
     /** @return array{string,string} */
     private function splitSetupScript(string$setup):array

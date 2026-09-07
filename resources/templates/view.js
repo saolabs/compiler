@@ -1,4 +1,5 @@
 import { View, ViewController, app, Application } from '@saolabs/client';
+[TYPE_IMPORTS]
 
 [COMPONENT_IMPORTS]
 
@@ -10,8 +11,6 @@ const __VIEW_CONFIG__ = {
 };
 
 [COMPONENT_PROPS_INTERFACE]
-
-[COMPONENT_SCRIPT_CONTENTS]
 
 class [COMPONENT_NAME]ViewController extends ViewController {
     constructor(view:[TYPE:View]) {
@@ -48,6 +47,8 @@ class [COMPONENT_NAME]View extends View {
 
 
 [COMPONENT_DECLARE_VARIABLES_AND_STATES]
+
+[COMPONENT_SCRIPT_CONTENTS]
 
         this.__ctrl__.setUserDefinedConfig({
 [USER_DEFINED_PROPERTIES_PLACEHOLDER]

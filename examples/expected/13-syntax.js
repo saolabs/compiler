@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class SyntaxViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -65,6 +64,7 @@ class SyntaxView extends View {
         __UPDATE_DATA_TRAIT__.value = __next => { value = __next; updateStateByKey('value', __next); };
         __UPDATE_DATA_TRAIT__.items = __next => { items = __next; updateStateByKey('items', __next); };
         const __VARIABLE_LIST__ = ["label", "value", "items"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({
