@@ -23,6 +23,38 @@ final class Parser
 
     private readonly EventDirectiveProcessor $eventProcessor;
 
+    /**
+     * "SVG tag name adjustment" của spec HTML — tên thường → tên đúng hoa/thường.
+     *
+     * HTML không phân biệt hoa thường nên parser hạ hết về chữ thường, nhưng SVG
+     * thì CÓ: `createElementNS(NS, 'clippath')` ra một SVGElement TRƠ, không phải
+     * SVGClipPathElement. Parser của trình duyệt tự áp bảng này khi đọc markup,
+     * nên SSR vẫn đúng còn CSR thì hỏng — cùng một view ra hai kết quả.
+     *
+     * Trích thẳng từ Chromium (parse `<svg><tên thường>` rồi đọc lại tagName),
+     * không chép tay: 37 mục, khớp bảng trong spec.
+     */
+    private const SVG_TAG_ADJUST = [
+        'altglyph' => 'altGlyph', 'altglyphdef' => 'altGlyphDef',
+        'altglyphitem' => 'altGlyphItem', 'animatecolor' => 'animateColor',
+        'animatemotion' => 'animateMotion', 'animatetransform' => 'animateTransform',
+        'clippath' => 'clipPath', 'feblend' => 'feBlend',
+        'fecolormatrix' => 'feColorMatrix', 'fecomponenttransfer' => 'feComponentTransfer',
+        'fecomposite' => 'feComposite', 'feconvolvematrix' => 'feConvolveMatrix',
+        'fediffuselighting' => 'feDiffuseLighting', 'fedisplacementmap' => 'feDisplacementMap',
+        'fedistantlight' => 'feDistantLight', 'fedropshadow' => 'feDropShadow',
+        'feflood' => 'feFlood', 'fefunca' => 'feFuncA', 'fefuncb' => 'feFuncB',
+        'fefuncg' => 'feFuncG', 'fefuncr' => 'feFuncR',
+        'fegaussianblur' => 'feGaussianBlur', 'feimage' => 'feImage',
+        'femerge' => 'feMerge', 'femergenode' => 'feMergeNode',
+        'femorphology' => 'feMorphology', 'feoffset' => 'feOffset',
+        'fepointlight' => 'fePointLight', 'fespecularlighting' => 'feSpecularLighting',
+        'fespotlight' => 'feSpotLight', 'fetile' => 'feTile',
+        'feturbulence' => 'feTurbulence', 'foreignobject' => 'foreignObject',
+        'glyphref' => 'glyphRef', 'lineargradient' => 'linearGradient',
+        'radialgradient' => 'radialGradient', 'textpath' => 'textPath',
+    ];
+
     private const VOID_ELEMENTS = [
         'area' => true, 'base' => true, 'br' => true, 'col' => true,
         'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
@@ -432,12 +464,12 @@ final class Parser
                 continue;
             }
             if (Re::match('/\G<\/\s*([a-zA-Z][\w-]*)\s*>/', $line, $m, 0, $pos)) {
-                $this->popHtmlTag($stack, strtolower($m[1]));
+                $this->popHtmlTag($stack, self::normalizeTagName($m[1]));
                 $pos += strlen($m[0]);
                 continue;
             }
             if (Re::match('/\G<([a-zA-Z][\w-]*)/', $line, $m, 0, $pos)) {
-                $tag = strtolower($m[1]);
+                $tag = self::normalizeTagName($m[1]);
                 $pos += strlen($m[0]);
                 [$attrs, $pos, $selfClosing] = $this->scanTagEnd($line, $pos);
                 $void = isset(self::VOID_ELEMENTS[$tag]) || $selfClosing;
@@ -846,6 +878,14 @@ final class Parser
     }
 
     /** @param list<array{Node, string, mixed}> $stack */
+    /** Hạ chữ thường như HTML, rồi trả lại đúng hoa/thường cho tag SVG. */
+    private static function normalizeTagName(string $raw): string
+    {
+        $lower = strtolower($raw);
+
+        return self::SVG_TAG_ADJUST[$lower] ?? $lower;
+    }
+
     private function popHtmlTag(array &$stack, string $tag): void
     {
         for ($i = count($stack) - 1; $i > 0; $i--) if ($stack[$i][1] === 'html' && $stack[$i][2] === $tag) { array_splice($stack, $i); return; }
