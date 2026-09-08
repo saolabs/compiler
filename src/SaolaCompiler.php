@@ -77,7 +77,7 @@ final class SaolaCompiler
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
-            $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource);
+            $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath);
             $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
@@ -305,9 +305,9 @@ final class SaolaCompiler
      * `@pageStart` in <head>, page thì `@extends` render con trước cha nên chỗ
      * nào cũng kịp.
      */
-    private function injectSsrHeadAssets(string $content, string $source): string
+    private function injectSsrHeadAssets(string $content, string $source, ?string $viewPath = null): string
     {
-        $resources = (new RegisterParser())->parseRegisterContent($source)['resources'] ?? [];
+        $resources = (new RegisterParser())->parseRegisterContent($source, $viewPath)['resources'] ?? [];
         $lines = [];
         foreach ($resources as $resource) {
             $attributes = $resource['attrs'] ?? [];

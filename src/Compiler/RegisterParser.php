@@ -48,7 +48,7 @@ final class RegisterParser
         $this->setupLang = null;
         $this->mergedContent = null;
         $this->parseScripts($content);
-        $this->parseStyles($content);
+        $this->parseStyles($content, $viewName);
 
         $duplicates = array_intersect_key($this->objectMethodNames(), $this->setupFunctions);
         if ($duplicates !== []) {
@@ -126,8 +126,21 @@ final class RegisterParser
         }
     }
 
-    private function parseStyles(string $content): void
+    private function parseStyles(string $content, ?string $viewName = null): void
     {
+        // `<style lang="scss">` trong comment là ví dụ, không phải style thật —
+        // giống {@see ScopedStyle::extract}. Không xoá comment thì trang docs in
+        // ví dụ ra sẽ không compile được. (@verbatim đã thành placeholder từ
+        // trước khi vào đây nên không cần lo.)
+        $scan = BladeComment::blank($content);
+        preg_match_all('/<style\b([^>]*?)>(.*?)<\/style>/is', $scan, $flagged, PREG_SET_ORDER);
+        foreach ($flagged as $match) {
+            if (trim($match[2]) === '') {
+                continue;
+            }
+            $this->assertPlainCss($match[1], $viewName);
+        }
+
         preg_match_all('/<style\b([^>]*?)>(.*?)<\/style>/is', $content, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
             $attrs = $match[1];
@@ -139,7 +152,9 @@ final class RegisterParser
             if (preg_match('/\bscoped\b/i', $attrs) === 1) {
                 $item['scoped'] = true;
             }
-            $this->copyAttributes($item, $this->parseAttributes($attrs, ['scoped']));
+            // `lang` là chỉ thị cho compiler, không phải attribute của DOM —
+            // loại như `scoped`, đừng để nó lọt ra thẻ <style> lúc chạy.
+            $this->copyAttributes($item, $this->parseAttributes($attrs, ['scoped', 'lang']));
             $this->styles[] = $item;
         }
 
@@ -157,6 +172,34 @@ final class RegisterParser
             $this->copyAttributes($item, $this->parseAttributes($attrs, ['href', 'rel']));
             $this->styles[] = $item;
         }
+    }
+
+    /**
+     * Compiler KHÔNG biên dịch preprocessor CSS nào.
+     *
+     * Bỏ qua lặng lẽ thì SCSS thô đi thẳng vào styles[].content rồi được nhét
+     * vào thẻ <style> lúc chạy: trình duyệt bỏ qua, không lỗi, không cảnh báo.
+     * Tệ hơn, ScopedStyle::apply() đã kịp viết lại selector top-level nên thứ
+     * sinh ra không còn là SCSS hợp lệ mà cũng chưa phải CSS. Thà chết ở lúc
+     * biên dịch còn hơn để người ta đi tìm vì sao style không ăn.
+     */
+    private function assertPlainCss(string $attrs, ?string $viewName): void
+    {
+        if (preg_match('/\blang\s*=\s*(["\'])\s*([^"\']*?)\s*\1/i', $attrs, $m) !== 1) {
+            return;
+        }
+
+        $lang = strtolower($m[2]);
+        if ($lang === '' || $lang === 'css') {
+            return;
+        }
+
+        throw new CompileException(
+            '<style lang="'.$m[2].'"> không được hỗ trợ — compiler chỉ nhận CSS thuần. '
+            .'Nesting (`.a { & .b { … } }`) và biến (`var(--x)`) đã chạy native, '
+            .'không cần preprocessor.',
+            $viewName,
+        );
     }
 
     /** @param list<string> $exclude @return array<string, mixed> */
