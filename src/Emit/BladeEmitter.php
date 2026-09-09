@@ -108,6 +108,7 @@ BLADE;
         }
 
         $processed = self::stripListenerKeys($processed);
+        self::assertNoClientOnlyView($processed);
 
         return $this->assemble(
             $declarationList,
@@ -615,6 +616,29 @@ BLADE;
         }
 
         return $content;
+    }
+
+    /**
+     * `$view` là biến hệ thống CHỈ có ở client — chặn nó lọt vào Blade.
+     *
+     * Nó lọt qua được vì trình dịch biểu thức coi `$view` như một biến bình
+     * thường: `{{ $view.path }}` ra `{{ $$view->path }}`, tức biến-biến của
+     * PHP. Không có biến nào tên đó nên SSR ra rỗng hoặc lỗi — trang trắng mà
+     * HTTP vẫn 200, đúng loại hỏng khó lần nhất.
+     *
+     * Handler sự kiện KHÔNG dính: chúng không sinh ra gì ở phía Blade, nên
+     * `@click($view.emit('x'))` đi qua đây sạch sẽ.
+     */
+    private static function assertNoClientOnlyView(string $blade): void
+    {
+        if (! Re::match('/\$\$view\b/', $blade)) {
+            return;
+        }
+
+        throw new \RuntimeException(
+            '`$view` chỉ dùng được ở phía client (handler sự kiện, <script setup>), '
+            . 'không dùng được trong biểu thức được SSR render như {{ }}, @class, @attr…',
+        );
     }
 
     /**

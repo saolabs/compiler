@@ -1027,7 +1027,7 @@ final class Parser
             $entry = trim($entry);
             if ($entry === '') continue;
             if (Re::match('/^[\'"]on\$([^\'"]+)[\'"]\s*=>\s*(.+)$/s', $entry, $m)) {
-                $listeners[] = '"' . $m[1] . '": ' . $this->eventProcessor->compileHandler(trim($m[2]));
+                $listeners[] = '"' . $m[1] . '": ' . $this->eventProcessor->compileHandler(trim($m[2]), $m[1]);
                 continue;
             }
             $props[] = $entry;
@@ -1068,7 +1068,8 @@ final class Parser
                 $value = trim($m[2]);
                 // Khoá `on$<tên>` là listener, không phải prop — xem splitDataAndListeners()
                 if (str_starts_with($m[1], 'on$')) {
-                    $listeners[] = '"' . substr($m[1], 3) . '": ' . $this->eventProcessor->compileHandler($value);
+                    $name = substr($m[1], 3);
+                    $listeners[] = '"' . $name . '": ' . $this->eventProcessor->compileHandler($value, $name);
                     continue;
                 }
                 $pairs[] = [$m[1], $this->expressions->compileStatement($value)];

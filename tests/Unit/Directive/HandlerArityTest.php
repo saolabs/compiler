@@ -171,6 +171,152 @@ final class HandlerArityTest extends TestCase
         $this->assertStringContainsString("'a.b', parentElement, [\"n\"],", $js);
     }
 
+    /**
+     * `$view` là biến hệ thống trỏ tới chính view — CHỈ có ở client.
+     *
+     * Thay cho biến `emit` mà compiler từng tự chèn vào phạm vi: đọc code không
+     * thấy nó đến từ đâu, và view viết tay thì không có.
+     */
+    public function test_view_emit_chay_ca_trong_handler_lan_script_setup(): void
+    {
+        $js = $this->compile(
+            "<button @click(\$view.emit('pick', n))>x</button>",
+            "function go() { \$view.emit('go', 1); }",
+        );
+
+        $this->assertStringContainsString("[() => \$view.emit('pick', n)]", $js);
+        $this->assertStringContainsString("function go() { \$view.emit('go', 1); }", $js);
+    }
+
+    /** Object literal LỒNG trong đối số phải thành object JS, không phải mảng PHP. */
+    public function test_object_literal_long_trong_doi_so_thanh_object_js(): void
+    {
+        $js = $this->compile("<button @click(\$view.emit('tag', {id: n, k: 'v'}))>x</button>");
+
+        $this->assertStringContainsString('{"id": n, "k": "v"}', $js);
+        $this->assertStringNotContainsString("'id'=>", $js);
+    }
+
+    /**
+     * `emit` là method CÓ SẴN của View, không phải biến ma thuật — nên trong
+     * template nó phân giải y hệt method người dùng viết, không cần `$view.`.
+     *
+     * Ba vị trí, ba đường phân giải khác nhau, đều phải ra được `View.emit`:
+     * handler theo tên, thân arrow, và biểu thức của listener.
+     */
+    public function test_emit_tran_phan_giai_duoc_o_moi_vi_tri(): void
+    {
+        // 1. Handler theo tên — runtime tra `view['emit']`
+        $this->assertSame('[{"handler":"emit","params":[\'x\']}]', $this->eventConfig("emit('x')"));
+
+        // 2. Thân arrow người dùng viết
+        $this->assertSame("[() => this.view.emit('x')]", $this->eventConfig("() => emit('x')"));
+
+        // 3. Biểu thức của listener ở thẻ component
+        $js = $this->compile("@include('a.b', {on\$re: emit('other')})");
+        $this->assertStringContainsString('{ "re": () => this.view.emit(\'other\') }', $js);
+    }
+
+    /** Chuỗi chứa `emit(` là DỮ LIỆU, không phải lời gọi. */
+    public function test_khong_dung_vao_emit_trong_chuoi(): void
+    {
+        $this->assertSame("[() => this.view.g('emit(')]", $this->eventConfig("() => g('emit(')"));
+    }
+
+    /**
+     * `emit(...)` trần TRONG `<script setup>` không bắt được lúc biên dịch —
+     * nội dung setup đi qua nguyên văn, không qua trình dịch biểu thức. Quét
+     * văn bản để bắt sẽ báo nhầm cả comment lẫn `socket.emit(`, nên để nguyên:
+     * runtime ném ReferenceError có kèm đúng tên, không phải hỏng câm.
+     */
+    /**
+     * Trong `<script setup>` thì KHÁC: nội dung đó đi qua nguyên văn, không
+     * qua trình dịch biểu thức, nên `emit(...)` trần không được phân giải và
+     * nổ ReferenceError lúc chạy. Ở đó phải viết `$view.emit(...)`.
+     */
+    public function test_emit_tran_trong_script_setup_di_qua_nguyen_van(): void
+    {
+        $js = $this->compile('<button @click(go())>a</button>', "function go() { emit('x'); }");
+
+        $this->assertStringContainsString("function go() { emit('x'); }", $js);
+    }
+
+    /** `$view` không tồn tại lúc Blade render — bắt lúc biên dịch, không để ra trang trắng. */
+    public function test_view_o_vi_tri_ssr_bao_loi(): void
+    {
+        $this->expectExceptionMessageMatches('/chỉ dùng được ở phía client/');
+        $this->compile('<p>{{ $view.path }}</p>');
+    }
+
+    /**
+     * `@edit($view.emit)` — CHUYỂN TIẾP lên tầng trên, giữ nguyên tên sự kiện.
+     *
+     * `emit` chỉ nhảy MỘT tầng, nên cháu muốn tới ông thì tầng giữa phải phát
+     * lại. Dạng này là bản gọn của `(...args) => $view.emit('edit', ...args)`,
+     * và `...args` giữ nguyên số đối số lẫn GIÁ TRỊ TRẢ VỀ — nhờ đó
+     * `if ($view.emit('confirm', id) === false)` vẫn đúng qua nhiều tầng.
+     */
+    public function test_view_emit_tran_o_the_component_la_chuyen_tiep(): void
+    {
+        $source = "@import('a.b' as child)\n@states({ n: 1 })\n"
+            . "<template>\n<child :x=\"n\" @edit(\$view.emit) "
+            . "@on('row:changed', \$view.emit) />\n</template>";
+
+        $js = (new SaolaCompiler())->compile($source, new CompileOptions(
+            viewPath: 'test.view',
+            functionName: 'TestView',
+            factoryName: 'TestViewFactory',
+        ))->js ?? '';
+
+        $this->assertStringContainsString(
+            '{ "edit": (...args) => $view.emit(\'edit\', ...args), '
+            . '"row:changed": (...args) => $view.emit(\'row:changed\', ...args) }',
+            $js,
+        );
+    }
+
+    public function test_chuyen_tiep_dung_duoc_ca_voi_khoa_on(): void
+    {
+        $js = $this->compile("@include('a.b', {x: n, on\$save: \$view.emit})");
+
+        $this->assertStringContainsString('{ "save": (...args) => $view.emit(\'save\', ...args) }', $js);
+    }
+
+    /** Trên element thường thì không có "tầng trên" nào để chuyển tiếp. */
+    public function test_chuyen_tiep_tren_element_bao_loi(): void
+    {
+        $this->expectExceptionMessageMatches('/chỉ dùng được cho sự kiện của THẺ COMPONENT/');
+        $this->compile('<button @click($view.emit)>x</button>');
+    }
+
+    /**
+     * `$view` phải giữ nguyên đúng MỘT '$' ở MỌI directive.
+     *
+     * Số '$' đi vào EventDirectiveProcessor không ổn định: preprocessor thêm
+     * một cái nữa cho đối số của directive nó BIẾT, còn `@dragstart(...)`
+     * (không có trong EVENT_DIRECTIVES) và `@submit.prevent(...)` (regex
+     * `@submit\s*\(` trượt vì modifier) thì giữ nguyên một cái. Bóc '$' mù
+     * theo số lượng làm hai dạng đó ra `view.emit(...)` — ReferenceError lúc
+     * bấm, mà CHỈ ở đúng những directive đó nên rất dễ lọt.
+     */
+    #[DataProvider('directiveGiuNguyenDollarView')]
+    public function test_view_giu_nguyen_dollar_o_moi_directive(string $directive): void
+    {
+        $js = $this->compile("<b @{$directive}(\$view.emit('x'))>y</b>");
+
+        $this->assertStringContainsString("\$view.emit('x')", $js);
+        $this->assertDoesNotMatchRegularExpression('/(?<![\w.$])view\.emit/', $js);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function directiveGiuNguyenDollarView(): iterable
+    {
+        yield 'trong danh sách event' => ['click'];
+        yield 'NGOÀI danh sách event' => ['dragstart'];
+        yield 'có modifier' => ['submit.prevent'];
+        yield 'ngoài danh sách + modifier' => ['animationend.once'];
+    }
+
     /** Listener là closure của view cha — sang PHP là biến không tồn tại. */
     public function test_blade_khong_bao_gio_nhan_khoa_on(): void
     {

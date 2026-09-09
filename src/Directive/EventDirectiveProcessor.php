@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Saola\Compiler\Directive;
 
 use Saola\Compiler\Expr\ExpressionCompiler;
+use Saola\Compiler\Expr\HelperResolver;
 use Saola\Compiler\Support\Balanced;
 use Saola\Compiler\Support\Re;
 
 /** Event DSL used by the AST parser; port of process_event_items and dependencies. */
 final class EventDirectiveProcessor
 {
+    /** Chỗ giữ `$view` qua vòng bóc '$' — không chứa '$' nên vòng đó không đụng. */
+    private const VIEW_PLACEHOLDER = '__SAO_VIEW_REF__';
+
     /** @var array<string, true> */
     private array $stateVariables = [];
 
@@ -65,6 +69,15 @@ final class EventDirectiveProcessor
             if (Re::match('/^\$?([a-zA-Z_][a-zA-Z0-9_]*)$/', $part, $m) && ! $this->isUseStateFunctionName($m[1])) {
                 $items[] = '{"handler":"' . $m[1] . '"}';
                 continue;
+            }
+
+            // Trên element thường không có "tầng trên" nào để chuyển tiếp lên.
+            if (Re::match('/^\$\$?view\s*(?:->|\.)\s*emit$/', $part)) {
+                throw new \RuntimeException(
+                    'Chuyển tiếp `$view.emit` chỉ dùng được cho sự kiện của THẺ COMPONENT '
+                    . '(`<Card @edit($view.emit) />`). Trên element thường, hãy gọi tường minh: '
+                    . "`@click(\$view.emit('tên', …))`.",
+                );
             }
 
             foreach ($this->splitExpressionsBySemicolon($part) as $expr) {
@@ -175,11 +188,43 @@ final class EventDirectiveProcessor
      * `emit('edit', a, b)` khi đó nhận đủ mọi đối số, còn dạng biểu thức chỉ
      * thấy payload đầu qua `event`.
      */
-    public function compileHandler(string $expr): string
+    public function compileHandler(string $expr, ?string $eventName = null): string
     {
         $expr = trim($expr);
+        if (getenv("SAO_DEBUG")) fwrite(STDERR, "HANDLER[" . ($eventName ?? "-") . "]=" . $expr . "
+");
+
+        // `@edit($view.emit)` — CHUYỂN TIẾP: phát tiếp lên trên, giữ nguyên tên.
+        //
+        // `emit` chỉ nhảy MỘT tầng (tới cha đã @include view này), nên cháu
+        // muốn tới ông thì tầng giữa phải phát lại. Viết tay là
+        // `@edit((...args) => $view.emit('edit', ...args))` ở MỌI sự kiện —
+        // dạng này gọn hơn mà vẫn phải LIỆT KÊ sự kiện nào được chuyển tiếp,
+        // nên không có chuyện tổ tiên xa vô tình bắt được (đó là lý do không
+        // làm nổi bọt kiểu DOM).
+        if ($eventName !== null && self::isEmitReference($expr)) {
+            return "(...args) => \$view.emit('" . $eventName . "', ...args)";
+        }
+
         if (Re::match('/^\$?([a-zA-Z_]\w*)$/', $expr, $m)) return $m[1];
+
         return $this->processExpressionToArrow($expr);
+    }
+
+    /**
+     * `emit` hoặc `$view.emit` đứng TRẦN, không gọi.
+     *
+     * Nhận cả hai vì cả hai đều đọc ra "chính hàm phát sự kiện": `emit` là
+     * method của View, `$view.emit` là đường dẫn tường minh tới đúng nó.
+     *
+     * Tới đây `$view.emit` đã thành `$$view->emit`: preprocessor thêm '$' lên
+     * một tên vốn ĐÃ mở đầu bằng '$', và đổi '.' thành '->'. Bước dịch sang JS
+     * gỡ lại một '$'.
+     */
+    private static function isEmitReference(string $expr): bool
+    {
+        return Re::match('/^\$?emit$/', trim($expr))
+            || Re::match('/^\$\$?view\s*(?:->|\.)\s*emit$/', trim($expr));
     }
 
     /**
@@ -243,6 +288,11 @@ final class EventDirectiveProcessor
             }
             return '(event) => ' . $setter . '(' . $js . ')';
         }
+        // Nhánh cuối KHÔNG chạy resolveUserMethodCalls (biểu thức ở đây thường
+        // chỉ đụng biến trong scope), nhưng `emit` thì vẫn phải phân giải:
+        // `@re(emit('other'))` ở listener của thẻ component đi đúng đường này.
+        $js = HelperResolver::rewriteEmitCalls($js);
+
         return $this->arrowPrefix($js) . $this->arrowBody($js);
     }
 
@@ -271,9 +321,25 @@ final class EventDirectiveProcessor
         return str_starts_with($name, 'set') && strlen($name) > 3 ? $name : 'set' . ucfirst($name);
     }
 
+    /**
+     * Bóc tiền tố '$' của biến PHP — TRỪ `$view`.
+     *
+     * `$view` là biến hệ thống và trong JS nó tên đúng như vậy, có '$'. Số '$'
+     * đi vào đây KHÔNG ổn định: preprocessor thêm một cái nữa (`$$view`) cho
+     * đối số của directive mà nó biết, còn directive nó không biết —
+     * `@dragstart(...)` không nằm trong EVENT_DIRECTIVES, `@submit.prevent(...)`
+     * có modifier nên regex `@submit\s*\(` trượt — thì giữ nguyên một cái.
+     * Bóc mù theo số lượng nên hai dạng sau ra `view.emit(...)`:
+     * ReferenceError lúc bấm, mà chỉ ở ĐÚNG những directive đó.
+     *
+     * Gộp mọi số lượng '$' về đúng một, và không cho vòng bóc đụng vào.
+     */
     private function convertPhpVariableToJs(string $param): string
     {
-        return Re::replace('/\$([a-zA-Z_][a-zA-Z0-9_]*)/', '${1}', $param);
+        $param = Re::replace('/\$+view\b/', self::VIEW_PLACEHOLDER, $param);
+        $param = Re::replace('/\$([a-zA-Z_][a-zA-Z0-9_]*)/', '${1}', $param);
+
+        return str_replace(self::VIEW_PLACEHOLDER, '$view', $param);
     }
 
     private function processEventInString(string $param): string
@@ -295,8 +361,73 @@ final class EventDirectiveProcessor
     {
         $trimmed = trim($param);
         if ($this->isPhpArrayLiteral($trimmed)) return $this->expressions->compile($trimmed);
+        $param = $this->convertEmbeddedPhpArrays($param);
         $param = str_replace(['->', '::'], '.', $param);
         return $this->renameLoopIdentifier($param);
+    }
+
+    /**
+     * Đổi mảng kết hợp PHP NẰM BÊN TRONG một biểu thức lớn hơn thành object JS.
+     *
+     * Nhánh trên chỉ đổi khi TOÀN BỘ chuỗi là một mảng — đủ cho đường
+     * `{handler, params}` vì ở đó từng tham số được xử lý riêng. Còn biểu thức
+     * nguyên khối như `$view.emit('x', ['id'=> $row['id']])` thì mảng nằm lồng
+     * bên trong, rơi ra ngoài và ra thẳng JS sai cú pháp — `'id'=> row['id']`.
+     *
+     * Chỉ đụng `[...]` có `=>` ở mức ngoài: đó là mảng kết hợp. `row['id']` là
+     * TRUY CẬP mảng và `['a', 'b']` là list, cả hai đã hợp lệ trong JS.
+     */
+    private function convertEmbeddedPhpArrays(string $expr): string
+    {
+        if (! str_contains($expr, '=>')) return $expr;
+
+        $out = '';
+        $quote = null;
+        $length = strlen($expr);
+
+        for ($i = 0; $i < $length; $i++) {
+            $ch = $expr[$i];
+
+            if ($quote !== null) {
+                $out .= $ch;
+                if ($ch === '\\' && $i + 1 < $length) $out .= $expr[++$i];
+                elseif ($ch === $quote) $quote = null;
+                continue;
+            }
+            if ($ch === '"' || $ch === "'") { $quote = $ch; $out .= $ch; continue; }
+            if ($ch !== '[') { $out .= $ch; continue; }
+
+            $end = self::matchingBracket($expr, $i);
+            if ($end === -1) { $out .= $ch; continue; }
+
+            $slice = substr($expr, $i, $end - $i + 1);
+            $out .= $this->isPhpArrayLiteral($slice)
+                ? $this->expressions->compile($slice)
+                : $slice;
+            $i = $end;
+        }
+
+        return $out;
+    }
+
+    /** Vị trí ']' khớp với '[' tại $start, -1 nếu không cân bằng. */
+    private static function matchingBracket(string $expr, int $start): int
+    {
+        $depth = 0;
+        $quote = null;
+        for ($i = $start, $n = strlen($expr); $i < $n; $i++) {
+            $ch = $expr[$i];
+            if ($quote !== null) {
+                if ($ch === '\\') $i++;
+                elseif ($ch === $quote) $quote = null;
+                continue;
+            }
+            if ($ch === '"' || $ch === "'") { $quote = $ch; continue; }
+            if ($ch === '[') $depth++;
+            elseif ($ch === ']' && --$depth === 0) return $i;
+        }
+
+        return -1;
     }
 
     private function isPhpArrayLiteral(string $expr): bool

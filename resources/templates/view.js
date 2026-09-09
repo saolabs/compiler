@@ -27,7 +27,9 @@ class [COMPONENT_NAME]View extends View {
     constructor(__data__:[TYPE:any] = {}, systemData:[TYPE:any] = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, [COMPONENT_NAME]ViewController);
         const App:[TYPE:Application] = app("App") as [TYPE:Application];
-        const $view = this;
+        const $view:[TYPE:[COMPONENT_NAME]View] = this;
+        const $app:[TYPE:Application] = App;
+        const $controller:[TYPE:[COMPONENT_NAME]ViewController] = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
         const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
@@ -44,10 +46,6 @@ class [COMPONENT_NAME]View extends View {
         };
         const updateStateByKey = (key:[TYPE:string], state:[TYPE:any]) => {
             __STATE__.__.updateStateByKey(key, state);
-        };
-        // Phát sự kiện lên cha đã @include view này (`<mycomp @edit(...)>`).
-        const emit = (event:[TYPE:string], ...args:[TYPE:Array<any>]) => {
-            return this.__ctrl__.emit(event, ...args);
         };
 
 

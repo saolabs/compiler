@@ -103,7 +103,9 @@ final class HelperResolver
      */
     public function resolveUserMethodCalls(string $expr): string
     {
-        if ($this->userMethods === []) {
+        // KHÔNG return sớm khi không có userMethods: `emit` là method có sẵn
+        // của View, phải phân giải kể cả ở view không có <script setup>.
+        if ($this->userMethods === [] && ! str_contains($expr, 'emit')) {
             return $expr;
         }
 
@@ -118,7 +120,24 @@ final class HelperResolver
             );
         }
 
+        $masked = self::rewriteEmitCalls($masked);
+
         return $mask->unmask($masked);
+    }
+
+    /**
+     * `emit(...)` trần → `this.view.emit(...)`.
+     *
+     * `emit` là method CÓ SẴN của View, chỉ khác method người dùng ở chỗ không
+     * ai viết nó ra. Không phân giải thì nó ở lại dạng trần trong closure và
+     * nổ ReferenceError đúng lúc người dùng bấm — scope compiled không còn
+     * biến `emit` nào kể từ khi bỏ biến ma thuật.
+     *
+     * Lookbehind chặn `obj.emit(` và `$view.emit(` — hai thứ đã đúng sẵn.
+     */
+    public static function rewriteEmitCalls(string $expr): string
+    {
+        return Re::replace('/(?<![\w.$])emit\s*\(/', 'this.view.emit(', $expr);
     }
 
     /** Giả định string literal ĐÃ được che. */
@@ -154,6 +173,13 @@ final class HelperResolver
         // App.Helper là TypeError lúc chạy và giết cả view.
         if (isset($this->userMethods[$name])) {
             return 'this.view.' . $name . '(';
+        }
+
+        // `emit` là method CÓ SẴN của View, không phải biến ma thuật — phân
+        // giải y như method người dùng viết trong <script setup>. Thiếu nhánh
+        // này nó rơi vào `App.Helper.emit(...)`, chỉ nổ lúc chạy.
+        if ($name === 'emit') {
+            return 'this.view.emit(';
         }
 
         $this->warnUnknown($name);
