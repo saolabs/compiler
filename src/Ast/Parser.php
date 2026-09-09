@@ -402,10 +402,12 @@ final class Parser
             $expr = $this->extractDirectiveParens($line, '@include');
             if ($expr !== null) {
                 [$pathPhp, $dataPhp] = $this->parseIncludeParams($expr);
+                [$propsPhp, $listenersJs] = $this->splitDataAndListeners($dataPhp);
                 $this->addChild($stack, new IncludeNode(
                     $pathPhp, $pathPhp !== '' ? $this->convertPathToJs($pathPhp) : "''",
-                    $dataPhp, $dataPhp !== null ? $this->expressions->compileStatement($dataPhp) : null,
-                    $dataPhp !== null ? $this->getStateVars($dataPhp) : [],
+                    $propsPhp, $propsPhp !== null ? $this->expressions->compileStatement($propsPhp) : null,
+                    $propsPhp !== null ? $this->getStateVars($propsPhp) : [],
+                    $listenersJs,
                 ));
                 return true;
             }
@@ -413,8 +415,8 @@ final class Parser
         if (Re::match('/^@importInclude\s*\(/', $line)) {
             $expr = $this->extractDirectiveParens($line, '@importInclude');
             if ($expr !== null) {
-                [$pathPhp, $pathJs, $pairs, $svars] = $this->parseImportIncludeParams($expr);
-                $node = new ImportIncludeNode($pathPhp, $pathJs, $pairs, $svars);
+                [$pathPhp, $pathJs, $pairs, $svars, $listenersJs] = $this->parseImportIncludeParams($expr);
+                $node = new ImportIncludeNode($pathPhp, $pathJs, $pairs, $svars, $listenersJs);
                 $this->addChild($stack, $node);
                 $stack[] = [$node, 'importInclude', null];
                 return true;
@@ -987,10 +989,56 @@ final class Parser
     }
 
     /** @return array{string, ?string} */
+    /** @return array{string, ?string} */
     private function parseIncludeParams(string $expr): array
     {
         $parts = $this->splitPhpArray($expr);
         return count($parts) >= 2 ? [trim($parts[0]), trim($parts[1])] : [trim($expr), null];
+    }
+
+    /**
+     * Tách khoá `on$<tên>` khỏi mảng data của `@include`.
+     *
+     *   ['card' => $card, 'on$edit' => $openEditor]
+     *   → props     ['card' => $card]
+     *     listener  { "edit": openEditor }
+     *
+     * MỘT object ở mặt chữ, HAI kênh lúc chạy — cố ý. Listener không được vào
+     * `this.data` (nó không phải dữ liệu, và `updateVariableData` sẽ đi qua nó
+     * mỗi lần prop đổi), không được sang Blade (SSR không có ai bấm chuột), và
+     * không được tính vào stateKeys (một handler nhắc tới state không phải lý
+     * do để đẩy prop mới xuống con mỗi lần state đó đổi).
+     *
+     * Giá trị đi qua đúng DSL của `@click` nên `on$edit: openEditor`,
+     * `on$edit: openEditor(event)`, `on$edit: (a, b) => f(a, b)` và
+     * `on$edit: (a, b) => { f(a); g(b) }` đều dùng được.
+     *
+     * @return array{?string, ?string} [mảng props (null nếu rỗng), object listener JS]
+     */
+    private function splitDataAndListeners(?string $dataPhp): array
+    {
+        if ($dataPhp === null || ! str_contains($dataPhp, 'on$')) return [$dataPhp, null];
+
+        $inner = trim($dataPhp);
+        if (str_starts_with($inner, '[') && str_ends_with($inner, ']')) $inner = trim(substr($inner, 1, -1));
+
+        $props = []; $listeners = [];
+        foreach ($this->splitPhpArray($inner) as $entry) {
+            $entry = trim($entry);
+            if ($entry === '') continue;
+            if (Re::match('/^[\'"]on\$([^\'"]+)[\'"]\s*=>\s*(.+)$/s', $entry, $m)) {
+                $listeners[] = '"' . $m[1] . '": ' . $this->eventProcessor->compileHandler(trim($m[2]));
+                continue;
+            }
+            $props[] = $entry;
+        }
+
+        if ($listeners === []) return [$dataPhp, null];
+
+        return [
+            $props === [] ? null : '[' . implode(', ', $props) . ']',
+            '{ ' . implode(', ', $listeners) . ' }',
+        ];
     }
 
     private function convertPathToJs(string $path): string
@@ -1006,23 +1054,28 @@ final class Parser
         return $js;
     }
 
-    /** @return array{string, string, list<array{string, string}>, array<string, true>} */
+    /** @return array{string, string, list<array{string, string}>, array<string, true>, ?string} */
     private function parseImportIncludeParams(string $expr): array
     {
         $parts = $this->splitPhpArray($expr);
-        if ($parts === []) return [trim($expr), "''", [], []];
+        if ($parts === []) return [trim($expr), "''", [], [], null];
         $path = trim(count($parts) === 1 ? $parts[0] : $parts[1]);
-        $pairs = []; $state = [];
+        $pairs = []; $state = []; $listeners = [];
         if (isset($parts[2])) {
             $data = trim($parts[2]);
             if (str_starts_with($data, '[') && str_ends_with($data, ']')) $data = trim(substr($data, 1, -1));
             foreach ($this->splitPhpArray($data) as $entry) if (Re::match('/^[\'"]([^\'"]+)[\'"]\s*=>\s*(.+)$/s', trim($entry), $m)) {
                 $value = trim($m[2]);
+                // Khoá `on$<tên>` là listener, không phải prop — xem splitDataAndListeners()
+                if (str_starts_with($m[1], 'on$')) {
+                    $listeners[] = '"' . substr($m[1], 3) . '": ' . $this->eventProcessor->compileHandler($value);
+                    continue;
+                }
                 $pairs[] = [$m[1], $this->expressions->compileStatement($value)];
                 $state += $this->getStateVars($value);
             }
         }
-        return [$path, $this->convertPathToJs($path), $pairs, $state];
+        return [$path, $this->convertPathToJs($path), $pairs, $state, $listeners === [] ? null : '{ ' . implode(', ', $listeners) . ' }'];
     }
 
     private function extractWhileVar(string $expr): ?string

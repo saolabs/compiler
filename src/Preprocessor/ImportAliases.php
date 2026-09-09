@@ -41,6 +41,12 @@ final class ImportAliases
         return $this->aliases[$name] ?? null;
     }
 
+    /** @return list<string> tên thẻ component đã khai báo */
+    public function names(): array
+    {
+        return array_keys($this->aliases);
+    }
+
     /**
      * Quét `@import` trong nội dung `.sao` GỐC (chưa transform).
      *

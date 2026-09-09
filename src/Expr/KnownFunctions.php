@@ -67,6 +67,7 @@ final class KnownFunctions
         'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval',
         'requestAnimationFrame', 'cancelAnimationFrame',
         'useState', 'updateRealState', 'lockUpdateRealState', 'updateStateByKey',
+        'emit',
     ];
 
     public const VIEW_NAMESPACE = 'App.View';

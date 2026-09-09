@@ -14,6 +14,7 @@ use Saola\Compiler\Ast\ForeachBlock;
 use Saola\Compiler\Ast\HtmlElement;
 use Saola\Compiler\Ast\IfBlock;
 use Saola\Compiler\Ast\ImportIncludeNode;
+use Saola\Compiler\Support\Re;
 use Saola\Compiler\Ast\IncludeNode;
 use Saola\Compiler\Ast\LongSectionNode;
 use Saola\Compiler\Ast\Node;
@@ -192,10 +193,10 @@ final class JsEmitter
 
     /** @param list<Node> $nodes @return array<string,true> */
     private function collectStateVariables(array $nodes): array { $out=[];foreach($nodes as$node){if(property_exists($node,'stateVars'))$out+=$node->stateVars;if(property_exists($node,'children'))$out+=$this->collectStateVariables($node->children);if($node instanceof IfBlock)foreach($node->branches as[,, $children])$out+=$this->collectStateVariables($children);}return$out; }
-    private function genInclude(IncludeNode $node,string $indent): string { $keys=array_keys($node->stateVars);sort($keys);$data=$node->dataJs?trim($node->dataJs):'';if(str_starts_with($data,'{')&&str_ends_with($data,'}'))$data=trim(substr($data,1,-1));return $indent.'this.include('.$this->formatId($this->ids->nextComponent()).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({'.$data.'}))'; }
+    private function genInclude(IncludeNode $node,string $indent): string { $keys=array_keys($node->stateVars);sort($keys);$data=$node->dataJs?trim($node->dataJs):'';if(str_starts_with($data,'{')&&str_ends_with($data,'}'))$data=trim(substr($data,1,-1));return $indent.'this.include('.$this->formatId($this->ids->nextComponent()).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({'.$data.'})'.($node->listenersJs!==null?', '.$this->maybeTypeListeners($node->listenersJs):'').')'; }
     private function genImportInclude(ImportIncludeNode $node,string $indent): string
     {
-        $has=$node->children!==[];$id=$has?$this->ids->pushComponent():$this->ids->nextComponent();$keys=array_keys($node->stateVars);sort($keys);$parts=[];foreach($node->dataPairs as[$key,$value])$parts[]='"'.$key.'": '.$value;if($has){$arrow=$this->arrowParent();if($this->hasExecNodes($node->children)){$this->pushDeclaredScope(['parentElement']);$code=$this->genChildrenImperative($node->children,$indent.'            ');$this->popDeclaredScope();$parts[]='__ONE_CHILDREN_CONTENT__: '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    }';}else$parts[]='__ONE_CHILDREN_CONTENT__: '.$arrow.' ['."\n".$this->genChildrenList($node->children,$indent.'        ')."\n".$indent.'    ]';$this->ids->popScope();}if($parts!==[]){$inner=implode(",\n",array_map(fn(string$p):string=>$indent.'        '.$p,$parts));return $indent.'this.include('.$this->formatId($id).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({'."\n".$inner."\n".$indent.'    }))';}return $indent.'this.include('.$this->formatId($id).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({}))';
+        $has=$node->children!==[];$id=$has?$this->ids->pushComponent():$this->ids->nextComponent();$keys=array_keys($node->stateVars);sort($keys);$parts=[];foreach($node->dataPairs as[$key,$value])$parts[]='"'.$key.'": '.$value;if($has){$arrow=$this->arrowParent();if($this->hasExecNodes($node->children)){$this->pushDeclaredScope(['parentElement']);$code=$this->genChildrenImperative($node->children,$indent.'            ');$this->popDeclaredScope();$parts[]='__ONE_CHILDREN_CONTENT__: '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    }';}else$parts[]='__ONE_CHILDREN_CONTENT__: '.$arrow.' ['."\n".$this->genChildrenList($node->children,$indent.'        ')."\n".$indent.'    ]';$this->ids->popScope();}$listeners=$node->listenersJs!==null?', '.$this->maybeTypeListeners($node->listenersJs):'';if($parts!==[]){$inner=implode(",\n",array_map(fn(string$p):string=>$indent.'        '.$p,$parts));return $indent.'this.include('.$this->formatId($id).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({'."\n".$inner."\n".$indent.'    })'.$listeners.')';}return $indent.'this.include('.$this->formatId($id).', '.$node->pathJs.', parentElement, '.$this->jsonList($keys).', '.$this->arrowParent().' ({})'.$listeners.')';
     }
 
     private function genOptions(HtmlElement $node): string
@@ -265,14 +266,103 @@ final class JsEmitter
         return $items === [] ? null : '{ ' . implode(', ', $items) . ' }';
     }
 
-    /** Type generated callbacks only after expression conversion has finished. */
+    /**
+     * Cắt danh sách tham số theo dấu ',' Ở MỨC NGOÀI.
+     *
+     * `{id, tag}` là MỘT tham số gỡ rối; cắt thô bằng explode(',') sẽ ra
+     * `{id` và `tag}` rồi chú kiểu vào giữa pattern.
+     *
+     * @return list<string>
+     */
+    private static function splitParams(string $params): array
+    {
+        $out = []; $buf = ''; $depth = 0;
+        for ($i = 0, $n = strlen($params); $i < $n; $i++) {
+            $ch = $params[$i];
+            if (str_contains('{[', $ch)) $depth++;
+            elseif (str_contains('}]', $ch)) $depth--;
+            elseif ($ch === ',' && $depth === 0) { $out[] = $buf; $buf = ''; continue; }
+            $buf .= $ch;
+        }
+        if (trim($buf) !== '') $out[] = $buf;
+
+        return $out;
+    }
+
+    /** Vị trí ký tự ở mức ngoài của một tham số, false nếu không có. */
+    private static function topLevelColon(string $param): int|false { return self::topLevelChar($param, ':'); }
+    private static function topLevelEquals(string $param): int|false { return self::topLevelChar($param, '='); }
+
+    private static function topLevelChar(string $param, string $needle): int|false
+    {
+        $depth = 0;
+        for ($i = 0, $n = strlen($param); $i < $n; $i++) {
+            $ch = $param[$i];
+            if (str_contains('{[(', $ch)) $depth++;
+            elseif (str_contains('}])', $ch)) $depth--;
+            elseif ($ch === $needle && $depth === 0) return $i;
+        }
+
+        return false;
+    }
+
+    /** Listener của `@include` đi thẳng từ Parser nên phải chú kiểu ở đây. */
+    private function maybeTypeListeners(string $listeners): string
+    {
+        return $this->isTypescript ? $this->typeEventCallbacks($listeners) : $listeners;
+    }
+
+    /**
+     * Chú `: any` cho tham số arrow — cả callback compiler sinh lẫn arrow
+     * NGƯỜI DÙNG viết trong handler.
+     *
+     * Bản cũ chỉ nhận đúng `(event) =>`, nên `@click((a, b) => f(a, b))` hay
+     * `on$pair: ({id, tag}) => …` ra tham số không kiểu và `tsc --strict` của
+     * chính dự án chặn lại (TS7006/TS7031). Không lộ ra sớm hơn vì arrow có
+     * tham số vốn đang bị bọc thêm một lớp nên chưa ai viết được.
+     *
+     * Chạy SAU khi biểu thức đã dịch xong.
+     */
     private function typeEventCallbacks(string $handler): string
     {
-        // Skip literals/comments: text such as "(event) =>" is application data.
+        // Bỏ qua chuỗi/comment: "(event) =>" trong đó là dữ liệu, không phải code.
         $pattern = <<<'REGEX'
-~(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|/\*[\s\S]*?\*/|//[^\r\n]*)(*SKIP)(*F)|\(\s*event\s*\)\s*=>~
+~(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|/\*[\s\S]*?\*/|//[^\r\n]*)(*SKIP)(*F)|\(([^()]*)\)\s*=>|(?<![\w$.])([A-Za-z_$][\w$]*)\s*=>~
 REGEX;
-        return preg_replace($pattern, '(event: any) =>', $handler) ?? $handler;
+
+        return Re::replaceCallback(
+            $pattern,
+            static function (array $m): string {
+                if (($m[2] ?? '') !== '') {
+                    return '(' . $m[2] . ': any) =>';
+                }
+                if (trim($m[1] ?? '') === '') {
+                    return '() =>';
+                }
+
+                $typed = [];
+                foreach (self::splitParams($m[1]) as $param) {
+                    $param = trim($param);
+                    if ($param === '' || self::topLevelColon($param) !== false) {
+                        // Đã có chú kiểu — không đụng.
+                        $typed[] = $param;
+                        continue;
+                    }
+                    if (str_starts_with($param, '...')) {
+                        $typed[] = $param . ': any[]';
+                        continue;
+                    }
+                    // `a = 1` → `a: any = 1`; `{id, tag}` → `{id, tag}: any`
+                    $eq = self::topLevelEquals($param);
+                    $typed[] = $eq === false
+                        ? $param . ': any'
+                        : rtrim(substr($param, 0, $eq)) . ': any = ' . ltrim(substr($param, $eq + 1));
+                }
+
+                return '(' . implode(', ', $typed) . ') =>';
+            },
+            $handler,
+        );
     }
 
     private function formatId(string $base): string { $parts=[];foreach($this->loopScopes as[, $expr])$parts[]='${'.$expr.'}';return '`'.HydrateId::hash($base, $this->idMode).($parts!==[]?'-'.implode('-',$parts):'').'`'; }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Saola\Compiler\Directive;
 
 use Saola\Compiler\Expr\ExpressionCompiler;
+use Saola\Compiler\Support\Balanced;
 use Saola\Compiler\Support\Re;
 
 /** Event DSL used by the AST parser; port of process_event_items and dependencies. */
@@ -51,8 +52,18 @@ final class EventDirectiveProcessor
                 continue;
             }
 
-            if (Re::match('/^([a-zA-Z_][a-zA-Z0-9_]*)$/', $part, $m) && ! $this->isUseStateFunctionName($m[1])) {
-                $items[] = '{"handler":"' . $m[1] . '","params":[]}';
+            // Tên trần `@click(handler)` — TRUYỀN THẲNG tham chiếu, khác hẳn
+            // `@click(handler())` là gọi KHÔNG tham số.
+            //
+            // Bỏ `params` (chứ không để `[]`) để runtime rơi vào nhánh mặc định
+            // `[event]` — `[]` là "gọi với đúng không đối số", đúng cho dạng
+            // `handler()` nhưng nuốt mất event của dạng này.
+            //
+            // `\$?` là bắt buộc: preprocessor đã đổi `handler` thành `$handler`
+            // trước khi tới đây, nên regex không có '$' trượt sạch và cả dạng
+            // này rơi xuống nhánh cuối thành `() => handler` — bấm không chạy gì.
+            if (Re::match('/^\$?([a-zA-Z_][a-zA-Z0-9_]*)$/', $part, $m) && ! $this->isUseStateFunctionName($m[1])) {
+                $items[] = '{"handler":"' . $m[1] . '"}';
                 continue;
             }
 
@@ -153,6 +164,50 @@ final class EventDirectiveProcessor
         return $param;
     }
 
+    /**
+     * Biểu thức handler → một HÀM JS.
+     *
+     * Dùng cho listener của thẻ component (`<mycomp @edit(...)>`): nó cần đúng
+     * bộ luật của `@click` trên element — setter state, `$event`, `sel++` — nên
+     * đi thẳng vào DSL sẵn có thay vì dựng bản dịch thứ hai.
+     *
+     * Tên trần (`@edit(openEditor)`) trả về chính tham chiếu hàm: con
+     * `emit('edit', a, b)` khi đó nhận đủ mọi đối số, còn dạng biểu thức chỉ
+     * thấy payload đầu qua `event`.
+     */
+    public function compileHandler(string $expr): string
+    {
+        $expr = trim($expr);
+        if (Re::match('/^\$?([a-zA-Z_]\w*)$/', $expr, $m)) return $m[1];
+        return $this->processExpressionToArrow($expr);
+    }
+
+    /**
+     * Biểu thức có phải MỘT arrow người dùng tự viết không?
+     *
+     * Nhận theo CẤU TRÚC chứ không liệt kê dạng tham số: vế trái của `=>` là
+     * một định danh trần, hoặc một cặp `( … )` cân bằng bắt đầu từ đầu chuỗi.
+     * Mọi kiểu tham số vì thế đều đúng — `(a, b)`, `(...args)`, `(a = 1)`,
+     * `({id, title})` — mà không phải vá thêm lần nữa.
+     *
+     * Bản cũ liệt kê `[A-Za-z_]\w*` nên rest/default/destructuring rơi ra
+     * ngoài và bị bọc thành `() => (...args) => …`: trả về một hàm thay vì
+     * chạy nó, hỏng CÂM ở cả element lẫn component.
+     */
+    private static function isArrowLiteral(string $expr): bool
+    {
+        $expr = ltrim($expr);
+        if ($expr === '') return false;
+
+        if ($expr[0] === '(') {
+            [$inner, $end] = Balanced::extractParensAt($expr, 0);
+
+            return $inner !== null && Re::match('/^\s*=>/', substr($expr, $end));
+        }
+
+        return Re::match('/^\$?[A-Za-z_]\w*\s*=>/', $expr);
+    }
+
     private function processExpressionToArrow(string $expr): string
     {
         $original = trim($expr);
@@ -162,7 +217,8 @@ final class EventDirectiveProcessor
         }
         $js = $this->convertPhpArrayToJsObject($js);
 
-        if (Re::match('/^\s*(?:\(\s*(?:[a-zA-Z_]\w*\s*(?:,\s*[a-zA-Z_]\w*\s*)*)?\)|[a-zA-Z_]\w*)\s*=>/', $original)) {
+        // Arrow người dùng tự viết → giữ NGUYÊN arity, không bọc thêm lớp nào.
+        if (self::isArrowLiteral($original)) {
             $js = $this->expressions->helpers()->resolveUserMethodCalls($js);
             return Re::replace('/(?<!")@(?:EVENT|event|Event)(?!")/', '"@EVENT"', $js);
         }
@@ -340,7 +396,10 @@ final class EventDirectiveProcessor
     {
         if (trim($value) === '') return [];
         if (! str_contains($value, $delimiter)) return [$value];
-        $out = []; $current = ''; $paren = 0; $bracket = 0; $quote = null;
+        // Đếm cả '{}': từ khi thân arrow `=> { a(); b() }` giữ nguyên dấu ngoặc
+        // nhọn (trước đây preprocessor đổi thành '[]' nên nhánh $bracket vô
+        // tình che được), dấu ';' BÊN TRONG thân hàm sẽ bị cắt làm hai handler.
+        $out = []; $current = ''; $paren = 0; $bracket = 0; $brace = 0; $quote = null;
         for ($i = 0; $i < strlen($value); $i++) {
             $ch = $value[$i];
             if ($quote === null && ($ch === "'" || $ch === '"')) $quote = $ch;
@@ -349,7 +408,9 @@ final class EventDirectiveProcessor
             elseif ($quote === null && $ch === ')') $paren--;
             elseif ($quote === null && $ch === '[') $bracket++;
             elseif ($quote === null && $ch === ']') $bracket--;
-            elseif ($quote === null && $ch === $delimiter && $paren === 0 && $bracket === 0) {
+            elseif ($quote === null && $ch === '{') $brace++;
+            elseif ($quote === null && $ch === '}') $brace--;
+            elseif ($quote === null && $ch === $delimiter && $paren === 0 && $bracket === 0 && $brace === 0) {
                 if (trim($current) !== '') $out[] = trim($current);
                 $current = '';
                 continue;

@@ -197,6 +197,7 @@ final class ExpressionTransformer
             $result,
         );
 
+        $result = $this->transformComponentTagEvents($result);
         $result = $this->transformDirectives($result);
         $result = $this->transformAttributeBindings($result);
 
@@ -212,6 +213,179 @@ final class ExpressionTransformer
         }
 
         return $result;
+    }
+
+    // ── Sự kiện của thẻ component ─────────────────────────────────────
+
+    /**
+     * `<mycomp @edit(handler(event))>` → `<mycomp @edit="handler($event)">`.
+     *
+     * Con phát sự kiện bằng `emit('edit', payload)`, cha lắng nghe ngay tại thẻ
+     * — không qua event bus. Biểu thức được dịch Ở ĐÂY rồi cất vào nháy, nên
+     * {@see \Saola\Compiler\Template\ImportTagResolver} đọc nó bằng đúng
+     * đường thuộc tính có nháy sẵn có.
+     *
+     * PHẢI chạy TRƯỚC transformDirectives: tên sự kiện trùng tên DOM
+     * (`<mycomp @click(...)>`) mà để lượt directive chạm vào trước thì nó bị
+     * dịch thành cấu hình sự kiện của element, mất luôn đường về component.
+     */
+    private function transformComponentTagEvents(string $template): string
+    {
+        $tags = $this->importAliases->names();
+        if ($tags === []) {
+            return $template;
+        }
+
+        $pattern = '~<(' . implode('|', array_map(
+            static fn (string $tag): string => preg_quote($tag, '~'),
+            $tags,
+        )) . ')(?=[\s/>])~';
+
+        $result = '';
+        $offset = 0;
+
+        while (Re::match($pattern, $template, $m, PREG_OFFSET_CAPTURE, $offset)) {
+            $start = $m[0][1];
+            $end = self::scanComponentTagEnd($template, $start + strlen($m[0][0]));
+            $result .= substr($template, $offset, $start - $offset)
+                . $this->rewriteTagEvents(substr($template, $start, $end - $start));
+            $offset = $end;
+        }
+
+        return $result . substr($template, $offset);
+    }
+
+    /**
+     * Vị trí ngay sau '>' của thẻ mở, bỏ qua '>' nằm trong nháy HOẶC trong
+     * ngoặc tròn — `@edit(a > b)` là đối số, không phải chỗ đóng thẻ.
+     */
+    private static function scanComponentTagEnd(string $source, int $start): int
+    {
+        $quote = null;
+        $paren = 0;
+        $length = strlen($source);
+
+        for ($pos = $start; $pos < $length; $pos++) {
+            $char = $source[$pos];
+
+            if ($quote !== null) {
+                if ($char === '\\') {
+                    $pos++;
+                } elseif ($char === $quote) {
+                    $quote = null;
+                }
+                continue;
+            }
+
+            if ($char === "'" || $char === '"') {
+                $quote = $char;
+            } elseif ($char === '(') {
+                $paren++;
+            } elseif ($char === ')' && $paren > 0) {
+                $paren--;
+            } elseif ($char === '>' && $paren === 0) {
+                return $pos + 1;
+            }
+        }
+
+        return $length;
+    }
+
+    /**
+     * `@on('tên', handler)` → tên sự kiện lấy từ đối số thứ nhất.
+     *
+     * Dạng tổng quát bên cạnh `@edit(handler)`: tên là DỮ LIỆU nên đặt được cả
+     * những tên không phải định danh (`@on('user:saved', h)`), và không thể đọc
+     * nhầm với một sự kiện DOM trùng tên.
+     *
+     * Cả hai cách viết ra CÙNG một khoá `on$<tên>` ở hạ nguồn.
+     *
+     * @return array{string, string} [tên sự kiện, biểu thức handler]
+     */
+    private static function splitOnDirective(string $directive, string $inner): array
+    {
+        if ($directive !== 'on') {
+            return [$directive, $inner];
+        }
+
+        $comma = self::topLevelComma($inner);
+        $name = $comma === -1 ? trim($inner) : trim(substr($inner, 0, $comma));
+
+        if ($comma === -1 || ! Re::match('/^([\'"])(.+)\1$/s', $name, $m)) {
+            throw new \RuntimeException(
+                "@on() cần tên sự kiện dạng chuỗi rồi tới handler: @on('tên', handler). Nhận được: @on({$inner})",
+            );
+        }
+
+        return [$m[2], substr($inner, $comma + 1)];
+    }
+
+    /** Vị trí dấu ',' đầu tiên ở mức ngoài cùng, -1 nếu không có. */
+    private static function topLevelComma(string $value): int
+    {
+        $depth = 0;
+        $quote = null;
+        for ($i = 0, $n = strlen($value); $i < $n; $i++) {
+            $ch = $value[$i];
+            if ($quote !== null) {
+                if ($ch === '\\') $i++;
+                elseif ($ch === $quote) $quote = null;
+                continue;
+            }
+            if ($ch === '"' || $ch === "'" || $ch === '`') $quote = $ch;
+            elseif ($ch === '(' || $ch === '[' || $ch === '{') $depth++;
+            elseif ($ch === ')' || $ch === ']' || $ch === '}') $depth--;
+            elseif ($ch === ',' && $depth === 0) return $i;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Chỉ nhận `@name(` NGOÀI nháy: `title="a@b(c)"` là văn bản của thuộc tính,
+     * không phải khai báo sự kiện.
+     */
+    private function rewriteTagEvents(string $tag): string
+    {
+        $out = '';
+        $kept = 0;
+        $quote = null;
+        $length = strlen($tag);
+
+        for ($pos = 0; $pos < $length; $pos++) {
+            $char = $tag[$pos];
+
+            if ($quote !== null) {
+                if ($char === '\\') $pos++;
+                elseif ($char === $quote) $quote = null;
+                continue;
+            }
+
+            if ($char === "'" || $char === '"') {
+                $quote = $char;
+                continue;
+            }
+
+            if ($char !== '@' || ! Re::match('/\G@([A-Za-z_][\w-]*)\s*\(/', $tag, $m, PREG_OFFSET_CAPTURE, $pos)) {
+                continue;
+            }
+
+            [$inner, $end] = Balanced::extractParensAt($tag, $pos + strlen($m[0][0]) - 1);
+            if ($inner === null) {
+                break;
+            }
+
+            [$name, $inner] = self::splitOnDirective($m[1][0], $inner);
+            $expr = $this->transformExpression(trim($inner));
+            // Nháy kép trong giá trị thì bọc bằng nháy đơn — cùng quy ước với
+            // `:prop="..."`; chứa cả hai loại thì không biểu diễn được.
+            $wrap = str_contains($expr, '"') ? "'" : '"';
+            $out .= substr($tag, $kept, $pos - $kept) . '@' . $name . '=' . $wrap . $expr . $wrap;
+            $kept = $end;
+            $pos = $end - 1;
+        }
+
+        return $out . substr($tag, $kept);
     }
 
     // ── Binding thuộc tính ────────────────────────────────────────────
@@ -297,6 +471,15 @@ final class ExpressionTransformer
                 continue;
             }
 
+            // Dấu ':' GIỮA tên một thuộc tính `@…` là của tên sự kiện
+            // (`@on('user:saved', …)` đã thành `@user:saved="…"`), không phải
+            // mở đầu một binding. Khớp nhầm thì giá trị bị dịch LẦN HAI.
+            if (self::insideEventAttrName($result)) {
+                $result .= $ch;
+                $i++;
+                continue;
+            }
+
             if (Re::match('/^(x-bind:|:)([A-Za-z_][\w:.\-]*)\s*=\s*(["\'])/', substr($template, $i), $attr)) {
                 $name = $attr[2];
                 $quote = $attr[3];
@@ -341,6 +524,22 @@ final class ExpressionTransformer
         }
 
         return $result;
+    }
+
+    /**
+     * Con trỏ đang nằm giữa tên một thuộc tính directive (`@name`)?
+     *
+     * Nhìn lui trong phần đã dựng tới khoảng trắng gần nhất: mảnh đó bắt đầu
+     * bằng '@' nghĩa là ta đang ở giữa `@user:saved`, không phải ở đầu `:prop`.
+     */
+    private static function insideEventAttrName(string $out): bool
+    {
+        $cut = strcspn(strrev($out), " \t\n\r<");
+        if ($cut === 0 || $cut === strlen($out)) {
+            return false;
+        }
+
+        return $out[strlen($out) - $cut] === '@';
     }
 
     // ── Token ─────────────────────────────────────────────────────────
@@ -396,10 +595,20 @@ final class ExpressionTransformer
     private function transformTokens(array $tokens): string
     {
         $tokens = $this->handlePlusOperator($tokens);
+        $paramBraces = self::arrowParamBraces($tokens);
 
         $result = '';
         $ternaryPending = 0;
         $count = count($tokens);
+        /**
+         * Mỗi '{' đang mở là object literal (→ '[') hay THÂN HÀM (giữ '{')?
+         *
+         * `(a, b) => { f(a); g(b) }` mà đổi thành '[' sẽ ra `[f(a); g(b)]` —
+         * vừa sai JS vừa sai PHP. Ngăn xếp để '}' đóng đúng loại của '{' đã mở.
+         *
+         * @var list<bool> true = thân hàm
+         */
+        $braceIsBlock = [];
 
         for ($i = 0; $i < $count; $i++) {
             $token = $tokens[$i];
@@ -445,10 +654,18 @@ final class ExpressionTransformer
                         continue;
                     }
                 } elseif ($token->value === '{') {
-                    $result .= '[';
+                    $previous = self::prevNonWhitespace($tokens, $i);
+                    // Giữ '{' khi nó là THÂN hàm (`=> { … }`) hoặc PATTERN gỡ
+                    // rối trong danh sách tham số (`({id, title}) => …`).
+                    $isBlock = isset($paramBraces[$i])
+                        || ($previous !== null
+                            && $previous->is(TokenType::Operator)
+                            && $previous->value === '=>');
+                    $braceIsBlock[] = $isBlock;
+                    $result .= $isBlock ? '{' : '[';
                     continue;
                 } elseif ($token->value === '}') {
-                    $result .= ']';
+                    $result .= array_pop($braceIsBlock) === true ? '}' : ']';
                     continue;
                 }
             }
@@ -457,6 +674,67 @@ final class ExpressionTransformer
         }
 
         return $result;
+    }
+
+    /**
+     * Chỉ số các token '{' nằm trong DANH SÁCH THAM SỐ của một arrow.
+     *
+     * `({id, title}) => f(id)` — dấu ngoặc nhọn ở đây là pattern gỡ rối, không
+     * phải object literal, nên không được đổi thành '[' của mảng PHP.
+     *
+     * Nhận diện đi NGƯỢC từ '=>': token liền trước là ')' thì dò về '(' khớp,
+     * mọi '{' trong khoảng đó là pattern. Đi ngược là cách duy nhất chắc chắn —
+     * lúc gặp '{' thì chưa biết phía sau có '=>' hay không.
+     *
+     * @param list<Token> $tokens
+     * @return array<int, true>
+     */
+    private static function arrowParamBraces(array $tokens): array
+    {
+        $marks = [];
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            if (! $tokens[$i]->is(TokenType::Operator) || $tokens[$i]->value !== '=>') {
+                continue;
+            }
+
+            $close = $i - 1;
+            while ($close >= 0 && $tokens[$close]->is(TokenType::Whitespace)) {
+                $close--;
+            }
+            if ($close < 0 || ! $tokens[$close]->is(TokenType::Operator) || $tokens[$close]->value !== ')') {
+                continue;
+            }
+
+            $depth = 0;
+            $open = -1;
+            for ($k = $close; $k >= 0; $k--) {
+                if (! $tokens[$k]->is(TokenType::Operator)) {
+                    continue;
+                }
+                if ($tokens[$k]->value === ')') {
+                    $depth++;
+                } elseif ($tokens[$k]->value === '(') {
+                    $depth--;
+                    if ($depth === 0) {
+                        $open = $k;
+                        break;
+                    }
+                }
+            }
+            if ($open < 0) {
+                continue;
+            }
+
+            for ($m = $open; $m <= $close; $m++) {
+                if ($tokens[$m]->is(TokenType::Operator) && ($tokens[$m]->value === '{' || $tokens[$m]->value === '}')) {
+                    $marks[$m] = true;
+                }
+            }
+        }
+
+        return $marks;
     }
 
     /** @param list<Token> $tokens */

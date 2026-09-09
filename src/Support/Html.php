@@ -144,6 +144,12 @@ final class Html
         ['@wrapper', false], ['@wrap', false],
         // @section inline cũng mất nội dung ở sao2js y như @if.
         ['@section', true], ['@block', true],
+        // @include: Blade xử lý được inline, sao2js thì không — `tryDirective`
+        // đòi directive đứng ĐẦU dòng, nên `<div>@include('x')</div>` ra chữ
+        // "@include('x')" nguyên văn ở client trong khi server render đúng.
+        // Đặt CUỐI: `@includeIf` không được khớp nhầm (chặn bởi kiểm alnum ở
+        // matchControlDirective), còn `@importInclude` khác tiền tố nên vô can.
+        ['@include', true],
     ];
 
     /**
@@ -241,7 +247,7 @@ final class Html
                 $out .= "\n";
             }
 
-            $out .= substr($masked, $i, $end - $i);
+            $out .= self::flattenDirectiveArgs(substr($masked, $i, $end - $i));
             $i = $end;
 
             // Có nội dung SAU trên cùng dòng → xuống dòng sau directive
@@ -260,6 +266,71 @@ final class Html
     /**
      * @return array{0: int, 1: bool} [vị trí kết thúc, có khớp không]
      */
+    /**
+     * Gộp đối số trải nhiều dòng của một directive về MỘT dòng.
+     *
+     *     @include('a.b', {          →  @include('a.b', { x: n, on$edit: f })
+     *         x: n,
+     *         on$edit: f
+     *     })
+     *
+     * Cả hai emitter đọc theo DÒNG, nên directive xuống dòng chỉ khớp được
+     * mảnh đầu: sao2js bỏ qua cả khối, sao2blade để lại một `@include(` cụt.
+     *
+     * Chỉ đụng phần TRONG ngoặc — đó là biểu thức, không phải nội dung — nên
+     * không sinh thêm hay mất đi text node nào. Xuống dòng cùng phần thụt lề
+     * theo sau gộp thành ĐÚNG một khoảng trắng để hai đích ra chuỗi giống hệt.
+     * Nội dung trong nháy giữ nguyên.
+     */
+    private static function flattenDirectiveArgs(string $directive): string
+    {
+        if (! str_contains($directive, "\n")) {
+            return $directive;
+        }
+
+        $out = '';
+        $depth = 0;
+        $quote = '';
+        $length = strlen($directive);
+
+        for ($i = 0; $i < $length; $i++) {
+            $ch = $directive[$i];
+
+            if ($quote !== '') {
+                $out .= $ch;
+                if ($ch === '\\' && $i + 1 < $length) {
+                    $out .= $directive[++$i];
+                } elseif ($ch === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+
+            if ($ch === '"' || $ch === "'" || $ch === '`') {
+                $quote = $ch;
+                $out .= $ch;
+                continue;
+            }
+
+            if ($ch === '(' || $ch === '[' || $ch === '{') {
+                $depth++;
+            } elseif ($ch === ')' || $ch === ']' || $ch === '}') {
+                $depth--;
+            } elseif (($ch === "\n" || $ch === "\r") && $depth > 0) {
+                while ($i + 1 < $length && ($directive[$i + 1] === ' ' || $directive[$i + 1] === "\t"
+                    || $directive[$i + 1] === "\n" || $directive[$i + 1] === "\r")) {
+                    $i++;
+                }
+                $out .= ' ';
+                continue;
+            }
+
+            $out .= $ch;
+        }
+
+        return $out;
+    }
+
     private static function matchControlDirective(string $text, int $pos): array
     {
         foreach (self::CONTROL_DIRECTIVES as [$name, $takesParens]) {

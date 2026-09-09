@@ -107,6 +107,8 @@ BLADE;
             $processed = $this->resolveImportIncludes($processed, $counter);
         }
 
+        $processed = self::stripListenerKeys($processed);
+
         return $this->assemble(
             $declarationList,
             $ssrContent ?? '',
@@ -613,6 +615,98 @@ BLADE;
         }
 
         return $content;
+    }
+
+    /**
+     * Bỏ mọi khoá `'on$<tên>' => …` khỏi mảng data của `@include`.
+     *
+     * Listener là closure trong scope view của CHA — sang PHP nó là biến không
+     * tồn tại (`$openEditor`) hoặc lời gọi hàm không có thật, tức Fatal ngay
+     * lúc SSR. Server cũng chẳng có ai bấm chuột để chạy chúng.
+     *
+     * Lọc ở ĐÂY, trên đầu ra Blade cuối cùng, nên phủ cả thẻ component (đã
+     * thành `@include` ở bước trên) lẫn `@include('x', {on$del: …})` viết tay —
+     * không phải nhớ chặn ở từng nguồn.
+     */
+    private static function stripListenerKeys(string $content): string
+    {
+        if (! str_contains($content, 'on$')) {
+            return $content;
+        }
+
+        $result = $content;
+        $offset = 0;
+
+        while (Re::match('/@include\s*\(/', $result, $m, PREG_OFFSET_CAPTURE, $offset)) {
+            // preg_match với offset trả về vị trí TUYỆT ĐỐI, không phải tương đối.
+            $start = $m[0][1];
+            [$args, $end] = Balanced::extractParensAt($result, $start + strlen($m[0][0]) - 1);
+            if ($args === null) {
+                break;
+            }
+
+            $stripped = self::stripListenersInArgs($args);
+            if ($stripped === $args) {
+                $offset = $end;
+                continue;
+            }
+
+            $rebuilt = '@include(' . $stripped . ')';
+            $result = substr($result, 0, $start) . $rebuilt . substr($result, $end);
+            $offset = $start + strlen($rebuilt);
+        }
+
+        return $result;
+    }
+
+    /** Lọc trong ĐÚNG đối số mảng, dựng lại nguyên cặp ngoặc vuông. */
+    private static function stripListenersInArgs(string $args): string
+    {
+        $out = [];
+
+        foreach (self::splitTopLevelCommas($args) as $arg) {
+            $trimmed = trim($arg);
+            if (! str_starts_with($trimmed, '[') || ! str_ends_with($trimmed, ']')) {
+                $out[] = $arg;
+                continue;
+            }
+
+            $entries = [];
+            foreach (self::splitTopLevelCommas(substr($trimmed, 1, -1)) as $entry) {
+                if (Re::match('/^[\'"]on\$/', ltrim($entry))) {
+                    continue;
+                }
+                if (trim($entry) !== '') {
+                    $entries[] = trim($entry);
+                }
+            }
+
+            $out[] = ' [' . implode(', ', $entries) . ']';
+        }
+
+        return implode(',', $out);
+    }
+
+    /** @return list<string> */
+    private static function splitTopLevelCommas(string $value): array
+    {
+        $out = []; $current = ''; $depth = 0; $paren = 0; $quote = null;
+        for ($i = 0, $n = strlen($value); $i < $n; $i++) {
+            $ch = $value[$i];
+            if ($quote === null && ($ch === "'" || $ch === '"')) $quote = $ch;
+            elseif ($quote !== null && $ch === $quote && self::precedingBackslashes($value, $i) % 2 === 0) $quote = null;
+            elseif ($quote === null) {
+                if ($ch === '[' || $ch === '{') $depth++;
+                elseif ($ch === ']' || $ch === '}') $depth--;
+                elseif ($ch === '(') $paren++;
+                elseif ($ch === ')') $paren--;
+                elseif ($ch === ',' && $depth === 0 && $paren === 0) { $out[] = $current; $current = ''; continue; }
+            }
+            $current .= $ch;
+        }
+        if (trim($current) !== '') $out[] = $current;
+
+        return $out;
     }
 
     /** @return array{string, string, ?string} */

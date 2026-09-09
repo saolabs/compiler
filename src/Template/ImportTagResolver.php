@@ -180,7 +180,7 @@ final class ImportTagResolver
     }
 
     /**
-     * @return list<array{name: string, value: ?string, binding: bool}>
+     * @return list<array{name: string, value: ?string, binding: bool, event: bool}>
      */
     private function parseAttributes(string $source): array
     {
@@ -202,12 +202,21 @@ final class ImportTagResolver
             }
 
             $binding = false;
+            $event = false;
             if ($source[$pos] === ':') {
                 $binding = true;
                 $pos++;
+            } elseif ($source[$pos] === '@') {
+                // `@edit="expr"` — preprocessor đã đổi `@edit(expr)` sang dạng
+                // nháy này (ExpressionTransformer::transformComponentTagEvents).
+                $event = true;
+                $pos++;
             }
 
-            if (! Re::match('/\G[a-zA-Z_][a-zA-Z0-9_-]*/', $source, $name, PREG_OFFSET_CAPTURE, $pos)) {
+            // Tên sự kiện đến từ `@on('user:saved', …)` nên rộng hơn tên prop:
+            // ':' và '.' hợp lệ trong tên thuộc tính HTML, dùng được nguyên văn.
+            $namePattern = $event ? '/\G[a-zA-Z_][a-zA-Z0-9_.:-]*/' : '/\G[a-zA-Z_][a-zA-Z0-9_-]*/';
+            if (! Re::match($namePattern, $source, $name, PREG_OFFSET_CAPTURE, $pos)) {
                 $pos++;
                 continue;
             }
@@ -227,18 +236,18 @@ final class ImportTagResolver
 
                 if ($pos < $length && ($source[$pos] === '"' || $source[$pos] === "'")) {
                     [$value, $pos] = $this->extractQuotedValue($source, $pos, $source[$pos]);
-                    $attrs[] = ['name' => $attrName, 'value' => $value, 'binding' => $binding];
+                    $attrs[] = ['name' => $attrName, 'value' => $value, 'binding' => $binding, 'event' => $event];
                 } elseif (Re::match('/\G[^\s>]+/', $source, $bare, PREG_OFFSET_CAPTURE, $pos)) {
                     // Biến RIÊNG: nhánh nháy ở trên gán $value là chuỗi, nên
                     // dùng lại nó làm tham số by-ref `?array` sẽ TypeError ở
                     // lần lặp sau. Chỉ lộ ra khi một thẻ có cả thuộc tính nháy
                     // lẫn không nháy — trước đây thẻ đó không khớp nổi vì '>'
                     // trong giá trị, nên nhánh này chưa từng chạy.
-                    $attrs[] = ['name' => $attrName, 'value' => $bare[0][0], 'binding' => $binding];
+                    $attrs[] = ['name' => $attrName, 'value' => $bare[0][0], 'binding' => $binding, 'event' => $event];
                     $pos += strlen($bare[0][0]);
                 }
             } else {
-                $attrs[] = ['name' => $attrName, 'value' => null, 'binding' => $binding];
+                $attrs[] = ['name' => $attrName, 'value' => null, 'binding' => $binding, 'event' => $event];
             }
         }
 
@@ -302,7 +311,7 @@ final class ImportTagResolver
     }
 
     /**
-     * @param list<array{name: string, value: ?string, binding: bool}> $attrs
+     * @param list<array{name: string, value: ?string, binding: bool, event: bool}> $attrs
      */
     private function buildInclude(string $path, array $attrs): string
     {
@@ -313,8 +322,9 @@ final class ImportTagResolver
         return "@include({$path}, [" . implode(', ', $this->buildAttributeParts($attrs)) . '])';
     }
 
+
     /**
-     * @param list<array{name: string, value: ?string, binding: bool}> $attrs
+     * @param list<array{name: string, value: ?string, binding: bool, event: bool}> $attrs
      */
     private function buildIncludeWithSlot(
         string $path,
@@ -330,7 +340,7 @@ final class ImportTagResolver
     }
 
     /**
-     * @param list<array{name: string, value: ?string, binding: bool}> $attrs
+     * @param list<array{name: string, value: ?string, binding: bool, event: bool}> $attrs
      * @return list<string>
      */
     private function buildAttributeParts(array $attrs): array
@@ -340,6 +350,14 @@ final class ImportTagResolver
         foreach ($attrs as $attr) {
             $name = $attr['name'];
             $value = $attr['value'];
+
+            // `@edit(...)` ở thẻ → khoá `on$edit` trong mảng data, tức CÙNG một
+            // biểu diễn với `@include('x', {on$edit: ...})` viết tay. Parser
+            // tách nó ra khỏi props sau (Parser::splitDataAndListeners).
+            if (! empty($attr['event'])) {
+                $parts[] = "'on\${$name}' => " . ($value ?? 'null');
+                continue;
+            }
 
             if ($value === null) {
                 $parts[] = "'{$name}' => true";

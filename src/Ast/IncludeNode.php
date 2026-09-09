@@ -13,6 +13,7 @@ final class IncludeNode extends Node
         public ?string $dataPhp = null,
         public ?string $dataJs = null,
         public array $stateVars = [],
+        public ?string $listenersJs = null,
     ) {
     }
 }
