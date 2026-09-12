@@ -55,13 +55,6 @@ final class Parser
         'radialgradient' => 'radialGradient', 'textpath' => 'textPath',
     ];
 
-    private const VOID_ELEMENTS = [
-        'area' => true, 'base' => true, 'br' => true, 'col' => true,
-        'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
-        'link' => true, 'meta' => true, 'param' => true, 'source' => true,
-        'track' => true, 'wbr' => true,
-    ];
-
     private const RCDATA_ELEMENTS = ['textarea' => true, 'title' => true];
 
     private const RAW_CONTENT_ELEMENTS = [
@@ -474,7 +467,7 @@ final class Parser
                 $tag = self::normalizeTagName($m[1]);
                 $pos += strlen($m[0]);
                 [$attrs, $pos, $selfClosing] = $this->scanTagEnd($line, $pos);
-                $void = isset(self::VOID_ELEMENTS[$tag]) || $selfClosing;
+                $void = isset(Html::VOID_ELEMENTS[$tag]) || $selfClosing;
                 $node = new HtmlElement($tag, $void);
                 $this->parseElementAttributes($attrs, $node);
                 $this->addChild($stack, $node);

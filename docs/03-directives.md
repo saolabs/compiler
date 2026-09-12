@@ -99,6 +99,36 @@ Class điều kiện biến mất, lại chèn thêm một thuộc tính rác, k
 unit test khẳng định mọi directive compiler xử lý đều thuộc một tầng — thêm
 directive mới mà quên khai tầng thì test đỏ.
 
+### 3.1. Namespace `#` là tập ĐÓNG
+
+`#if="cond"` viết trên thẻ là cách viết khác của `@if(cond)` bọc quanh thẻ đó.
+Compiler hạ nó về directive khối tương ứng ở
+`Support\Html::expandTagDirectives()`, gọi từ
+`ExpressionTransformer::transformTemplate()` **trước** `transformDirectives()` —
+tức trước cả registry. Chi tiết: [SAO_ELEMENT_DIRECTIVES_RFC.md](../../docs/SAO_ELEMENT_DIRECTIVES_RFC.md).
+
+| `#` | hạ thành | ghi chú |
+|---|---|---|
+| `#if` `#elseif` `#else` | `@if` `@elseif` `@else` | chuỗi nhánh phải là sibling liền kề, chỉ cách nhau bởi khoảng trắng |
+| `#switch` | `@switch` | ca DUY NHẤT bọc **ruột** thẻ, không bọc thẻ; con phải toàn `#case`/`#default` |
+| `#case` `#default` | `@case` `@default` | `@break` do compiler tự chèn |
+| `#foreach` `#for` `#while` | `@foreach` `@for` `@while` | bọc thẻ như `#if` |
+| `#key` | `@key` | bạn đồng hành của directive lặp; ngoại lệ duy nhất của quy tắc một-directive-mỗi-thẻ |
+
+**Không đăng ký được `#` mới.** Registry chỉ nhận tên `@`. Bảng trên là tập
+đóng nằm trong `Html::TAG_DIRECTIVES`; đây là quyết định E-07 của RFC, không
+phải thiếu sót.
+
+Khác `@` một điểm quan trọng: **`#` lạ là LỖI biên dịch**, không im lặng đi qua
+như `@chua_dang_ky` (§6). Bắt buộc phải thế, vì `parseElementAttributes` nhảy
+qua dấu `#` rồi khớp phần còn lại như thuộc tính thường — gõ nhầm `#fi="x"` sẽ
+lặng lẽ thành `fi="x"` trong HTML nếu không chặn.
+
+Dấu `#` chỉ được coi là directive khi đứng ở **vị trí tên thuộc tính**: ngoài
+nháy, ngoài ngoặc của `@class(...)`, và ngay sau khoảng trắng. Nên
+`style="color: #fff"`, `href="#section"` và `title="xem #quan-trọng"` không bị
+đụng tới.
+
 ## 4. `transform()` không đụng vào `@verbatim` và comment
 
 Trước khi thay, registry che `{{-- … --}}` và `@verbatim … @endverbatim`, thay
@@ -179,6 +209,8 @@ cú pháp trước khi compile**, đừng dùng nó để đổi ngữ nghĩa m�
 `transform()` chỉ đụng tới tên đã đăng ký. `@chua_dang_ky(x)` đi qua nguyên vẹn
 và rơi xuống parser lõi như văn bản thường — không có cảnh báo nào trong
 `CompileResult::$warnings`.
+
+Namespace `#` thì ngược lại: tên lạ ném `CompileException` ngay (§3.1).
 
 ## 7. Chưa xây — parse hai đích với marker id dùng chung
 

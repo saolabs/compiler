@@ -8,6 +8,21 @@ Compiler PHP không được đổi hành vi ngoài ý muốn. Thư mục này l
 ./regenerate.sh    # ghi lại ảnh chụp — CHỈ khi output đổi có chủ ý
 ```
 
+## Suite này PHẢI luôn xanh
+
+Đỏ là **chặn**, không phải trạng thái nền. Lý do: 10/09/2026 suite từng đỏ
+15/33 và ở tình trạng đó nó không cho tín hiệu gì — đỏ mới lẫn vào đỏ cũ, muốn
+biết thay đổi của mình có gây hồi quy không thì phải chạy hai lần (bật/tắt) rồi
+`diff` hai danh sách. Không ai làm vậy, nên hồi quy thật sẽ lọt.
+
+Nếu `run-all.sh` đỏ: hoặc sửa code, hoặc — nếu output đổi CÓ CHỦ Ý — chạy
+`./regenerate.sh` và **review từng diff**. Đừng regenerate mù: làm vậy là đóng
+dấu "đúng" lên cả lỗi thật.
+
+Mẹo review khi corpus đổi: so **theo khoá file**, đừng so theo dòng. Ảnh chụp
+xếp theo file nên thêm/bớt một file trong `saola/resources` sẽ làm lệch mọi dòng
+phía sau và giấu mất thay đổi hành vi thật.
+
 ## Cách hoạt động
 
 Mỗi cổng có ba phần cùng chung một hợp đồng stdin/stdout:
@@ -183,3 +198,26 @@ chứng minh được gì** — ghi ra đây để không ai tưởng nhầm là
 1. Tạo `tests/Parity/<tên>/` với `oracle.py` + `subject.php` + `run.sh`
 2. Giữ nguyên hợp đồng: stdin nhận input, stdout in kết quả có thể diff
 3. Thêm một dòng `run_gate` vào `run-all.sh`
+
+## Nhật ký
+
+- **10/09/2026** — dọn suite từ 15/33 đỏ về 0 đỏ.
+  - **Gỡ oracle JS** ở ba cổng `source-split`, `symbol-collector`, `preprocessor`;
+    chúng thành golden. Oracle cũ là `builder/src/{index,preprocessor}` nhưng
+    builder thật gửi thẳng source tới `php bin/saoc`, nên bản JS là code chết.
+    Bằng chứng nó đã sai: `home/contact.sao` có `<style scoped>` ở dòng 57, PHP
+    tách được, oracle JS trả `null`. Cũng gỡ field `this.preprocessor` khỏi
+    `builder/src/index.js` — lớp production không cần mang nó. Thư mục
+    `builder/src/preprocessor/` **chưa mồ côi**: `main-compiler/cases.js` còn
+    dùng để DỰNG input cho cổng (không phải để so sánh), nay tự khởi tạo lấy.
+  - **Sinh lại ảnh chụp** cho 12 cổng. Thay đổi đã review, đều có chủ ý và khớp
+    lịch sử: text node `"\n"` được giữ lại (fix nuốt whitespace, 05/09/2026),
+    field `setupFunctions` mới, `@include` được bọc `@startMarker('component')`,
+    ba binding `$view`/`$app`/`$controller` thêm vào mọi example. Phần lớn "lệch"
+    ở `blade-emit`/`declarations`/`template-processor` chỉ là **corpus đổi** —
+    3 file `themes/*` đã bị xoá khỏi repo, 17 file mới thêm.
+  - **`node-transport`** đỏ vì chính cổng sai, không phải compiler:
+    `norm()` lọc dòng `'Generated at:'` trong khi header đã đổi nhãn thành
+    `'Sinh lúc:'` (phép TÁI LẬP), và phép TRUNG THỰC gọi `saoc` **không** truyền
+    `--asset-prefix` trong khi builder có truyền (`index.js:320`), nên `asset()`
+    sinh hai đường dẫn khác nhau. Sửa cả hai.

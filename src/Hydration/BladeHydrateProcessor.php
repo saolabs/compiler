@@ -20,13 +20,6 @@ use Saola\Compiler\Support\Re;
 final class BladeHydrateProcessor
 {
     /** @var array<string, true> */
-    private const VOID_ELEMENTS = [
-        'area' => true, 'base' => true, 'br' => true, 'col' => true,
-        'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
-        'link' => true, 'meta' => true, 'param' => true, 'source' => true,
-        'track' => true, 'wbr' => true,
-    ];
-
     /** @var array<string, true> */
     private const EVENT_NAMES = [
         'click' => true, 'dblclick' => true, 'mousedown' => true, 'mouseup' => true,
@@ -499,7 +492,7 @@ final class BladeHydrateProcessor
                 $tagName = strtolower($open['tag']);
                 $attrsSource = $open['attrs'];
                 $slash = $open['slash'];
-                $isVoid = isset(self::VOID_ELEMENTS[$tagName]) || $slash !== '';
+                $isVoid = isset(Html::VOID_ELEMENTS[$tagName]) || $slash !== '';
                 if ($isVoid) {
                     $elementId = $this->idGenerator->nextElement($tagName);
                 } else {

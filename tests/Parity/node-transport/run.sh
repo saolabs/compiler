@@ -78,10 +78,17 @@ for dirpath, _, files in os.walk(views):
                       if os.path.exists(os.path.join(jsdir, os.path.dirname(rel), stem + e))), None)
         lang = 'ts' if (found or '').endswith('.ts') else 'js'
 
+        # `--asset-prefix` PHẢI truyền giống hệt builder, nếu không phép so vô
+        # nghĩa: builder/src/index.js:320 tính prefix theo context
+        # (`<public>/<context>/assets/`) rồi truyền xuống saoc, còn gọi saoc
+        # trần thì prefix rỗng và `asset()` sinh ra đường dẫn khác.
+        # Sandbox dùng paths.public = 'public/static/saola' và context 'web'
+        # (xem make-corpus.js), nên prefix là 'static/saola/web/assets/'.
         p = subprocess.run(['php', saoc, 'compile', sao, f'--view-path={view}',
                             f'--fn={pascal(stem)}',
                             f"--factory={''.join(pascal(x) for x in view.split('.'))}",
-                            f'--lang={lang}', '--json'],
+                            f'--lang={lang}', '--asset-prefix=static/saola/web/assets/',
+                            '--json'],
                            capture_output=True, text=True)
         if p.returncode != 0:
             print(f'      saoc lỗi: {view}'); bad += 1; continue
@@ -112,8 +119,11 @@ PY
     echo "  ❌ TÁI LẬP: build lần hai thất bại"; failed=$((failed + 1)); }
 
 # Bỏ dòng timestamp trong registry/views trước khi so
+# Dòng dấu thời gian trong header sinh ra không bao giờ tái lập được — lọc bỏ.
+# Nhãn đã đổi từ 'Generated at:' sang 'Sinh lúc:' mà bộ lọc không đổi theo, nên
+# phép TÁI LẬP đỏ suốt vì đúng một dòng vô hại. Giữ cả hai nhãn để bản cũ vẫn lọc được.
 norm() { find "$1" -type f | sort | while read -r f; do
-    echo "== ${f#$1}"; grep -v 'Generated at:' "$f"; done; }
+    echo "== ${f#$1}"; grep -vE 'Generated at:|Sinh lúc:' "$f"; done; }
 
 if diff <(norm "$SANDBOX/pass1-js") <(norm "$SANDBOX/resources/js") > "$SANDBOX/repro.diff" \
    && diff <(norm "$SANDBOX/pass1-views") <(norm "$SANDBOX/resources/views") >> "$SANDBOX/repro.diff"; then

@@ -12,6 +12,13 @@
 SourceSplitter / SetupDeclarations → TypedDeclarations → Preprocessor →
 BladeEmitter và MainCompiler/JsEmitter → CompileResult.
 
+Preprocessor còn hạ **directive viết trên thẻ** (`#if`, `#switch`, `#foreach`…) về
+directive khối tương ứng — `Support\Html::expandTagDirectives()`, gọi ngay trước
+`transformDirectives()` để biểu thức đi qua cùng phép dịch JS→PHP như `@if` viết tay.
+Xuống tới emitter thì không còn dấu vết `#` nào. Xem
+[SAO_ELEMENT_DIRECTIVES_RFC.md](../../docs/SAO_ELEMENT_DIRECTIVES_RFC.md) và
+[03-directives.md](03-directives.md) §3.1.
+
 Builder Node điều phối file, watcher, registry và Vite. PHP compiler xử lý cú pháp.
 Không có Python trên đường build. Hai target có thể có source khác nhau do custom
 directive; chúng dùng cùng cấu hình marker, được kiểm bằng contract tests.

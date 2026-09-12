@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Saola\Compiler\Preprocessor;
 
+use Saola\Compiler\CompileException;
 use Saola\Compiler\Support\Balanced;
+use Saola\Compiler\Support\Html;
 use Saola\Compiler\Support\Re;
 
 /**
@@ -57,7 +59,7 @@ final class ExpressionTransformer
      * lệch, và lệch ở đây nghĩa là người dùng đè được directive lõi mà không bị
      * chặn.
      */
-    public const ELEMENT_DIRECTIVES = ['class', 'style', 'exec', 'show', 'hide'];
+    public const ELEMENT_DIRECTIVES = ['class', 'style', 'exec'];
 
     /** Định danh KHÔNG thêm '$' dù không có trong bảng ký hiệu. */
     private const NO_PREFIX = [
@@ -155,6 +157,32 @@ final class ExpressionTransformer
         return $declaration;
     }
 
+    /**
+     * `@show(…)`/`@hide(…)` đã bị gỡ — báo lỗi thay vì sinh ra HTML sai.
+     *
+     * Cả hai chưa từng chạy đúng: nhánh JS để `AstParser` nuốt thành thuộc tính
+     * tĩnh rác (`<div show vis>`), nhánh Blade để nguyên chuỗi trong thẻ — mà
+     * `@show` còn là directive section CÓ SẴN của Laravel, nghĩa hoàn toàn khác.
+     * Hai nhánh ra hai cây DOM khác nhau nên hydrate không thể khớp.
+     *
+     * Chỉ bắt dạng CÓ ngoặc: `@show` trần là directive section của Blade, hợp lệ.
+     * Gọi sau khi `{{-- --}}`/`@verbatim` đã được che, và `<script>`/`<style>`
+     * thì `SourceSplitter` đã tách ra từ trước — nên chỉ còn `@show(` thật.
+     *
+     * Xem docs/SAO_ELEMENT_DIRECTIVES_RFC.md §10.1 (E-08).
+     */
+    private static function rejectShowHide(string $template): void
+    {
+        if (! Re::match('/@(show|hide)\s*\(/i', $template, $m)) {
+            return;
+        }
+
+        throw new CompileException(
+            "`@{$m[1]}(…)` đã bị gỡ khỏi Saola — dùng `@if(…)` để bỏ hẳn element,"
+            . ' hoặc `@style([\'display\' => …])` nếu cần giữ element trong DOM lúc ẩn.',
+        );
+    }
+
     /** Dịch cả khối template: `{{ }}`, `{!! !!}`, directive, binding thuộc tính. */
     public function transformTemplate(string $template): string
     {
@@ -185,6 +213,8 @@ final class ExpressionTransformer
             $template,
         );
 
+        self::rejectShowHide($result);
+
         $result = Re::replaceCallback(
             '/\{\{\s*([\s\S]*?)\s*\}\}/',
             fn (array $m): string => '{{ ' . $this->transformExpression(trim($m[1])) . ' }}',
@@ -198,6 +228,13 @@ final class ExpressionTransformer
         );
 
         $result = $this->transformComponentTagEvents($result);
+
+        // Hạ `#if`/`#elseif`/`#else` viết trên thẻ về directive khối TRƯỚC
+        // `transformDirectives`, để biểu thức của chúng đi qua cùng phép dịch
+        // JS→PHP như `@if` viết tay — nếu không, output Blade ra `@if(a)` thay
+        // vì `@if($a)`. Xem docs/SAO_ELEMENT_DIRECTIVES_RFC.md §4.
+        $result = Html::expandTagDirectives($result);
+
         $result = $this->transformDirectives($result);
         $result = $this->transformAttributeBindings($result);
 
@@ -993,7 +1030,7 @@ final class ExpressionTransformer
             $result = $this->replaceDirectiveArgs($result, $dir, $plain);
         }
 
-        foreach (['class', 'style', 'exec', 'show', 'hide', 'switch', 'case'] as $dir) {
+        foreach (['class', 'style', 'exec', 'switch', 'case'] as $dir) {
             $result = $this->replaceDirectiveArgs($result, $dir, $plain);
         }
 

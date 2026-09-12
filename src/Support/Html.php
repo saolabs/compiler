@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Saola\Compiler\Support;
 
+use Saola\Compiler\CompileException;
+
 /**
  * Tiện ích HTML dùng chung cho CẢ HAI emitter.
  *
@@ -13,6 +15,56 @@ namespace Saola\Compiler\Support;
  */
 final class Html
 {
+    /**
+     * Thẻ rỗng — không có thẻ đóng, không tăng độ sâu khi dò.
+     *
+     * Nguồn DUY NHẤT: `Ast\Parser` và `Hydration\BladeHydrateProcessor` đều
+     * tham chiếu về đây. Hai bản sao lệch nhau là id hydrate lệch theo.
+     *
+     * @var array<string, true>
+     */
+    public const VOID_ELEMENTS = [
+        'area' => true, 'base' => true, 'br' => true, 'col' => true,
+        'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
+        'link' => true, 'meta' => true, 'param' => true, 'source' => true,
+        'track' => true, 'wbr' => true,
+    ];
+
+    /**
+     * Ruột là văn bản nguyên vẹn — `<` bên trong KHÔNG mở thẻ.
+     *
+     * Giữ khớp với `Ast\Parser::RAW_CONTENT_ELEMENTS`.
+     *
+     * @var array<string, true>
+     */
+    private const RAW_CONTENT_ELEMENTS = [
+        'textarea' => true, 'title' => true, 'script' => true, 'style' => true,
+    ];
+
+    /**
+     * Directive viết trên thẻ → directive khối tương ứng.
+     *
+     * Tên `#` nào không nằm ở đây là LỖI, không được rơi lại thành thuộc tính
+     * HTML thường: `parseElementAttributes` nhảy qua dấu `#` rồi khớp phần còn
+     * lại như attr bình thường, nên `#fi="x"` sẽ lặng lẽ thành `fi="x"` trong
+     * HTML. Xem docs/SAO_ELEMENT_DIRECTIVES_RFC.md §7 BB-2.
+     *
+     * @var array<string, bool> [tên directive => có nhận giá trị không]
+     */
+    private const TAG_DIRECTIVES = [
+        'if' => true, 'elseif' => true, 'else' => false,
+        'switch' => true, 'case' => true, 'default' => false,
+        'foreach' => true, 'for' => true, 'while' => true,
+        'key' => true,
+    ];
+
+    /**
+     * Directive lặp — bọc thẻ giống `#if`, nhưng nhận kèm `#key`.
+     *
+     * @var array<string, true>
+     */
+    private const LOOP_DIRECTIVES = ['foreach' => true, 'for' => true, 'while' => true];
+
     private function __construct()
     {
     }
@@ -438,5 +490,548 @@ final class Html
         }
 
         return null;
+    }
+
+    // ── Directive viết trên thẻ (`#if`, `#elseif`, `#else`) ──────────────
+
+    /**
+     * Hạ directive viết trên thẻ về directive khối tương ứng.
+     *
+     *     <a #if="cond">A</a>   →   @if(cond)<a>A</a>@endif
+     *
+     * PHẢI chạy giữa `joinMultilineOpenTags()` và `splitInlineDirectives()`:
+     *
+     * - SAU cái đầu vì thẻ mở trải nhiều dòng lúc ấy đã gom về một dòng, nên
+     *   `#if` không bao giờ nằm cách tên thẻ bởi một xuống dòng.
+     * - TRƯỚC cái sau vì `@if(...)` phát ra dính liền `<a`, và chính
+     *   `splitInlineDirectives` đẩy nó xuống dòng riêng — cả hai emitter đọc
+     *   theo DÒNG nên directive dính nội dung sẽ mất ở sao2js.
+     *
+     * Cùng một hàm chạy cho cả hai traversal nên id parity đúng theo cấu tạo.
+     * Chi tiết: docs/SAO_ELEMENT_DIRECTIVES_RFC.md §4.
+     */
+    public static function expandTagDirectives(string $template): string
+    {
+        if (! str_contains($template, '#')) {
+            return $template;
+        }
+
+        // Che vùng nguyên văn TRƯỚC khi dò. `splitInlineDirectives` che
+        // `{{-- --}}` và `@verbatim` nhưng bước này chạy trước nó nên phải tự
+        // làm — và phải che thêm `{{ }}`/`{!! !!}` mà nó không che, vì
+        // `{{ '</div>' }}` là một thẻ đóng giả.
+        $regions = [];
+        $masked = Re::replaceCallback(
+            '/\{\{--[\s\S]*?--\}\}|@verbatim\b[\s\S]*?@endverbatim\b|\{!![\s\S]*?!!\}|\{\{[\s\S]*?\}\}/i',
+            static function (array $m) use (&$regions): string {
+                $regions[] = $m[0];
+
+                return '__SAO_EXPAND_' . (count($regions) - 1) . '__';
+            },
+            $template,
+        );
+
+        $out = self::expandRegion($masked);
+
+        foreach ($regions as $index => $original) {
+            $out = str_replace('__SAO_EXPAND_' . $index . '__', $original, $out);
+        }
+
+        return $out;
+    }
+
+    /** Quét một vùng, hạ mọi directive `#` gặp được. Đệ quy vào ruột thẻ mang directive. */
+    private static function expandRegion(string $s): string
+    {
+        $out = '';
+        $i = 0;
+        $length = strlen($s);
+
+        while ($i < $length) {
+            $lt = strpos($s, '<', $i);
+            if ($lt === false) {
+                return $out . substr($s, $i);
+            }
+
+            $out .= substr($s, $i, $lt - $i);
+
+            if (! Re::match('~^<([a-zA-Z][\w-]*)~', substr($s, $lt, 64), $m)) {
+                $out .= '<';
+                $i = $lt + 1;
+                continue;
+            }
+
+            $tag = strtolower($m[1]);
+            $openEnd = self::tagEnd($s, $lt);
+            if ($openEnd === null) {
+                $out .= '<';
+                $i = $lt + 1;
+                continue;
+            }
+
+            // Ruột rawtext là văn bản: nhả nguyên CẢ THẺ LẪN RUỘT, không quét
+            // `#` bên trong.
+            if (isset(self::RAW_CONTENT_ELEMENTS[$tag])) {
+                $i = self::skipRawContent($s, $openEnd, $tag);
+                $out .= substr($s, $lt, $i - $lt);
+                continue;
+            }
+
+            [$openTag, $directive, $expr, $keyExpr] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
+
+            if ($directive === null) {
+                $out .= $openTag;
+                $i = $openEnd;
+                continue;
+            }
+
+            if (isset(self::LOOP_DIRECTIVES[$directive])) {
+                [$chunk, $i] = self::expandLoop($s, $lt, $tag, $openTag, $directive, $expr, $keyExpr, $openEnd);
+                $out .= $chunk;
+                continue;
+            }
+
+            if ($directive === 'switch') {
+                [$chunk, $i] = self::expandSwitch($s, $lt, $tag, $openTag, $expr, $openEnd);
+                $out .= $chunk;
+                continue;
+            }
+
+            if ($directive !== 'if') {
+                $owner = $directive === 'case' || $directive === 'default' ? '#switch' : '#if';
+                throw new CompileException(
+                    "`#{$directive}` trên `<{$tag}>` không có `{$owner}` bao ngoài",
+                    sourceLine: self::lineOf($s, $lt),
+                );
+            }
+
+            [$chain, $i] = self::expandChain($s, $lt, $tag, $openTag, $expr, $openEnd);
+            $out .= $chain;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Hạ trọn một chuỗi `#if` → `#elseif`* → `#else`?.
+     *
+     * Các nhánh phải là element sibling liền kề, chỉ được cách nhau bởi
+     * khoảng trắng. Khoảng trắng đó giữ nguyên — nó là text node thường.
+     *
+     * @return array{0: string, 1: int} [đoạn đã hạ, vị trí quét tiếp]
+     */
+    private static function expandChain(string $s, int $lt, string $tag, string $openTag, ?string $expr, int $openEnd): array
+    {
+        $out = '@if(' . $expr . ')';
+
+        while (true) {
+            [$element, $after] = self::takeElement($s, $lt, $tag, $openTag, $openEnd);
+            $out .= $element;
+
+            $next = self::nextChainBranch($s, $after);
+            if ($next === null) {
+                return [$out . '@endif', $after];
+            }
+
+            [$lt, $tag, $openTag, $directive, $expr, $openEnd, $gap] = $next;
+            $out .= $gap . ($directive === 'else' ? '@else' : '@elseif(' . $expr . ')');
+        }
+    }
+
+    /**
+     * Hạ `#foreach`/`#for`/`#while` — bọc thẻ y như `#if`, không có chuỗi nhánh.
+     *
+     * `#key` đi kèm được phát thành `@key(...)` ngay sau directive lặp; nó là
+     * directive riêng đứng trong khối lặp (Ast\Parser::tryDirective), không phải
+     * tham số của `@foreach`.
+     *
+     * @return array{0: string, 1: int} [đoạn đã hạ, vị trí quét tiếp]
+     */
+    private static function expandLoop(string $s, int $lt, string $tag, string $openTag, string $directive, ?string $expr, ?string $keyExpr, int $openEnd): array
+    {
+        [$element, $after] = self::takeElement($s, $lt, $tag, $openTag, $openEnd);
+
+        $out = '@' . $directive . '(' . $expr . ')';
+        if ($keyExpr !== null) {
+            $out .= '@key(' . $keyExpr . ')';
+        }
+
+        return [$out . $element . '@end' . $directive, $after];
+    }
+
+    /**
+     * Lấy trọn một element (thẻ mở + ruột đã hạ đệ quy + thẻ đóng).
+     *
+     * @return array{0: string, 1: int} [nguyên văn element, vị trí ngay sau nó]
+     */
+    private static function takeElement(string $s, int $lt, string $tag, string $openTag, int $openEnd): array
+    {
+        if (isset(self::VOID_ELEMENTS[$tag]) || str_ends_with(rtrim(substr($openTag, 0, -1)), '/')) {
+            return [$openTag, $openEnd];
+        }
+
+        $closeStart = self::findMatchingClose($s, $openEnd, $tag);
+        if ($closeStart === null) {
+            throw new CompileException(
+                "`<{$tag}>` mang directive `#` nhưng thiếu `</{$tag}>`",
+                sourceLine: self::lineOf($s, $lt),
+            );
+        }
+        $closeEnd = strpos($s, '>', $closeStart) + 1;
+
+        return [
+            $openTag
+                . self::expandRegion(substr($s, $openEnd, $closeStart - $openEnd))
+                . substr($s, $closeStart, $closeEnd - $closeStart),
+            $closeEnd,
+        ];
+    }
+
+    /**
+     * Hạ `#switch` — ca DUY NHẤT không bọc chính thẻ mang nó.
+     *
+     * Thẻ cha vẫn render; chỉ RUỘT được bọc `@switch(...)…@endswitch`. Con phải
+     * toàn là `#case`/`#default`.
+     *
+     * Mọi thứ phát ra đều dính liền nhau, không chèn khoảng trắng nào giữa
+     * `@switch` và `@case` đầu tiên: nội dung lạc ở đó bị Blade render còn JS bỏ
+     * hẳn — SSR ≠ CSR, không một cảnh báo. Xem RFC §5.6.
+     * `splitInlineDirectives` chạy sau sẽ tách từng directive ra dòng riêng.
+     *
+     * @return array{0: string, 1: int} [đoạn đã hạ, vị trí quét tiếp]
+     */
+    private static function expandSwitch(string $s, int $lt, string $tag, string $openTag, ?string $expr, int $openEnd): array
+    {
+        if (isset(self::VOID_ELEMENTS[$tag])) {
+            throw new CompileException(
+                "`#switch` không đặt được trên thẻ rỗng `<{$tag}>` — nó bọc RUỘT của thẻ",
+                sourceLine: self::lineOf($s, $lt),
+            );
+        }
+
+        $closeStart = self::findMatchingClose($s, $openEnd, $tag);
+        if ($closeStart === null) {
+            throw new CompileException(
+                "`<{$tag}>` mang directive `#` nhưng thiếu `</{$tag}>`",
+                sourceLine: self::lineOf($s, $lt),
+            );
+        }
+        $closeEnd = strpos($s, '>', $closeStart) + 1;
+
+        $branches = '';
+        $seen = 0;
+        $i = $openEnd;
+
+        while ($i < $closeStart) {
+            if (ctype_space($s[$i])) {
+                $i++;
+                continue;
+            }
+
+            if ($s[$i] !== '<' || ! Re::match('~^<([a-zA-Z][\w-]*)~', substr($s, $i, 64), $m)) {
+                throw new CompileException(
+                    "ruột của `#switch` chỉ được chứa `#case`/`#default`, gặp nội dung lạc",
+                    sourceLine: self::lineOf($s, $i),
+                );
+            }
+
+            $childTag = strtolower($m[1]);
+            $childOpenEnd = self::tagEnd($s, $i);
+            if ($childOpenEnd === null) {
+                throw new CompileException("thẻ `<{$childTag}>` trong `#switch` không đóng", sourceLine: self::lineOf($s, $i));
+            }
+
+            [$childOpen, $childDirective, $childExpr, ] = self::takeTagDirective(substr($s, $i, $childOpenEnd - $i), $childTag);
+            if ($childDirective !== 'case' && $childDirective !== 'default') {
+                throw new CompileException(
+                    "`<{$childTag}>` trong `#switch` phải mang `#case` hoặc `#default`",
+                    sourceLine: self::lineOf($s, $i),
+                );
+            }
+
+            if ($branches !== '') {
+                $branches .= '@break';
+            }
+            $branches .= $childDirective === 'default' ? '@default' : '@case(' . $childExpr . ')';
+            $branches .= $childOpen;
+
+            if (isset(self::VOID_ELEMENTS[$childTag]) || str_ends_with(rtrim(substr($childOpen, 0, -1)), '/')) {
+                $i = $childOpenEnd;
+            } else {
+                $childClose = self::findMatchingClose($s, $childOpenEnd, $childTag);
+                if ($childClose === null) {
+                    throw new CompileException(
+                        "`<{$childTag}>` mang directive `#` nhưng thiếu `</{$childTag}>`",
+                        sourceLine: self::lineOf($s, $i),
+                    );
+                }
+                $childCloseEnd = strpos($s, '>', $childClose) + 1;
+                $branches .= self::expandRegion(substr($s, $childOpenEnd, $childClose - $childOpenEnd));
+                $branches .= substr($s, $childClose, $childCloseEnd - $childClose);
+                $i = $childCloseEnd;
+            }
+
+            $seen++;
+        }
+
+        if ($seen === 0) {
+            throw new CompileException("`#switch` trên `<{$tag}>` không có nhánh `#case` nào", sourceLine: self::lineOf($s, $lt));
+        }
+
+        return [
+            $openTag . '@switch(' . $expr . ')' . $branches . '@endswitch' . substr($s, $closeStart, $closeEnd - $closeStart),
+            $closeEnd,
+        ];
+    }
+
+    /**
+     * Nhánh kế tiếp của chuỗi, nếu có.
+     *
+     * @return array{0: int, 1: string, 2: string, 3: string, 4: ?string, 5: int, 6: string}|null
+     */
+    private static function nextChainBranch(string $s, int $from): ?array
+    {
+        $lt = $from;
+        while ($lt < strlen($s) && ctype_space($s[$lt])) {
+            $lt++;
+        }
+
+        if ($lt >= strlen($s) || $s[$lt] !== '<') {
+            return null;
+        }
+
+        if (! Re::match('~^<([a-zA-Z][\w-]*)~', substr($s, $lt, 64), $m)) {
+            return null;
+        }
+
+        $tag = strtolower($m[1]);
+        $openEnd = self::tagEnd($s, $lt);
+        if ($openEnd === null) {
+            return null;
+        }
+
+        [$openTag, $directive, $expr] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
+        if ($directive !== 'elseif' && $directive !== 'else') {
+            return null;
+        }
+
+        return [$lt, $tag, $openTag, $directive, $expr, $openEnd, substr($s, $from, $lt - $from)];
+    }
+
+    /**
+     * Bóc directive `#` khỏi thẻ mở.
+     *
+     * @return array{0: string, 1: ?string, 2: ?string, 3: ?string} [thẻ đã bỏ directive, tên directive, biểu thức, biểu thức #key]
+     */
+    private static function takeTagDirective(string $openTag, string $tag): array
+    {
+        if (! str_contains($openTag, '#')) {
+            return [$openTag, null, null, null];
+        }
+
+        $found = null;
+        $expr = null;
+        $keyExpr = null;
+        $out = '';
+        $i = 0;
+        $length = strlen($openTag);
+        $quote = '';
+        $parens = 0;
+
+        while ($i < $length) {
+            $ch = $openTag[$i];
+
+            if ($quote !== '') {
+                if ($ch === $quote) {
+                    $quote = '';
+                }
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+
+            if ($ch === '"' || $ch === "'") {
+                $quote = $ch;
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+
+            if ($ch === '(') {
+                $parens++;
+            } elseif ($ch === ')' && $parens > 0) {
+                $parens--;
+            }
+
+            // `#` chỉ là directive khi đứng ở VỊ TRÍ TÊN THUỘC TÍNH: ngoài nháy,
+            // ngoài ngoặc của `@class(...)`, và ngay sau khoảng trắng. Nếu không
+            // thì `style="color: #fff"` hay `title="xem #quan-trọng"` bị nhận nhầm.
+            if ($ch !== '#' || $parens !== 0 || $i === 0 || ! ctype_space($openTag[$i - 1])) {
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+
+            if (! Re::match('/^#([a-zA-Z][\w-]*)/', substr($openTag, $i), $m)) {
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+
+            $name = strtolower($m[1]);
+            if (! array_key_exists($name, self::TAG_DIRECTIVES)) {
+                throw new CompileException(
+                    "`#{$name}` trên `<{$tag}>` không phải directive hợp lệ"
+                    . ' (hỗ trợ: ' . implode(', ', array_map(static fn (string $d): string => '#' . $d, array_keys(self::TAG_DIRECTIVES))) . ')',
+                );
+            }
+            if ($name !== 'key' && $found !== null) {
+                throw new CompileException("`<{$tag}>` mang nhiều directive điều khiển: `#{$found}` và `#{$name}`");
+            }
+            if ($name === 'key' && $keyExpr !== null) {
+                throw new CompileException("`<{$tag}>` mang hai `#key`");
+            }
+
+            $i += strlen($m[0]);
+            $raw = null;
+            if (Re::match('/^\s*=\s*("[^"]*"|\'[^\']*\')/', substr($openTag, $i), $v)) {
+                $raw = substr($v[1], 1, -1);
+                $i += strlen($v[0]);
+            }
+
+            $needsValue = self::TAG_DIRECTIVES[$name];
+            if ($needsValue && ($raw === null || trim($raw) === '')) {
+                throw new CompileException("`#{$name}` trên `<{$tag}>` thiếu biểu thức");
+            }
+            if (! $needsValue && $raw !== null) {
+                throw new CompileException("`#{$name}` trên `<{$tag}>` không nhận giá trị");
+            }
+
+            if ($name === 'key') {
+                $keyExpr = trim((string) $raw);
+            } else {
+                $found = $name;
+                $expr = $raw === null ? null : trim($raw);
+            }
+            $out = rtrim($out);
+        }
+
+        // `#key` là bạn đồng hành của directive lặp, không đứng một mình.
+        if ($keyExpr !== null && ! isset(self::LOOP_DIRECTIVES[(string) $found])) {
+            throw new CompileException(
+                "`#key` trên `<{$tag}>` phải đi kèm `#foreach`/`#for`/`#while`",
+            );
+        }
+
+        return [$out, $found, $expr, $keyExpr];
+    }
+
+    /**
+     * Vị trí ngay sau `>` của thẻ mở bắt đầu tại `$start`, hoặc null.
+     *
+     * `>` trong nháy hoặc trong ngoặc là ký tự thường: `<div @if(x>0) …>` —
+     * cùng bẫy mà `joinMultilineOpenTags` và `splitInlineDirectives` đã vấp.
+     */
+    private static function tagEnd(string $s, int $start): ?int
+    {
+        $length = strlen($s);
+        $quote = '';
+        $parens = 0;
+
+        for ($i = $start + 1; $i < $length; $i++) {
+            $ch = $s[$i];
+
+            if ($quote !== '') {
+                if ($ch === $quote) {
+                    $quote = '';
+                }
+                continue;
+            }
+
+            if ($ch === '"' || $ch === "'") {
+                $quote = $ch;
+            } elseif ($ch === '(') {
+                $parens++;
+            } elseif ($ch === ')' && $parens > 0) {
+                $parens--;
+            } elseif ($ch === '>' && $parens === 0) {
+                return $i + 1;
+            }
+        }
+
+        return null;
+    }
+
+    /** Vị trí `<` của thẻ đóng khớp với thẻ mở đã kết thúc tại `$from`, hoặc null. */
+    private static function findMatchingClose(string $s, int $from, string $tag): ?int
+    {
+        $depth = 1;
+        $i = $from;
+        $length = strlen($s);
+
+        while ($i < $length) {
+            $lt = strpos($s, '<', $i);
+            if ($lt === false) {
+                return null;
+            }
+
+            $head = substr($s, $lt, 64);
+
+            if (Re::match('~^</\s*([a-zA-Z][\w-]*)~', $head, $m)) {
+                $end = strpos($s, '>', $lt);
+                if ($end === false) {
+                    return null;
+                }
+                if (strtolower($m[1]) === $tag && --$depth === 0) {
+                    return $lt;
+                }
+                $i = $end + 1;
+                continue;
+            }
+
+            if (! Re::match('~^<([a-zA-Z][\w-]*)~', $head, $m)) {
+                $i = $lt + 1;
+                continue;
+            }
+
+            $name = strtolower($m[1]);
+            $end = self::tagEnd($s, $lt);
+            if ($end === null) {
+                return null;
+            }
+
+            if (isset(self::RAW_CONTENT_ELEMENTS[$name])) {
+                $i = self::skipRawContent($s, $end, $name);
+                continue;
+            }
+
+            $selfClosing = str_ends_with(rtrim(substr($s, $lt, $end - $lt - 1)), '/');
+            if ($name === $tag && ! $selfClosing && ! isset(self::VOID_ELEMENTS[$name])) {
+                $depth++;
+            }
+
+            $i = $end;
+        }
+
+        return null;
+    }
+
+    /** Vị trí ngay sau `</tag>` của một thẻ rawtext mở kết thúc tại `$from`. */
+    private static function skipRawContent(string $s, int $from, string $tag): int
+    {
+        $close = stripos($s, '</' . $tag, $from);
+        if ($close === false) {
+            return strlen($s);
+        }
+
+        $end = strpos($s, '>', $close);
+
+        return $end === false ? strlen($s) : $end + 1;
+    }
+
+    /** Số dòng (1-based) của offset — chỉ dùng cho thông điệp lỗi. */
+    private static function lineOf(string $s, int $offset): int
+    {
+        return substr_count($s, "\n", 0, $offset) + 1;
     }
 }

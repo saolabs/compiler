@@ -44,11 +44,24 @@ final class TypedDeclarations
                         $this->types[$f[1]] = trim($f[2]);
                     }
                 }
-                foreach (self::split(substr(trim($body), 1, -1), ',', false) as $field) {
-                    if (Re::match('/^\s*([A-Za-z_]\w*)\s*:\s*\{\s*\}\s*$/', $field, $empty)) $this->emptyObjectDefaults[$empty[1]] = true;
+                if (!in_array($m[1], ['vars', 'props', 'state', 'states'], true)) {
+                    // @let/@const phá cấu trúc `{host, port} = config`: giữ nguyên văn.
+                    $declarations[] = '@'.$m[1].'('.$body.')';
+                    continue;
                 }
-                $declarations[] = '@'.$m[1].'('.$body.')';
-                continue;
+                // Ép về dạng phẳng rồi đi tiếp nhánh dưới: `{a = 1}` (chuẩn TS, trong
+                // <script setup>) và `{a: 1}` (gõ nhanh ngoài script) cùng một nghĩa,
+                // và dạng phẳng vốn sinh ra output y hệt.
+                $flat = [];
+                foreach (self::split(substr(trim($body), 1, -1), ',', false) as $field) {
+                    $field = trim($field);
+                    if ($field === '') continue;
+                    if (!Re::match('/^([A-Za-z_]\w*)\s*(?:[:=]\s*([\s\S]+))?$/', $field, $f)) {
+                        throw new \InvalidArgumentException('Invalid object default in @'.$m[1].': '.$field);
+                    }
+                    $flat[] = isset($f[2]) ? $f[1].' = '.trim($f[2]) : $f[1];
+                }
+                $body = implode(', ', $flat);
             }
             $normalized = [];
             foreach (self::split($body, ',', false) as $part) {

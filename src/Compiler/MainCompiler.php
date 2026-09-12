@@ -8,7 +8,6 @@ use Saola\Compiler\Ast\Parser as AstParser;
 use Saola\Compiler\Declaration\DeclarationTracker;
 use Saola\Compiler\Directive\BindingDirectiveService;
 use Saola\Compiler\Directive\DirectiveParsers;
-use Saola\Compiler\Directive\ShowDirectiveHandler;
 use Saola\Compiler\Directive\StyleDirectiveHandler;
 use Saola\Compiler\Emit\JsEmitter;
 use Saola\Compiler\Expr\ExpressionCompiler;
@@ -241,7 +240,6 @@ final class MainCompiler
         $hasPrerender = $this->calculatePrerenderNeed($hasAwait, $hasFetch, $varsDeclaration, $sectionsInfo, $legacyCode, $useStateDeclarations, $letDeclarations, $constDeclarations);
         $templateContent = $this->bindings->processAllBindingDirectives($templateContent);
         $templateContent = (new StyleDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processStyleDirective($templateContent);
-        $templateContent = (new ShowDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processShowDirective($templateContent);
 
         [$renderFunction, $prerenderStaticBody] = $this->generateStructuredRender($bladeForAst, $stateVariables, $variableList, $constDeclarations, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $hasPrerender, $hasAwait, $hasFetch);
         $prerender = (new FunctionGenerators($this->isTypescript))->generatePrerenderFunction($hasAwait, $hasFetch, $varsDeclaration === '' ? '' : '    '.$varsDeclaration."\n", "    \n", $templateContent, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $conditionalContent, $hasPrerender, $prerenderStaticBody);
@@ -260,7 +258,7 @@ final class MainCompiler
     private function protectVerbatim(string $code): array
     {
         $blocks=[]; $counter=0;
-        $code = preg_replace_callback('/@verbatim\s*(.*?)\s*@endverbatim/is', static function(array $m) use (&$blocks,&$counter): string { $p='__VERBATIM_BLOCK_'.$counter++.'__';$blocks[$p]=$m[1];return$p; }, $code) ?? $code;
+        $code = preg_replace_callback('/@verbatim([\s\S]*?)@endverbatim/i', static function(array $m) use (&$blocks,&$counter): string { $p='__VERBATIM_BLOCK_'.$counter++.'__';$blocks[$p]=$m[1];return$p; }, $code) ?? $code;
         return [$code,$blocks];
     }
 

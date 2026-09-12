@@ -7,7 +7,6 @@ require __DIR__ . '/../../../vendor/autoload.php';
 
 use Saola\Compiler\Directive\BindingDirectiveService;
 use Saola\Compiler\Directive\ClassBindingHandler;
-use Saola\Compiler\Directive\ShowDirectiveHandler;
 use Saola\Compiler\Directive\StyleDirectiveHandler;
 use Saola\Compiler\Template\EchoProcessor;
 use Saola\Compiler\Template\TemplateAnalyzer;
@@ -59,7 +58,6 @@ while (($line = fgets(STDIN)) !== false) {
             $states,
             $case['blade'] ?? null,
         ),
-        'show' => (new ShowDirectiveHandler($states))->processShowDirective($content),
         'style' => (new StyleDirectiveHandler($states))->processStyleDirective($content),
     ];
     echo json_encode(
