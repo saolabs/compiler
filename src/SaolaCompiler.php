@@ -77,7 +77,6 @@ final class SaolaCompiler
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
-            $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath);
             $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
@@ -87,6 +86,8 @@ final class SaolaCompiler
                     $options->factoryName,
                     $lang === Lang::Ts,
                 );
+            // Sau JS: `<style>` đăng ký cho SSR phải là CHÍNH bản đã ghi vào JS.
+            $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath, $mainCompiler->inlineStyles());
 
             $imports = (new ImportParser())->parseImports($jsInput);
             $css = $this->scopedStyles($source);
@@ -304,11 +305,29 @@ final class SaolaCompiler
      * Chèn ở ĐẦU file cho mọi loại view: layout phải đăng ký xong trước khi
      * `@pageStart` in <head>, page thì `@extends` render con trước cha nên chỗ
      * nào cũng kịp.
+     *
+     * `<style>` cũng đăng ký như vậy để có mặt trong <head> ngay byte đầu. Trước
+     * đây nó chỉ tới tay client (AssetManager chèn lúc mount, sau khi JS boot)
+     * nên phần tử SSR vẽ trần một nhịp rồi mới nhảy vào chỗ — FOUC.
+     *
+     * @param list<array<string, mixed>> $inlineStyles {@see MainCompiler::inlineStyles()}
      */
-    private function injectSsrHeadAssets(string $content, string $source, ?string $viewPath = null): string
+    private function injectSsrHeadAssets(string $content, string $source, ?string $viewPath = null, array $inlineStyles = []): string
     {
-        $resources = (new RegisterParser())->parseRegisterContent($source, $viewPath)['resources'] ?? [];
         $lines = [];
+        foreach ($inlineStyles as $style) {
+            $attributes = array_filter(['id' => $style['id'] ?? null, 'class' => $style['className'] ?? null])
+                + ($style['attributes'] ?? []);
+            $args = self::phpString($style['content']);
+            if ($attributes !== []) {
+                $args .= ', '.self::phpArrayLiteral($attributes);
+            }
+            // PHP thô chứ không phải directive: bộ tách statement của Blade quét
+            // `@media (…)` và ngoặc trong CSS, nhưng không đụng vào token PHP.
+            $lines['<?php $__helper->addStyle('.$args.'); ?>'] = true;
+        }
+
+        $resources = (new RegisterParser())->parseRegisterContent($source, $viewPath)['resources'] ?? [];
         foreach ($resources as $resource) {
             $attributes = $resource['attrs'] ?? [];
             $isLink = ($resource['tag'] ?? '') === 'link';

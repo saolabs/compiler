@@ -43,6 +43,7 @@ final class MainCompiler
     private bool $isTypescript = false;
     private string $scopeClass = '';
     /** @var array<string,true> */ private array $dataVarNames = [];
+    /** @var list<array<string,mixed>> */ private array $inlineStyles = [];
 
     public function __construct(
         ?string $viewTemplate = null,
@@ -92,6 +93,18 @@ final class MainCompiler
     public function warnings(): array
     {
         return $this->expressions->helpers()->warnings();
+    }
+
+    /**
+     * `<style>` của lượt compile vừa rồi, ĐÚNG như đã ghi vào `styles` của JS
+     * (đã scope). SaolaCompiler đăng ký chính bản này cho SSR, vì AssetManager
+     * so nội dung để adopt `<style>` server in sẵn — lệch một byte là chèn trùng.
+     *
+     * @return list<array{content: string, id?: string, className?: string, attributes?: array<string, mixed>}>
+     */
+    public function inlineStyles(): array
+    {
+        return $this->inlineStyles;
     }
 
     public function compileBladeToJs(
@@ -477,7 +490,23 @@ final class MainCompiler
 
     /** @param list<array<string,string>> $states */
     private function generateStateUpdates(array$states):string
-    { $out=[];foreach($states as$state)$out[]='update$'.$state['stateKey'].'('.$state['initialValue'].');';return implode("\n            ",$out); }
+    {
+        $out = [];
+        foreach ($states as $state) {
+            $value = $state['initialValue'];
+            // Pure object/array literals were already allocated in the constructor.
+            // Re-evaluating them at commit changes every item's reference after
+            // the first render and defeats reference-keyed row reconciliation.
+            $clean = preg_replace('/\'[^\']*\'|"[^"]*"/', '', $value) ?? $value;
+            preg_match_all('/[A-Za-z_$][\p{L}\p{N}_$]*/u', $clean, $matches);
+            $literal = in_array(substr(ltrim($value), 0, 1), ['[', '{'], true)
+                && !str_contains($value, '`')
+                && array_diff($matches[0] ?? [], ['true', 'false', 'null', 'undefined']) === [];
+            if ($literal) $value = $state['stateKey'];
+            $out[] = 'update$' . $state['stateKey'] . '(' . $value . ');';
+        }
+        return implode("\n            ", $out);
+    }
 
     /** @param list<array<string,string>> $states */
     private function generateDataStateUpdates(array$states):string
@@ -557,7 +586,7 @@ final class MainCompiler
     {
         $resources=[];foreach($data['resources']??[]as$r){$attrs=[];$templates=false;foreach($r['attrs']as$key=>$value){if(is_string($value)&&str_contains($value,'{{')&&str_contains($value,'}}')){$attrs[$key]='`'.$this->convertBladeToTemplateString($value).'`';$templates=true;}else$attrs[$key]=$value;}if($templates){$parts=[];foreach($attrs as$key=>$value)$parts[]='"'.$key.'":'.(is_string($value)&&str_starts_with($value,'`')&&str_ends_with($value,'`')?$value:'"'.$this->pyString($value).'"');$attrsJs='{'.implode(',',$parts).'}';}else$attrsJs=$this->utils->formatAttrs($r['attrs']);$resources[]='{"tag":"'.$r['tag'].'","uuid":"'.$r['uuid'].'","attrs":'.$attrsJs.'}';}$resourcesLine="\n        resources: [".implode(',',$resources).']';
         $scripts=[];foreach($data['scripts']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code')$parts[]='"content":'.$this->json($s['content']);else{$src=$s['src'];$parts[]='"src":'.(str_contains($src,'{{')&&str_contains($src,'}}')?'`'.$this->convertBladeToTemplateString($src).'`':'"'.$src.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$scripts[]='{'.implode(',',$parts).'}';}$scriptsLine="\n        scripts: [".implode(',',$scripts).']';
-        $styles=[];foreach($data['styles']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code'){$content=$s['content'];if(!empty($s['scoped']))$content=ScopedStyle::apply($content,$this->scopeClass);$parts[]='"content":"'.str_replace(['"',"\n"],['\\"','\\n'],$content).'"';}else{$href=$s['href'];$parts[]='"href":'.(str_contains($href,'{{')&&str_contains($href,'}}')?'`'.$this->convertBladeToTemplateString($href).'`':'"'.$href.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$styles[]='{'.implode(',',$parts).'}';}$stylesLine="\n        styles: [".implode(',',$styles).']';return[$scriptsLine,$stylesLine,$resourcesLine];
+        $styles=[];$this->inlineStyles=[];foreach($data['styles']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code'){$content=$s['content'];if(!empty($s['scoped']))$content=ScopedStyle::apply($content,$this->scopeClass);$parts[]='"content":'.$this->json($content);$this->inlineStyles[]=['content'=>$content]+array_intersect_key($s,['id'=>1,'className'=>1,'attributes'=>1]);}else{$href=$s['href'];$parts[]='"href":'.(str_contains($href,'{{')&&str_contains($href,'}}')?'`'.$this->convertBladeToTemplateString($href).'`':'"'.$href.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$styles[]='{'.implode(',',$parts).'}';}$stylesLine="\n        styles: [".implode(',',$styles).']';return[$scriptsLine,$stylesLine,$resourcesLine];
     }
 
     private function pyString(mixed$value):string{return is_bool($value)?($value?'True':'False'):(is_null($value)?'None':(string)$value);}

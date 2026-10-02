@@ -115,6 +115,7 @@ final class Parser
 
         // Ghép thẻ MỞ trải nhiều dòng — PHẢI giống hệt sao2blade, nếu không id
         // hydrate hai bên lệch nhau. Dùng chung Support\Html để không thể lệch.
+        $templateContent = Html::normalizeTextareaBindings($templateContent);
         $templateContent = Html::joinMultilineOpenTags($templateContent);
         // Directive điều khiển phải đứng riêng dòng: cả hai emitter xử lý
         // theo DÒNG nên nội dung dính cùng dòng sẽ mất (§14).

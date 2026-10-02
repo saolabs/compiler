@@ -69,6 +69,40 @@ final class Html
     {
     }
 
+    /** Fill an empty bound textarea for SSR, without inventing a two-way binding. */
+    public static function normalizeTextareaBindings(string $template): string
+    {
+        $scan = Re::replaceCallback(
+            '/\{\{--[\s\S]*?--\}\}|@verbatim\b[\s\S]*?@endverbatim\b|\{!![\s\S]*?!!\}|\{\{[\s\S]*?\}\}/i',
+            static fn(array $m): string => preg_replace('/[^\n]/', ' ', $m[0]),
+            $template,
+        );
+        $insertions = [];
+        $pos = 0;
+        while (preg_match('~<([a-zA-Z][\w-]*)\b~', $scan, $tag, PREG_OFFSET_CAPTURE, $pos)) {
+            $start = $tag[0][1];
+            $name = strtolower($tag[1][0]);
+            $openEnd = self::tagEnd($template, $start);
+            if ($openEnd === null) break;
+            $pos = $openEnd;
+            if (!isset(self::RAW_CONTENT_ELEMENTS[$name])) continue;
+            if (!preg_match('~</\s*' . $name . '\s*>~i', $scan, $close, PREG_OFFSET_CAPTURE, $openEnd)) break;
+            $closeStart = $close[0][1];
+            $pos = $closeStart + strlen($close[0][0]);
+            if ($name !== 'textarea' || trim(substr($template, $openEnd, $closeStart - $openEnd)) !== '') continue;
+            $open = substr($template, $start, $openEnd - $start);
+            // Ignore attribute strings that merely mention @bind.
+            if (!preg_match('~"(?:\\\\.|[^"\\\\])*"(*SKIP)(*F)|\'(?:\\\\.|[^\'\\\\])*\'(*SKIP)(*F)|@(?:bind|val)\s*\(~s', $open, $bind, PREG_OFFSET_CAPTURE)) continue;
+            $paren = $bind[0][1] + strlen($bind[0][0]) - 1;
+            [$expr] = Balanced::extractParensAt($open, $paren);
+            if (trim($expr) !== '') $insertions[] = [$openEnd, $closeStart, '{{ ' . trim($expr) . ' }}'];
+        }
+        foreach (array_reverse($insertions) as [$start, $end, $text]) {
+            $template = substr($template, 0, $start) . $text . substr($template, $end);
+        }
+        return $template;
+    }
+
     /**
      * Ghép các dòng của một thẻ MỞ thành một dòng.
      *

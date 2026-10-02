@@ -136,6 +136,13 @@ final class JsEmitter
     private function genHtml(HtmlElement $node,string $indent): string
     {
         $id=$node->isVoid?$this->ids->nextElement($node->tag):$this->ids->pushElement($node->tag);$idString=$this->formatId($id);$options=$this->genOptions($node);
+        if (in_array($node->tag, ['textarea', 'title'], true)) {
+            $content = $this->genTextContent($node);
+            $options = $options === '{}' ? '{ content: ' . $content . ' }'
+                : substr($options, 0, -2) . ', content: ' . $content . ' }';
+            $this->ids->popScope();
+            return $indent . 'this.html(' . $idString . ', "' . $node->tag . '", parentElement, ' . $options . ')';
+        }
         if($node->isVoid||$node->children===[]){if(!$node->isVoid)$this->ids->popScope();return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement, '.$options.')';}
         $arrow=$this->arrowParent();
         if($this->hasExecNodes($node->children)){$this->pushDeclaredScope(['parentElement']);$code=$this->genChildrenImperative($node->children,$indent.'        ');$this->popDeclaredScope();$this->ids->popScope();if($options==='{}')return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement, {},'."\n".$indent.'    '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    })';return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement,'."\n".$indent.'    '.$options.','."\n".$indent.'    '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    })';}
@@ -143,6 +150,32 @@ final class JsEmitter
     }
 
     private function genText(TextNode $node,string $indent): string { return $indent."this.text('".$this->jsTextLiteral($node->text)."')"; }
+
+    /** RCDATA is owned by its element; it cannot contain Output comment nodes. */
+    private function genTextContent(HtmlElement $node): string
+    {
+        $parts = [];
+        $keys = [];
+        foreach ($node->children as $child) {
+            if ($child instanceof TextNode) {
+                $parts[] = "'" . $this->jsTextLiteral($child->text) . "'";
+            } elseif ($child instanceof EchoNode) {
+                $value = 'String(' . $child->jsExpr . " ?? '')";
+                if (!$child->escaped) {
+                    // Raw SSR echoes still pass through the HTML RCDATA parser.
+                    $value = 'this.decodeTextContent(' . $value . ')';
+                }
+                $parts[] = $value;
+                $keys += $child->stateVars;
+            } else {
+                throw new \LogicException('Only text and interpolation are supported inside <' . $node->tag . '>.');
+            }
+        }
+        $stateKeys = array_keys($keys);
+        sort($stateKeys);
+        return '{ factory: () => ' . ($parts === [] ? "''" : implode(' + ', $parts))
+            . ', stateKeys: ' . $this->jsonList($stateKeys) . ' }';
+    }
     private function genEcho(EchoNode $node,string $indent): string
     {
         $stateKeys=array_keys($node->stateVars);$wrap=$stateKeys!==[];
@@ -160,9 +193,9 @@ final class JsEmitter
 
     private function genForeach(ForeachBlock $node,string $indent): string
     {
-        $id=$this->ids->pushReactive('foreach');$keys=array_keys($node->stateVars);sort($keys);$this->loopScopes[]=[$id,$node->customKeyJs??'__loopIndex'];
-        if($node->keyVar!==null)$params=$this->isTypescript?'('.$node->valueVar.': any, '.$node->keyVar.': any, __loopIndex: any, __loop: any)':'('.$node->valueVar.', '.$node->keyVar.', __loopIndex, __loop)';else$params=$this->isTypescript?'('.$node->valueVar.': any, __loopKey: any, __loopIndex: any, __loop: any)':'('.$node->valueVar.', __loopKey, __loopIndex, __loop)';
-        $exec=$this->hasExecNodes($node->children);if($exec){$vars=[$node->valueVar,'__loopKey','__loopIndex','__loop'];if($node->keyVar)$vars[]=$node->keyVar;$this->pushDeclaredScope($vars);$children=$this->genChildrenImperative($node->children,$indent.'    ');$this->popDeclaredScope();}else$children=$this->genChildrenList($node->children,$indent.'        ');array_pop($this->loopScopes);$this->ids->popScope();$keyFn=$node->customKeyJs!==null?($this->isTypescript?', ('.$node->valueVar.': any) => '.$node->customKeyJs:', ('.$node->valueVar.') => '.$node->customKeyJs):'';
+        $id=$this->ids->pushReactive('foreach');$keys=array_keys($node->stateVars);sort($keys);$this->loopScopes[]=[$id,$node->customKeyJs??'__loopIdentity'];
+        if($node->keyVar!==null)$params=$this->isTypescript?'('.$node->valueVar.': any, '.$node->keyVar.': any, __loopIndex: any, __loop: any, __loopIdentity: any)':'('.$node->valueVar.', '.$node->keyVar.', __loopIndex, __loop, __loopIdentity)';else$params=$this->isTypescript?'('.$node->valueVar.': any, __loopKey: any, __loopIndex: any, __loop: any, __loopIdentity: any)':'('.$node->valueVar.', __loopKey, __loopIndex, __loop, __loopIdentity)';
+        $exec=$this->hasExecNodes($node->children);if($exec){$vars=[$node->valueVar,'__loopKey','__loopIndex','__loop','__loopIdentity'];if($node->keyVar)$vars[]=$node->keyVar;$this->pushDeclaredScope($vars);$children=$this->genChildrenImperative($node->children,$indent.'    ');$this->popDeclaredScope();}else$children=$this->genChildrenList($node->children,$indent.'        ');array_pop($this->loopScopes);$this->ids->popScope();$keyFn=$node->customKeyJs!==null?($this->isTypescript?', ('.$node->valueVar.': any) => '.$node->customKeyJs:', ('.$node->valueVar.') => '.$node->customKeyJs):', undefined';$keyFn .= ', true, '.json_encode($id);
         if($exec){if($keys!==[])return $indent.'this.reactive('.$this->formatId($id).', "foreach", parentReactive, parentElement, '.$this->jsonList($keys).', '.$this->arrowReactive().' {'."\n".$indent.'    return this.__foreach('.$node->arrayJs.', '.$params.' => {'."\n".$indent.'        const __execArr = [];'."\n".$children."\n".$indent.'        return __execArr;'."\n".$indent.'    }'.$keyFn.')'."\n".$indent.'})';return $indent.'...this.__foreach('.$node->arrayJs.', '.$params.' => {'."\n".$indent.'    const __execArr = [];'."\n".$children."\n".$indent.'    return __execArr;'."\n".$indent.'}'.$keyFn.')';}
         if($keys!==[])return $indent.'this.reactive('.$this->formatId($id).', "foreach", parentReactive, parentElement, '.$this->jsonList($keys).', '.$this->arrowReactive().' {'."\n".$indent.'    return this.__foreach('.$node->arrayJs.', '.$params.' => ['."\n".$children."\n".$indent.'    ]'.$keyFn.')'."\n".$indent.'})';return $indent.'...this.__foreach('.$node->arrayJs.', '.$params.' => ['."\n".$children."\n".$indent.']'.$keyFn.')';
     }
