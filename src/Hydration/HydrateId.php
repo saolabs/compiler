@@ -43,12 +43,12 @@ final class HydrateId
         ['/^output-(\d+)$/', 'o'],
         ['/^component-(\d+)$/', 'c'],
         ['/^yield-(\d+)$/', 'y'],
-        ['/^block-outlet$/', 'b'],
+        ['/^block-outlet-(\d+)$/', 'b'],
     ];
 
-    private const TERSE = '/([erlkocy])(\d+)|(b)/';
+    private const TERSE = '/([erlkocyb])(\d+)/';
 
-    private const TERSE_HEAD = '/^B[a-z0-9_]+?(?=[erlkocy]\d|b(?![a-z]))/';
+    private const TERSE_HEAD = '/^B[a-z0-9_]+?(?=[erlkocyb]\d)/';
 
     private function __construct()
     {
@@ -139,8 +139,9 @@ final class HydrateId
      * bằng '_' nên không nhập nhằng với chuỗi chữ số đứng sau ('r1'+'e2'+'e3'
      * → 'r123' còn 'r12'+'e3' → 'r12_3').
      *
-     * block-outlet là 'b' KHÔNG kèm chữ số — bỏ sót nó sẽ làm 'e1' và 'e1b'
-     * cùng ra '1' (đã gặp thật khi kiểm 4.030 id).
+     * block-outlet mang chữ số như mọi loại khác ('b1', 'b2'). Trước
+     * 2026-09-03 nó là 'b' TRẦN vì bộ sinh không đếm outlet — khi đó bỏ sót ký
+     * tự 'b' sẽ làm 'e1' và 'e1b' cùng ra '1' (đã gặp thật khi kiểm 4.030 id).
      */
     public static function terse(string $baseId): string
     {
@@ -154,11 +155,6 @@ final class HydrateId
         }
 
         foreach (Re::matchAll(self::TERSE, substr($compact, $offset)) as $m) {
-            if (($m[3] ?? '') !== '') {
-                $out[] = 'b';
-                continue;
-            }
-
             $kind = $m[1];
             $number = $m[2];
 

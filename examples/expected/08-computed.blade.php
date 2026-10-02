@@ -2,6 +2,7 @@
 
 @useState($price, 100)
 @useState($qty, 2)
+@php($total = $price * $qty)
 @wrapper
-<p @class([$__VIEW_ID__ . '-e1'])>Tổng: {{ $total }}</p>
+<p @class([$__VIEW_ID__ . '-e1'])>Tổng: @startMarker('output', 'e1o1'){{ $total }}@endMarker('output', 'e1o1')</p>
 @endWrapper

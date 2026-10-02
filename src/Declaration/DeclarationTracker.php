@@ -29,6 +29,7 @@ final class DeclarationTracker
 
     public function __construct(
         private readonly ExpressionCompiler $expressions = new ExpressionCompiler(),
+        private readonly array $nativeComputed = [],
     ) {
     }
 
@@ -384,7 +385,7 @@ final class DeclarationTracker
 
             $variables[] = [
                 'name' => $name,
-                'value' => $this->toJs($valuePhp),
+                'value' => $this->nativeComputed[$name] ?? $this->toJs($valuePhp),
                 'valuePhp' => $valuePhp,
             ];
         }

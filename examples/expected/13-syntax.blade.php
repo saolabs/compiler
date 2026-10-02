@@ -1,6 +1,6 @@
 @exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
 
-<?php if(!isset($label) || (!$label && $label !== false)) $label = ''; if(!isset($value) || (!$value && $value !== false)) $value = 0; if(!isset($items) || (!$items && $items !== false)) $items = ['']; ?>
+<?php if(!array_key_exists('label', get_defined_vars())) $label = ''; if(!array_key_exists('value', get_defined_vars())) $value = 0; if(!array_key_exists('items', get_defined_vars())) $items = ['']; ?>
 @wrapper
 <div @class([$__VIEW_ID__ . '-e1', 'my-4'])>
         <label @class([$__VIEW_ID__ . '-e11'])>@startMarker('output', 'e11o1'){{ $label }}@endMarker('output', 'e11o1')</label>

@@ -1,4 +1,6 @@
-{{-- method trong <script setup> gọi qua this.view, không rơi vào App.Helper --}}
+{{-- DẠNG CŨ, vẫn được hỗ trợ: method khai trong `export default {}`.
+     Cú pháp chuẩn hiện nay là function ở cấp ngoài cùng — xem 15-setup-typed.
+     Giữ file này để khoá hành vi của dạng cũ, đừng xoá. --}}
 @states({ n: 0 })
 <script setup>
 export default {

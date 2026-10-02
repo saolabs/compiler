@@ -1,7 +1,7 @@
 /vendor/
-/composer.lock
 /.phpunit.cache/
 /.phpunit.result.cache
+.DS_Store
 
 # tests/Parity và tests/Tools NAY ĐƯỢC ĐƯA VÀO GIT.
 #

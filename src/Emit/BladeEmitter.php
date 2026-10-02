@@ -107,6 +107,9 @@ BLADE;
             $processed = $this->resolveImportIncludes($processed, $counter);
         }
 
+        $processed = self::stripListenerKeys($processed);
+        self::assertNoClientOnlyView($processed);
+
         return $this->assemble(
             $declarationList,
             $ssrContent ?? '',
@@ -132,7 +135,7 @@ BLADE;
         $wrappers = self::findWrapperSpans($contentWithoutSsr);
         $found = [];
 
-        foreach (['useState', 'states', 'const', 'let', 'var', 'vars', 'props'] as $type) {
+        foreach (['useState', 'states', 'const', 'let', 'var', 'vars', 'props', 'computed'] as $type) {
             $offset = 0;
             $length = strlen($contentWithoutSsr);
             while ($offset < $length) {
@@ -305,7 +308,14 @@ BLADE;
 
         // File template Python có newline cuối file; nó là một byte thuộc hợp
         // đồng output nên giữ tường minh thay vì phụ thuộc cú pháp nowdoc.
-        $output = str_replace('[ONE_COMPONENT_REGISTRY]', $registry, self::VIEW_TEMPLATE . "\n");
+        $viewTemplate = self::VIEW_TEMPLATE;
+        // Dynamic import paths may refer to @vars/@let/@computed bindings.
+        // Resolve the registry only after those bindings have been initialized.
+        if (preg_match('/\$[A-Za-z_]/', implode(' ', $componentImports))) {
+            [$registryLine, $viewTemplate] = explode("\n", $viewTemplate, 2);
+            $viewTemplate = str_replace('[BLADE_DECLARATIONS]', '[BLADE_DECLARATIONS]'."\n".$registryLine, $viewTemplate);
+        }
+        $output = str_replace('[ONE_COMPONENT_REGISTRY]', $registry, $viewTemplate . "\n");
         $declarationBlock = $declarations === [] ? '' : implode("\n", $declarations) . "\n";
         $output = str_replace("[BLADE_DECLARATIONS]\n", $declarationBlock, $output);
         $output = str_replace("[BLADE_SSR_CONTENT]\n", '', $output);
@@ -350,6 +360,11 @@ BLADE;
                 if ($php !== '') {
                     $result[] = $php;
                 }
+            } elseif (str_starts_with($stripped, '@computed(')) {
+                $inner = substr($stripped, 10, -1);
+                foreach (Balanced::splitTopLevelStripped($inner, ',') as $assignment) {
+                    $result[] = '@php('.$assignment.')';
+                }
             } elseif (str_starts_with($stripped, '@states(')) {
                 array_push($result, ...$this->statesToUseState($stripped));
             } else {
@@ -385,7 +400,7 @@ BLADE;
         foreach ($pairs as [$name, $default]) {
             if ($default !== null) {
                 $variable = '$' . $name;
-                $statements[] = "if(!isset({$variable}) || (!{$variable} && {$variable} !== false)) "
+                $statements[] = "if(!array_key_exists('{$name}', get_defined_vars())) "
                     . "{$variable} = {$default};";
             }
         }
@@ -601,6 +616,121 @@ BLADE;
         }
 
         return $content;
+    }
+
+    /**
+     * `$view` là biến hệ thống CHỈ có ở client — chặn nó lọt vào Blade.
+     *
+     * Nó lọt qua được vì trình dịch biểu thức coi `$view` như một biến bình
+     * thường: `{{ $view.path }}` ra `{{ $$view->path }}`, tức biến-biến của
+     * PHP. Không có biến nào tên đó nên SSR ra rỗng hoặc lỗi — trang trắng mà
+     * HTTP vẫn 200, đúng loại hỏng khó lần nhất.
+     *
+     * Handler sự kiện KHÔNG dính: chúng không sinh ra gì ở phía Blade, nên
+     * `@click($view.emit('x'))` đi qua đây sạch sẽ.
+     */
+    private static function assertNoClientOnlyView(string $blade): void
+    {
+        if (! Re::match('/\$\$view\b/', $blade)) {
+            return;
+        }
+
+        throw new \RuntimeException(
+            '`$view` chỉ dùng được ở phía client (handler sự kiện, <script setup>), '
+            . 'không dùng được trong biểu thức được SSR render như {{ }}, @class, @attr…',
+        );
+    }
+
+    /**
+     * Bỏ mọi khoá `'on$<tên>' => …` khỏi mảng data của `@include`.
+     *
+     * Listener là closure trong scope view của CHA — sang PHP nó là biến không
+     * tồn tại (`$openEditor`) hoặc lời gọi hàm không có thật, tức Fatal ngay
+     * lúc SSR. Server cũng chẳng có ai bấm chuột để chạy chúng.
+     *
+     * Lọc ở ĐÂY, trên đầu ra Blade cuối cùng, nên phủ cả thẻ component (đã
+     * thành `@include` ở bước trên) lẫn `@include('x', {on$del: …})` viết tay —
+     * không phải nhớ chặn ở từng nguồn.
+     */
+    private static function stripListenerKeys(string $content): string
+    {
+        if (! str_contains($content, 'on$')) {
+            return $content;
+        }
+
+        $result = $content;
+        $offset = 0;
+
+        while (Re::match('/@include\s*\(/', $result, $m, PREG_OFFSET_CAPTURE, $offset)) {
+            // preg_match với offset trả về vị trí TUYỆT ĐỐI, không phải tương đối.
+            $start = $m[0][1];
+            [$args, $end] = Balanced::extractParensAt($result, $start + strlen($m[0][0]) - 1);
+            if ($args === null) {
+                break;
+            }
+
+            $stripped = self::stripListenersInArgs($args);
+            if ($stripped === $args) {
+                $offset = $end;
+                continue;
+            }
+
+            $rebuilt = '@include(' . $stripped . ')';
+            $result = substr($result, 0, $start) . $rebuilt . substr($result, $end);
+            $offset = $start + strlen($rebuilt);
+        }
+
+        return $result;
+    }
+
+    /** Lọc trong ĐÚNG đối số mảng, dựng lại nguyên cặp ngoặc vuông. */
+    private static function stripListenersInArgs(string $args): string
+    {
+        $out = [];
+
+        foreach (self::splitTopLevelCommas($args) as $arg) {
+            $trimmed = trim($arg);
+            if (! str_starts_with($trimmed, '[') || ! str_ends_with($trimmed, ']')) {
+                $out[] = $arg;
+                continue;
+            }
+
+            $entries = [];
+            foreach (self::splitTopLevelCommas(substr($trimmed, 1, -1)) as $entry) {
+                if (Re::match('/^[\'"]on\$/', ltrim($entry))) {
+                    continue;
+                }
+                if (trim($entry) !== '') {
+                    $entries[] = trim($entry);
+                }
+            }
+
+            $out[] = ' [' . implode(', ', $entries) . ']';
+        }
+
+        return implode(',', $out);
+    }
+
+    /** @return list<string> */
+    private static function splitTopLevelCommas(string $value): array
+    {
+        $out = []; $current = ''; $depth = 0; $paren = 0; $quote = null;
+        for ($i = 0, $n = strlen($value); $i < $n; $i++) {
+            $ch = $value[$i];
+            if ($quote === null && ($ch === "'" || $ch === '"')) $quote = $ch;
+            elseif ($quote !== null && $ch === $quote && self::precedingBackslashes($value, $i) % 2 === 0) $quote = null;
+            elseif ($quote === null) {
+                if ($ch === '[' || $ch === '{') $depth++;
+                elseif ($ch === ']' || $ch === '}') $depth--;
+                elseif ($ch === '(') $paren++;
+                elseif ($ch === ')') $paren--;
+                elseif ($ch === ',' && $depth === 0 && $paren === 0) { $out[] = $current; $current = ''; continue; }
+            }
+            $current .= $ch;
+        }
+        if (trim($current) !== '') $out[] = $current;
+
+        return $out;
     }
 
     /** @return array{string, string, ?string} */

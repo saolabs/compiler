@@ -18,6 +18,7 @@ final class ImportIncludeNode extends Node
         public string $pathJs,
         array $dataPairs = [],
         public array $stateVars = [],
+        public ?string $listenersJs = null,
     ) {
         $this->dataPairs = $dataPairs;
     }

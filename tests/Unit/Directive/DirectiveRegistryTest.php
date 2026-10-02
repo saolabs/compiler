@@ -81,7 +81,6 @@ final class DirectiveRegistryTest extends TestCase
     {
         $rc = new \ReflectionClass(DirectiveRegistry::class);
         $tier = $rc->getMethod('elementTier');
-        $tier->setAccessible(true);
 
         $covered = array_merge(
             array_keys($rc->getConstant('LOCKED')),

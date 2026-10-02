@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class SyntaxViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -37,8 +36,11 @@ class SyntaxView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, SyntaxViewController);
         const App = app("App");
+        const $view = this;
+        const $app = App;
+        const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -65,6 +67,7 @@ class SyntaxView extends View {
         __UPDATE_DATA_TRAIT__.value = __next => { value = __next; updateStateByKey('value', __next); };
         __UPDATE_DATA_TRAIT__.items = __next => { items = __next; updateStateByKey('items', __next); };
         const __VARIABLE_LIST__ = ["label", "value", "items"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({
@@ -103,7 +106,7 @@ class SyntaxView extends View {
 
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -118,31 +121,56 @@ class SyntaxView extends View {
             this.html(`e1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "my-4" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "label", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["label"], (parentElement) => label)
                 ]),
-                this.html(`e12`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } })
+                this.text('\n'),
+                this.text('        '),
+                this.html(`e12`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } }),
+                this.text('\n'),
+                this.text('    ')
                 ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e2`, "div", parentElement,
                 { classes: [{ type: 'static', value: "mt-4" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e21`, "ul", parentElement, {}, (parentElement) => [
+                    this.text('\n'),
+                    this.text('            '),
                     this.reactive(`e21l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                         return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                            this.text('                '),
                             this.html(`e21l11-${__loopIndex}`, "li", parentElement,
                                 { attrs: { "key": { type: 'binding', value: item, factory: () => item, stateKeys: [] } } },
                                 (parentElement) => [
                                 this.output(`e21l11o1-${__loopIndex}`, parentElement, true, [], (parentElement) => item)
-                                ])
+                                ]),
+                            this.text('\n'),
+                            this.text('            ')
                         ])
-                    })
-                ])
+                    }),
+                    this.text('        ')
                 ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n'),
+            this.text('    '),
             this.html(`e3`, "div", parentElement,
                 { classes: [{ type: 'binding', value: "bg-red-500", factory: () => value < 10, stateKeys: ["value"] }, { type: 'binding', value: "bg-green-500", factory: () => value >= 10, stateKeys: ["value"] }, { type: 'binding', value: "bg-blue-500", factory: () => value >= 20, stateKeys: ["value"] }], styles: { "color": { type: 'binding', value: value > 10 ? 'blue' : 'red', factory: () => value > 10 ? 'blue' : 'red', stateKeys: ["value"] }, "font-size": { type: 'binding', value: value+'px', factory: () => value+'px', stateKeys: ["value"] } } },
                 (parentElement) => [
-                this.output(`e3o1`, parentElement, true, ["value"], (parentElement) => value)
-                ])
+                this.text('\n'),
+                this.text('        '),
+                this.output(`e3o1`, parentElement, true, ["value"], (parentElement) => value),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

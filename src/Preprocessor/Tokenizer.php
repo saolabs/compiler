@@ -225,9 +225,16 @@ final class Tokenizer
         return ($ch >= 'a' && $ch <= 'z') || ($ch >= 'A' && $ch <= 'Z') || $ch === '_';
     }
 
-    /** `/\w/` của JS — ASCII, khớp PCRE không cờ /u. */
+    /**
+     * `/[\w$]/` của JS — ASCII, khớp PCRE không cờ /u.
+     *
+     * '$' được tính vào PHẦN TIẾP nhưng KHÔNG phải ký tự mở đầu (isIdentStart
+     * không nhận), nên `$event` vẫn tách y như cũ còn `on$delete` thành MỘT
+     * định danh — đúng luật JS. Thiếu điều này thì khoá `{on$delete: fn}` bị
+     * chẻ làm ba và sinh ra `"on$'delete'"`.
+     */
     private static function isIdentPart(string $ch): bool
     {
-        return self::isIdentStart($ch) || self::isDigit($ch);
+        return self::isIdentStart($ch) || self::isDigit($ch) || $ch === '$';
     }
 }

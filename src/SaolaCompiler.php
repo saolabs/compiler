@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Saola\Compiler;
 
 use Saola\Compiler\Compiler\MainCompiler;
+use Saola\Compiler\Declaration\TypedDeclarations;
+use Saola\Compiler\Compiler\RegisterParser;
 use Saola\Compiler\Directive\DirectiveRegistry;
 use Saola\Compiler\Support\BladeComment;
 use Saola\Compiler\Support\Re;
 use Saola\Compiler\Emit\BladeBuiltinCheck;
 use Saola\Compiler\Emit\BladeInterpolationCheck;
+use Saola\Compiler\Emit\BladeTableNestingCheck;
 use Saola\Compiler\Emit\BladeEmitter;
 use Saola\Compiler\Hydration\IdMode;
 use Saola\Compiler\Preprocessor\Preprocessor;
@@ -62,8 +65,11 @@ final class SaolaCompiler
             $bladeSource = $this->directiveRegistry->transform($source, 'blade');
             $jsSource = $this->directiveRegistry->transform($source, 'js');
             $splitter = new SourceSplitter();
-            $bladeParts = (new Preprocessor($options->assetPrefix))->preprocess($splitter->split($bladeSource));
-            $jsParts = (new Preprocessor($options->assetPrefix))->preprocess($splitter->split($jsSource));
+            $typedBlade = new TypedDeclarations();
+            $typedJs = new TypedDeclarations();
+            $bladeParts = (new Preprocessor($options->assetPrefix))->preprocess($typedBlade->normalize($splitter->split($bladeSource)));
+            $jsParts = (new Preprocessor($options->assetPrefix))->preprocess($typedJs->normalize($splitter->split($jsSource)));
+            $lang = $typedJs->types !== [] ? Lang::Ts : $options->lang;
 
             $bladeInput = $this->buildBladeInput($bladeParts, $bladeSource);
             $jsInput = $this->buildJsInput($jsParts);
@@ -71,22 +77,24 @@ final class SaolaCompiler
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
-            $compiledBlade = $this->injectSsrStylesheets($compiledBlade, $this->stylesheetLinks($bladeSource));
-            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate);
+            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
                     $jsInput,
                     $options->viewPath,
                     $options->functionName,
                     $options->factoryName,
-                    $options->lang === Lang::Ts,
+                    $lang === Lang::Ts,
                 );
+            // Sau JS: `<style>` đăng ký cho SSR phải là CHÍNH bản đã ghi vào JS.
+            $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath, $mainCompiler->inlineStyles());
 
             $imports = (new ImportParser())->parseImports($jsInput);
             $css = $this->scopedStyles($source);
             $markers = $this->collectMarkers($compiledBlade, $compiledJs);
 
             return new CompileResult(
+                lang: $lang->value,
                 blade: $options->emit === Target::JsOnly ? null : $compiledBlade,
                 js: $options->emit === Target::BladeOnly ? null : $compiledJs,
                 css: $css,
@@ -101,6 +109,8 @@ final class SaolaCompiler
                     BladeBuiltinCheck::scan($compiledBlade, $options->viewPath),
                     // [sao2blade] nội suy "{$...}" PHP không parse nổi
                     BladeInterpolationCheck::scan($compiledBlade, $options->viewPath),
+                    // [sao2blade] <tr> trần trong <table> → parser chèn tbody, DOM API không
+                    BladeTableNestingCheck::scan($compiledBlade, $options->viewPath),
                 ),
             );
         } catch (CompileException $e) {
@@ -124,7 +134,8 @@ final class SaolaCompiler
             $this->atomicWrite($options->bladeOutputPath, $result->blade);
         }
         if ($options->jsOutputPath !== null && $result->js !== null) {
-            $this->atomicWrite($options->jsOutputPath, $result->js);
+            $outputPath = Re::replace('/\.(?:js|ts)$/', '.'.$result->lang, $options->jsOutputPath);
+            $this->atomicWrite($outputPath, $result->js);
         }
         return $result;
     }
@@ -180,7 +191,7 @@ final class SaolaCompiler
             }
             try {
                 $results[$relative] = $this->compileFile($path, $fileOptions);
-                $url = rtrim($options->publicBaseUrl, '/').'/'.ltrim($stem.'.'.$options->lang->value, '/');
+                $url = rtrim($options->publicBaseUrl, '/').'/'.ltrim($stem.'.'.$results[$relative]->lang, '/');
                 $views[$viewPath] = $url;
             } catch (\Throwable $e) {
                 $errors[] = ['file' => $relative, 'message' => $e->getMessage()];
@@ -278,42 +289,114 @@ final class SaolaCompiler
         return $out;
     }
 
-    /** @return list<string> */
-    private function stylesheetLinks(string $source): array
+    /**
+     * `<link rel=stylesheet>` / `<script src>` khai báo trong .sao → directive
+     * ĐĂNG KÝ ở đầu file blade, không in thẻ tại chỗ khai báo.
+     *
+     * In tại chỗ là nguồn của lỗi quirks mode: với trang `@extends`, phần output
+     * nằm ngoài block được echo TRƯỚC khi layout in `<!DOCTYPE html>`, mà doctype
+     * đứng sau nội dung thì trình duyệt bỏ qua nó — cả trang chạy BackCompat.
+     *
+     * Danh sách asset lấy từ CHÍNH RegisterParser mà đường JS dùng để sinh
+     * `styles`/`scripts`, nên href/src và attribute hai bên luôn khớp. Đó là
+     * điều kiện để AssetManager phía client nhận ra node SSR và ADOPT nó thay vì
+     * chèn bản thứ hai lúc hydrate (findExistingStylesheet / findExistingScript).
+     *
+     * Chèn ở ĐẦU file cho mọi loại view: layout phải đăng ký xong trước khi
+     * `@pageStart` in <head>, page thì `@extends` render con trước cha nên chỗ
+     * nào cũng kịp.
+     *
+     * `<style>` cũng đăng ký như vậy để có mặt trong <head> ngay byte đầu. Trước
+     * đây nó chỉ tới tay client (AssetManager chèn lúc mount, sau khi JS boot)
+     * nên phần tử SSR vẽ trần một nhịp rồi mới nhảy vào chỗ — FOUC.
+     *
+     * @param list<array<string, mixed>> $inlineStyles {@see MainCompiler::inlineStyles()}
+     */
+    private function injectSsrHeadAssets(string $content, string $source, ?string $viewPath = null, array $inlineStyles = []): string
     {
-        return self::matchesFromOriginal(
-            '/<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>/i',
-            BladeComment::blank($source),
-            $source,
-        );
+        $lines = [];
+        foreach ($inlineStyles as $style) {
+            $attributes = array_filter(['id' => $style['id'] ?? null, 'class' => $style['className'] ?? null])
+                + ($style['attributes'] ?? []);
+            $args = self::phpString($style['content']);
+            if ($attributes !== []) {
+                $args .= ', '.self::phpArrayLiteral($attributes);
+            }
+            // PHP thô chứ không phải directive: bộ tách statement của Blade quét
+            // `@media (…)` và ngoặc trong CSS, nhưng không đụng vào token PHP.
+            $lines['<?php $__helper->addStyle('.$args.'); ?>'] = true;
+        }
+
+        $resources = (new RegisterParser())->parseRegisterContent($source, $viewPath)['resources'] ?? [];
+        foreach ($resources as $resource) {
+            $attributes = $resource['attrs'] ?? [];
+            $isLink = ($resource['tag'] ?? '') === 'link';
+            $urlKey = $isLink ? 'href' : 'src';
+            $url = (string) ($attributes[$urlKey] ?? '');
+            if (trim($url) === '') {
+                continue;
+            }
+            // rel/href/src do helper tự in — không nhồi lại vào mảng attribute.
+            unset($attributes[$urlKey], $attributes['rel']);
+            $args = self::bladeStringExpression($url);
+            if ($attributes !== []) {
+                $args .= ', '.self::phpArrayLiteral($attributes);
+            }
+            // Khai báo trùng hệt nhau trong cùng file chỉ cần một dòng; trùng
+            // giữa các view thì store phía server lo (theo id, hoặc theo url).
+            $lines['@'.($isLink ? 'addCssLink' : 'addScriptSrc').'('.$args.')'] = true;
+        }
+
+        return $lines === [] ? $content : implode("\n", array_keys($lines))."\n".$content;
     }
 
-    /** @param list<string> $links */
-    private function injectSsrStylesheets(string $content, array $links): string
+    /**
+     * URL có thể chứa nội suy Blade (`href="{{ asset('x.css') }}"`) — directive
+     * nhận BIỂU THỨC PHP nên phải đổi thành phép nối chuỗi.
+     */
+    private static function bladeStringExpression(string $value): string
     {
-        $blocks = [];
-        $seen = [];
-        foreach ($links as $original) {
-            $tag = preg_replace('/\s+/', ' ', trim($original)) ?? trim($original);
-            if ($tag === '' || isset($seen[$tag])) continue;
-            $seen[$tag] = true;
-            $blocks[] = "@once('saola-css-".$this->stableHash($tag)."')\n".trim($original)."\n@endonce";
+        if (!str_contains($value, '{{')) {
+            return self::phpString($value);
         }
-        if ($blocks === []) return $content;
-        $assets = implode("\n", $blocks);
-        if (preg_match('/^\s*@(extends|pageStart)\b[^\n]*(?:\n|$)/im', $content, $match, PREG_OFFSET_CAPTURE) === 1) {
-            $position = $match[0][1] + strlen($match[0][0]);
-            return substr($content, 0, $position).$assets."\n".substr($content, $position);
+        $parts = preg_split('/\{\{(.*?)\}\}/s', $value, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [$value];
+        $out = [];
+        foreach ($parts as $index => $part) {
+            if ($index % 2 === 1) {
+                $expression = trim($part);
+                if ($expression !== '') {
+                    $out[] = '('.$expression.')';
+                }
+                continue;
+            }
+            if ($part !== '') {
+                $out[] = self::phpString($part);
+            }
         }
-        return $assets."\n".$content;
+
+        return $out === [] ? "''" : implode('.', $out);
     }
 
-    private function stableHash(string $value): string
+    private static function phpString(string $value): string
     {
-        $hash = 5381;
-        $units = unpack('v*', mb_convert_encoding($value, 'UTF-16LE', 'UTF-8')) ?: [];
-        foreach ($units as $unit) $hash = (($hash * 33) + $unit) & 0xffffffff;
-        return base_convert((string) $hash, 10, 36);
+        return "'".strtr($value, ['\\' => '\\\\', "'" => "\\'"])."'";
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private static function phpArrayLiteral(array $attributes): string
+    {
+        $parts = [];
+        foreach ($attributes as $name => $value) {
+            if ($value === false || $value === null) {
+                continue;
+            }
+            $key = self::phpString((string) $name);
+            $parts[] = $value === true
+                ? $key.' => true'
+                : $key.' => '.self::bladeStringExpression((string) $value);
+        }
+
+        return '['.implode(', ', $parts).']';
     }
 
     /** @return list<string> */

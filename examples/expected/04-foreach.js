@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class ForeachViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -37,8 +36,11 @@ class ForeachView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, ForeachViewController);
         const App = app("App");
+        const $view = this;
+        const $app = App;
+        const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -72,6 +74,7 @@ class ForeachView extends View {
             }
         };
         const __VARIABLE_LIST__ = [];
+
 
 
         this.__ctrl__.setUserDefinedConfig({
@@ -110,7 +113,7 @@ class ForeachView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -123,14 +126,21 @@ class ForeachView extends View {
             let parentReactive = null;
             return this.wrapper((parentElement) => [
             this.html(`e1`, "ul", parentElement, {}, (parentElement) => [
+                this.text('\n'),
+                this.text('    '),
                 this.reactive(`e1l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                     return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                        this.text('        '),
                         this.html(`e1l11-${item.id}`, "li", parentElement, {}, (parentElement) => [
                             this.output(`e1l11o1-${item.id}`, parentElement, true, [], (parentElement) => item.name)
-                        ])
+                        ]),
+                        this.text('\n'),
+                        this.text('    ')
                     ], (item) => item.id)
-                })
-            ])
+                }),
+                this.text('    ')
+            ]),
+            this.text('\n')
             ]);
             }
         });

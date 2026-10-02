@@ -23,11 +23,36 @@ final class Parser
 
     private readonly EventDirectiveProcessor $eventProcessor;
 
-    private const VOID_ELEMENTS = [
-        'area' => true, 'base' => true, 'br' => true, 'col' => true,
-        'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
-        'link' => true, 'meta' => true, 'param' => true, 'source' => true,
-        'track' => true, 'wbr' => true,
+    /**
+     * "SVG tag name adjustment" của spec HTML — tên thường → tên đúng hoa/thường.
+     *
+     * HTML không phân biệt hoa thường nên parser hạ hết về chữ thường, nhưng SVG
+     * thì CÓ: `createElementNS(NS, 'clippath')` ra một SVGElement TRƠ, không phải
+     * SVGClipPathElement. Parser của trình duyệt tự áp bảng này khi đọc markup,
+     * nên SSR vẫn đúng còn CSR thì hỏng — cùng một view ra hai kết quả.
+     *
+     * Trích thẳng từ Chromium (parse `<svg><tên thường>` rồi đọc lại tagName),
+     * không chép tay: 37 mục, khớp bảng trong spec.
+     */
+    private const SVG_TAG_ADJUST = [
+        'altglyph' => 'altGlyph', 'altglyphdef' => 'altGlyphDef',
+        'altglyphitem' => 'altGlyphItem', 'animatecolor' => 'animateColor',
+        'animatemotion' => 'animateMotion', 'animatetransform' => 'animateTransform',
+        'clippath' => 'clipPath', 'feblend' => 'feBlend',
+        'fecolormatrix' => 'feColorMatrix', 'fecomponenttransfer' => 'feComponentTransfer',
+        'fecomposite' => 'feComposite', 'feconvolvematrix' => 'feConvolveMatrix',
+        'fediffuselighting' => 'feDiffuseLighting', 'fedisplacementmap' => 'feDisplacementMap',
+        'fedistantlight' => 'feDistantLight', 'fedropshadow' => 'feDropShadow',
+        'feflood' => 'feFlood', 'fefunca' => 'feFuncA', 'fefuncb' => 'feFuncB',
+        'fefuncg' => 'feFuncG', 'fefuncr' => 'feFuncR',
+        'fegaussianblur' => 'feGaussianBlur', 'feimage' => 'feImage',
+        'femerge' => 'feMerge', 'femergenode' => 'feMergeNode',
+        'femorphology' => 'feMorphology', 'feoffset' => 'feOffset',
+        'fepointlight' => 'fePointLight', 'fespecularlighting' => 'feSpecularLighting',
+        'fespotlight' => 'feSpotLight', 'fetile' => 'feTile',
+        'feturbulence' => 'feTurbulence', 'foreignobject' => 'foreignObject',
+        'glyphref' => 'glyphRef', 'lineargradient' => 'linearGradient',
+        'radialgradient' => 'radialGradient', 'textpath' => 'textPath',
     ];
 
     private const RCDATA_ELEMENTS = ['textarea' => true, 'title' => true];
@@ -90,28 +115,78 @@ final class Parser
 
         // Ghép thẻ MỞ trải nhiều dòng — PHẢI giống hệt sao2blade, nếu không id
         // hydrate hai bên lệch nhau. Dùng chung Support\Html để không thể lệch.
+        $templateContent = Html::normalizeTextareaBindings($templateContent);
         $templateContent = Html::joinMultilineOpenTags($templateContent);
         // Directive điều khiển phải đứng riêng dòng: cả hai emitter xử lý
         // theo DÒNG nên nội dung dính cùng dòng sẽ mất (§14).
         $templateContent = Html::splitInlineDirectives($templateContent);
+        // Phần rìa không có ở output server: MainCompiler đã bóc `<template>` và cắt
+        // các range `@props`/`@states`, để lại dòng trống ở đầu/cuối. Blade sinh lại
+        // header ở cột 0 nên chúng không ra HTML — giữ lại thì CSR dư newline ngay
+        // sau marker view.
+        $templateContent = trim($templateContent, " \t\n\r");
 
         foreach (explode("\n", $templateContent) as $line) {
             if ($this->rawtextTag !== null) {
+                // Nội dung rawtext (<pre>, <code>, <textarea>) giữ nguyên từng dòng
+                // kể cả xuống dòng — đây là vùng white-space: pre, mất một "\n" là
+                // thấy ngay trên màn hình.
                 $this->processContentLine($line, $stack);
+                $this->addText($stack, "\n");
                 continue;
             }
 
+            // Whitespace phải sống sót: sao2blade giữ nguyên từng dòng nguồn, nên
+            // DOM từ server có đúng thụt lề + xuống dòng của file .sao. Trước đây
+            // parser này strip từng dòng và bỏ dòng trống, nên CSR dựng ra DOM
+            // KHÁC SSR — thấy rõ nhất ở khoảng trắng giữa hai thẻ inline
+            // (`<b>a</b> <b>b</b>` thành `<b>a</b><b>b</b>`) và trong vùng
+            // white-space: pre. Quy tắc lấy từ HTML server thật:
+            //   dòng nội dung  → nguyên dòng + "\n"
+            //   dòng directive → chỉ thụt lề, KHÔNG "\n" (PHP nuốt newline ngay
+            //                      sau thẻ đóng của directive đã biên dịch)
+            //   dòng trống     → "\n"
             $stripped = self::pyStrip($line);
+            $indent = substr($line, 0, strlen($line) - strlen(ltrim($line)));
+
             if ($stripped === '') {
+                $this->addText($stack, $line . "\n");
                 continue;
             }
             if (str_starts_with($stripped, '{{--') && str_ends_with($stripped, '--}}')) {
+                // Blade thay comment bằng chuỗi rỗng, thụt lề và newline vẫn ra output.
+                $this->addText($stack, $indent . "\n");
                 continue;
             }
-            if ($this->tryDirective($stripped, $stack)) {
+            if (str_starts_with($stripped, '@')) {
+                // @key là metadata biên dịch: sao2blade XOÁ HẲN dòng này khỏi output
+                // (Blade đi thẳng từ @foreach sang <li>), nên nó không đóng góp cả
+                // thụt lề lẫn newline. Giữ lại thì mỗi vòng lặp dư đúng một mức thụt.
+                if (Re::match('/^@key\b/i', $stripped)) {
+                    $this->tryDirective($stripped, $stack);
+                    continue;
+                }
+                // Emit thụt lề TRƯỚC khi chạy directive: directive đóng (@endblock,
+                // @endif) pop stack, nên thụt lề của nó phải vào parent còn đang mở.
+                $this->addText($stack, $indent);
+                if ($this->tryDirective($stripped, $stack)) {
+                    // @children là placeholder NỘI DUNG, không phải directive điều
+                    // khiển: nó được thay bằng nội dung con ngay ở khâu tiền xử lý
+                    // nên không sinh thẻ PHP nào để nuốt newline — server vẫn xuất
+                    // "\n" cuối dòng này.
+                    if (Re::match('/^@children\b/i', $stripped)) {
+                        $this->addText($stack, "\n");
+                    }
+                    continue;
+                }
+                // Bắt đầu bằng '@' nhưng không phải directive (vd '@saolabs/client'
+                // trong văn xuôi) — thụt lề đã emit rồi, xử lý phần còn lại như nội dung.
+                $this->processContentLine(substr($line, strlen($indent)), $stack);
+                $this->addText($stack, "\n");
                 continue;
             }
-            $this->processContentLine($stripped, $stack);
+            $this->processContentLine($line, $stack);
+            $this->addText($stack, "\n");
         }
 
         return $root;
@@ -321,10 +396,12 @@ final class Parser
             $expr = $this->extractDirectiveParens($line, '@include');
             if ($expr !== null) {
                 [$pathPhp, $dataPhp] = $this->parseIncludeParams($expr);
+                [$propsPhp, $listenersJs] = $this->splitDataAndListeners($dataPhp);
                 $this->addChild($stack, new IncludeNode(
                     $pathPhp, $pathPhp !== '' ? $this->convertPathToJs($pathPhp) : "''",
-                    $dataPhp, $dataPhp !== null ? $this->expressions->compileStatement($dataPhp) : null,
-                    $dataPhp !== null ? $this->getStateVars($dataPhp) : [],
+                    $propsPhp, $propsPhp !== null ? $this->expressions->compileStatement($propsPhp) : null,
+                    $propsPhp !== null ? $this->getStateVars($propsPhp) : [],
+                    $listenersJs,
                 ));
                 return true;
             }
@@ -332,8 +409,8 @@ final class Parser
         if (Re::match('/^@importInclude\s*\(/', $line)) {
             $expr = $this->extractDirectiveParens($line, '@importInclude');
             if ($expr !== null) {
-                [$pathPhp, $pathJs, $pairs, $svars] = $this->parseImportIncludeParams($expr);
-                $node = new ImportIncludeNode($pathPhp, $pathJs, $pairs, $svars);
+                [$pathPhp, $pathJs, $pairs, $svars, $listenersJs] = $this->parseImportIncludeParams($expr);
+                $node = new ImportIncludeNode($pathPhp, $pathJs, $pairs, $svars, $listenersJs);
                 $this->addChild($stack, $node);
                 $stack[] = [$node, 'importInclude', null];
                 return true;
@@ -364,14 +441,8 @@ final class Parser
                 $pos = $this->consumeRawtext($line, $pos, $stack);
                 continue;
             }
-            if ($pos === 0 && ($line[$pos] === ' ' || $line[$pos] === "\t")) {
-                while ($pos < $length && ($line[$pos] === ' ' || $line[$pos] === "\t")) {
-                    $pos++;
-                }
-                if ($pos >= $length) {
-                    break;
-                }
-            }
+            // (Thụt lề đầu dòng KHÔNG còn bị bỏ ở đây — nó là text node thật trong
+            //  DOM của server, xem ghi chú whitespace ở parse().)
             if (substr($line, $pos, 4) === '<!--') {
                 $end = strpos($line, '-->', $pos + 4);
                 if ($end === false) {
@@ -389,15 +460,15 @@ final class Parser
                 continue;
             }
             if (Re::match('/\G<\/\s*([a-zA-Z][\w-]*)\s*>/', $line, $m, 0, $pos)) {
-                $this->popHtmlTag($stack, strtolower($m[1]));
+                $this->popHtmlTag($stack, self::normalizeTagName($m[1]));
                 $pos += strlen($m[0]);
                 continue;
             }
             if (Re::match('/\G<([a-zA-Z][\w-]*)/', $line, $m, 0, $pos)) {
-                $tag = strtolower($m[1]);
+                $tag = self::normalizeTagName($m[1]);
                 $pos += strlen($m[0]);
                 [$attrs, $pos, $selfClosing] = $this->scanTagEnd($line, $pos);
-                $void = isset(self::VOID_ELEMENTS[$tag]) || $selfClosing;
+                $void = isset(Html::VOID_ELEMENTS[$tag]) || $selfClosing;
                 $node = new HtmlElement($tag, $void);
                 $this->parseElementAttributes($attrs, $node);
                 $this->addChild($stack, $node);
@@ -416,7 +487,8 @@ final class Parser
                 continue;
             }
             $segment = substr($line, $pos, $nextTag - $pos);
-            if (trim($segment) !== '') {
+            // Segment chỉ có khoảng trắng VẪN là text node ở server — giữ lại.
+            if ($segment !== '') {
                 $this->parseInlineContent($segment, $stack);
             }
             $pos = $nextTag;
@@ -441,7 +513,7 @@ final class Parser
     /** @param list<array{Node, string, mixed}> $stack */
     private function emitRawtext(string $raw, array &$stack, string $tag): void
     {
-        if ($raw === '' || trim($raw) === '') {
+        if ($raw === '') {
             return;
         }
         if (isset(self::RCDATA_ELEMENTS[$tag])) {
@@ -779,6 +851,19 @@ final class Parser
         return [$value, $state];
     }
 
+    /**
+     * Thêm text node nếu chuỗi không rỗng. Dùng cho whitespace cấu trúc
+     * (thụt lề, xuống dòng) mà server render ra nhưng parser trước đây vứt đi.
+     *
+     * @param list<array{Node, string, mixed}> $stack
+     */
+    private function addText(array &$stack, string $text): void
+    {
+        if ($text !== '') {
+            $this->addChild($stack, new TextNode($text));
+        }
+    }
+
     /** @param list<array{Node, string, mixed}> $stack */
     private function addChild(array &$stack, Node $child): void
     {
@@ -789,6 +874,14 @@ final class Parser
     }
 
     /** @param list<array{Node, string, mixed}> $stack */
+    /** Hạ chữ thường như HTML, rồi trả lại đúng hoa/thường cho tag SVG. */
+    private static function normalizeTagName(string $raw): string
+    {
+        $lower = strtolower($raw);
+
+        return self::SVG_TAG_ADJUST[$lower] ?? $lower;
+    }
+
     private function popHtmlTag(array &$stack, string $tag): void
     {
         for ($i = count($stack) - 1; $i > 0; $i--) if ($stack[$i][1] === 'html' && $stack[$i][2] === $tag) { array_splice($stack, $i); return; }
@@ -890,10 +983,56 @@ final class Parser
     }
 
     /** @return array{string, ?string} */
+    /** @return array{string, ?string} */
     private function parseIncludeParams(string $expr): array
     {
         $parts = $this->splitPhpArray($expr);
         return count($parts) >= 2 ? [trim($parts[0]), trim($parts[1])] : [trim($expr), null];
+    }
+
+    /**
+     * Tách khoá `on$<tên>` khỏi mảng data của `@include`.
+     *
+     *   ['card' => $card, 'on$edit' => $openEditor]
+     *   → props     ['card' => $card]
+     *     listener  { "edit": openEditor }
+     *
+     * MỘT object ở mặt chữ, HAI kênh lúc chạy — cố ý. Listener không được vào
+     * `this.data` (nó không phải dữ liệu, và `updateVariableData` sẽ đi qua nó
+     * mỗi lần prop đổi), không được sang Blade (SSR không có ai bấm chuột), và
+     * không được tính vào stateKeys (một handler nhắc tới state không phải lý
+     * do để đẩy prop mới xuống con mỗi lần state đó đổi).
+     *
+     * Giá trị đi qua đúng DSL của `@click` nên `on$edit: openEditor`,
+     * `on$edit: openEditor(event)`, `on$edit: (a, b) => f(a, b)` và
+     * `on$edit: (a, b) => { f(a); g(b) }` đều dùng được.
+     *
+     * @return array{?string, ?string} [mảng props (null nếu rỗng), object listener JS]
+     */
+    private function splitDataAndListeners(?string $dataPhp): array
+    {
+        if ($dataPhp === null || ! str_contains($dataPhp, 'on$')) return [$dataPhp, null];
+
+        $inner = trim($dataPhp);
+        if (str_starts_with($inner, '[') && str_ends_with($inner, ']')) $inner = trim(substr($inner, 1, -1));
+
+        $props = []; $listeners = [];
+        foreach ($this->splitPhpArray($inner) as $entry) {
+            $entry = trim($entry);
+            if ($entry === '') continue;
+            if (Re::match('/^[\'"]on\$([^\'"]+)[\'"]\s*=>\s*(.+)$/s', $entry, $m)) {
+                $listeners[] = '"' . $m[1] . '": ' . $this->eventProcessor->compileHandler(trim($m[2]), $m[1]);
+                continue;
+            }
+            $props[] = $entry;
+        }
+
+        if ($listeners === []) return [$dataPhp, null];
+
+        return [
+            $props === [] ? null : '[' . implode(', ', $props) . ']',
+            '{ ' . implode(', ', $listeners) . ' }',
+        ];
     }
 
     private function convertPathToJs(string $path): string
@@ -901,28 +1040,37 @@ final class Parser
         $path = trim($path);
         if ((str_starts_with($path, "'") && str_ends_with($path, "'") && substr_count($path, "'") === 2) || (str_starts_with($path, '"') && str_ends_with($path, '"') && substr_count($path, '"') === 2)) return $path;
         $js = str_contains($path, '+') && ! str_contains($path, '$') && ! str_contains($path, '->') ? $path : $this->expressions->compileStatement($path);
+        // Declared bindings carry a $ in the normalized source. Keep that
+        // distinction before expression compilation erases the variable marker.
+        if (str_contains($path, '$')) return $js;
         if (Re::match('/^[a-zA-Z_][\w.]*$/', $js) && str_contains($js, '.')) return "'{$js}'";
         if (Re::match('/^[a-zA-Z_]\w*$/', $js) && ! str_starts_with($js, '__')) return "'{$js}'";
         return $js;
     }
 
-    /** @return array{string, string, list<array{string, string}>, array<string, true>} */
+    /** @return array{string, string, list<array{string, string}>, array<string, true>, ?string} */
     private function parseImportIncludeParams(string $expr): array
     {
         $parts = $this->splitPhpArray($expr);
-        if ($parts === []) return [trim($expr), "''", [], []];
+        if ($parts === []) return [trim($expr), "''", [], [], null];
         $path = trim(count($parts) === 1 ? $parts[0] : $parts[1]);
-        $pairs = []; $state = [];
+        $pairs = []; $state = []; $listeners = [];
         if (isset($parts[2])) {
             $data = trim($parts[2]);
             if (str_starts_with($data, '[') && str_ends_with($data, ']')) $data = trim(substr($data, 1, -1));
             foreach ($this->splitPhpArray($data) as $entry) if (Re::match('/^[\'"]([^\'"]+)[\'"]\s*=>\s*(.+)$/s', trim($entry), $m)) {
                 $value = trim($m[2]);
+                // Khoá `on$<tên>` là listener, không phải prop — xem splitDataAndListeners()
+                if (str_starts_with($m[1], 'on$')) {
+                    $name = substr($m[1], 3);
+                    $listeners[] = '"' . $name . '": ' . $this->eventProcessor->compileHandler($value, $name);
+                    continue;
+                }
                 $pairs[] = [$m[1], $this->expressions->compileStatement($value)];
                 $state += $this->getStateVars($value);
             }
         }
-        return [$path, $this->convertPathToJs($path), $pairs, $state];
+        return [$path, $this->convertPathToJs($path), $pairs, $state, $listeners === [] ? null : '{ ' . implode(', ', $listeners) . ' }'];
     }
 
     private function extractWhileVar(string $expr): ?string

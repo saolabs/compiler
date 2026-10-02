@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Saola\Compiler\Preprocessor;
 
+use Saola\Compiler\CompileException;
 use Saola\Compiler\Support\Balanced;
+use Saola\Compiler\Support\Html;
 use Saola\Compiler\Support\Re;
 
 /**
@@ -57,7 +59,7 @@ final class ExpressionTransformer
      * lệch, và lệch ở đây nghĩa là người dùng đè được directive lõi mà không bị
      * chặn.
      */
-    public const ELEMENT_DIRECTIVES = ['class', 'style', 'exec', 'show', 'hide'];
+    public const ELEMENT_DIRECTIVES = ['class', 'style', 'exec'];
 
     /** Định danh KHÔNG thêm '$' dù không có trong bảng ký hiệu. */
     private const NO_PREFIX = [
@@ -77,6 +79,8 @@ final class ExpressionTransformer
     private readonly Tokenizer $tokenizer;
 
     private ImportAliases $importAliases;
+
+    private bool $computedExpression = false;
 
     public function __construct(
         private readonly SymbolTable $symbols,
@@ -123,6 +127,15 @@ final class ExpressionTransformer
             return $this->transformAssignmentDeclaration('@let', $m[1]);
         }
 
+        if (Re::match('/^@computed\s*\(([\s\S]*)\)$/', $declaration, $m)) {
+            try {
+                $this->computedExpression = true;
+                return $this->transformAssignmentDeclaration('@computed', $m[1]);
+            } finally {
+                $this->computedExpression = false;
+            }
+        }
+
         if (Re::match('/^@const\s*\(([\s\S]*)\)$/', $declaration, $m)) {
             return $this->transformAssignmentDeclaration('@const', $m[1]);
         }
@@ -144,28 +157,63 @@ final class ExpressionTransformer
         return $declaration;
     }
 
+    /**
+     * `@show(…)`/`@hide(…)` đã bị gỡ — báo lỗi thay vì sinh ra HTML sai.
+     *
+     * Cả hai chưa từng chạy đúng: nhánh JS để `AstParser` nuốt thành thuộc tính
+     * tĩnh rác (`<div show vis>`), nhánh Blade để nguyên chuỗi trong thẻ — mà
+     * `@show` còn là directive section CÓ SẴN của Laravel, nghĩa hoàn toàn khác.
+     * Hai nhánh ra hai cây DOM khác nhau nên hydrate không thể khớp.
+     *
+     * Chỉ bắt dạng CÓ ngoặc: `@show` trần là directive section của Blade, hợp lệ.
+     * Gọi sau khi `{{-- --}}`/`@verbatim` đã được che, và `<script>`/`<style>`
+     * thì `SourceSplitter` đã tách ra từ trước — nên chỉ còn `@show(` thật.
+     *
+     * Xem docs/SAO_ELEMENT_DIRECTIVES_RFC.md §10.1 (E-08).
+     */
+    private static function rejectShowHide(string $template): void
+    {
+        if (! Re::match('/@(show|hide)\s*\(/i', $template, $m)) {
+            return;
+        }
+
+        throw new CompileException(
+            "`@{$m[1]}(…)` đã bị gỡ khỏi Saola — dùng `@if(…)` để bỏ hẳn element,"
+            . ' hoặc `@style([\'display\' => …])` nếu cần giữ element trong DOM lúc ẩn.',
+        );
+    }
+
     /** Dịch cả khối template: `{{ }}`, `{!! !!}`, directive, binding thuộc tính. */
     public function transformTemplate(string $template): string
     {
-        // Comment Blade phải giữ NGUYÊN VĂN
-        $comments = [];
-        $result = Re::replaceCallback('/\{\{--[\s\S]*?--\}\}/', function (array $m) use (&$comments): string {
-            $placeholder = '__BLADE_COMMENT_' . count($comments) . '__';
-            $comments[] = $m[0];
+        // Che `{{-- … --}}` và `@verbatim … @endverbatim` trong MỘT lượt quét.
+        //
+        // Hai lượt riêng thì khối nào che sau sẽ nuốt placeholder của khối che
+        // trước khi hai thứ lồng nhau, và vòng khôi phục quét `$result` không
+        // còn gì để thay — placeholder rò thẳng ra trang. Đo được cả hai chiều:
+        // comment TRONG verbatim (thấy trên /demo/setup, 06/09/2026) và verbatim
+        // TRONG comment.
+        //
+        // Quét xen kẽ trái-sang-phải thì khối NGOÀI luôn khớp trước và nuốt trọn
+        // khối trong, nên không còn chuyện lồng nhau. Nội dung được cất giữ
+        // nguyên văn để các bước dịch bên dưới không đụng tới: `{{ title }}` trong
+        // khối code minh hoạ không bị thêm '$', comment giữ đúng chữ đã viết.
+        //
+        // Comment NGOÀI verbatim vẫn bị bỏ như cũ — việc đó do các khâu sau làm
+        // (MainCompiler và chính Blade), không phải ở đây.
+        $masked = [];
+        $result = Re::replaceCallback(
+            '/\{\{--[\s\S]*?--\}\}|@verbatim\b[\s\S]*?@endverbatim\b/i',
+            function (array $m) use (&$masked): string {
+                $placeholder = '__SAO_MASKED_' . count($masked) . '__';
+                $masked[] = $m[0];
 
-            return $placeholder;
-        }, $template);
+                return $placeholder;
+            },
+            $template,
+        );
 
-        // @verbatim nghĩa là "giữ nguyên văn". Không chặn thì `{{ title }}` trong
-        // khối code minh hoạ bị thêm '$' (thành `{{ $title }}`), còn `{{ $title }}`
-        // viết sẵn thành `{{ $$title }}` — sai nội dung ở CẢ Blade lẫn JS.
-        $verbatim = [];
-        $result = Re::replaceCallback('/@verbatim[\s\S]*?@endverbatim/', function (array $m) use (&$verbatim): string {
-            $placeholder = '__VERBATIM_RAW_' . count($verbatim) . '__';
-            $verbatim[] = $m[0];
-
-            return $placeholder;
-        }, $result);
+        self::rejectShowHide($result);
 
         $result = Re::replaceCallback(
             '/\{\{\s*([\s\S]*?)\s*\}\}/',
@@ -179,6 +227,14 @@ final class ExpressionTransformer
             $result,
         );
 
+        $result = $this->transformComponentTagEvents($result);
+
+        // Hạ `#if`/`#elseif`/`#else` viết trên thẻ về directive khối TRƯỚC
+        // `transformDirectives`, để biểu thức của chúng đi qua cùng phép dịch
+        // JS→PHP như `@if` viết tay — nếu không, output Blade ra `@if(a)` thay
+        // vì `@if($a)`. Xem docs/SAO_ELEMENT_DIRECTIVES_RFC.md §4.
+        $result = Html::expandTagDirectives($result);
+
         $result = $this->transformDirectives($result);
         $result = $this->transformAttributeBindings($result);
 
@@ -186,15 +242,187 @@ final class ExpressionTransformer
         // thay-lần-đầu của JS. Bản JS phải dùng replacement dạng HÀM để tránh
         // `$$`/`$&` trong nội dung bị diễn giải; str_replace của PHP không có
         // vấn đề đó.
-        foreach ($comments as $i => $comment) {
-            $result = str_replace('__BLADE_COMMENT_' . $i . '__', $comment, $result);
-        }
-
-        foreach ($verbatim as $i => $block) {
-            $result = str_replace('__VERBATIM_RAW_' . $i . '__', $block, $result);
+        // Placeholder là duy nhất và không lồng nhau nên thay thẳng, thứ tự nào
+        // cũng đúng. `str_replace` của PHP không diễn giải `$$`/`$&` trong nội
+        // dung — bản JS phải dùng replacement dạng HÀM để tránh đúng chuyện đó.
+        foreach ($masked as $i => $block) {
+            $result = str_replace('__SAO_MASKED_' . $i . '__', $block, $result);
         }
 
         return $result;
+    }
+
+    // ── Sự kiện của thẻ component ─────────────────────────────────────
+
+    /**
+     * `<mycomp @edit(handler(event))>` → `<mycomp @edit="handler($event)">`.
+     *
+     * Con phát sự kiện bằng `emit('edit', payload)`, cha lắng nghe ngay tại thẻ
+     * — không qua event bus. Biểu thức được dịch Ở ĐÂY rồi cất vào nháy, nên
+     * {@see \Saola\Compiler\Template\ImportTagResolver} đọc nó bằng đúng
+     * đường thuộc tính có nháy sẵn có.
+     *
+     * PHẢI chạy TRƯỚC transformDirectives: tên sự kiện trùng tên DOM
+     * (`<mycomp @click(...)>`) mà để lượt directive chạm vào trước thì nó bị
+     * dịch thành cấu hình sự kiện của element, mất luôn đường về component.
+     */
+    private function transformComponentTagEvents(string $template): string
+    {
+        $tags = $this->importAliases->names();
+        if ($tags === []) {
+            return $template;
+        }
+
+        $pattern = '~<(' . implode('|', array_map(
+            static fn (string $tag): string => preg_quote($tag, '~'),
+            $tags,
+        )) . ')(?=[\s/>])~';
+
+        $result = '';
+        $offset = 0;
+
+        while (Re::match($pattern, $template, $m, PREG_OFFSET_CAPTURE, $offset)) {
+            $start = $m[0][1];
+            $end = self::scanComponentTagEnd($template, $start + strlen($m[0][0]));
+            $result .= substr($template, $offset, $start - $offset)
+                . $this->rewriteTagEvents(substr($template, $start, $end - $start));
+            $offset = $end;
+        }
+
+        return $result . substr($template, $offset);
+    }
+
+    /**
+     * Vị trí ngay sau '>' của thẻ mở, bỏ qua '>' nằm trong nháy HOẶC trong
+     * ngoặc tròn — `@edit(a > b)` là đối số, không phải chỗ đóng thẻ.
+     */
+    private static function scanComponentTagEnd(string $source, int $start): int
+    {
+        $quote = null;
+        $paren = 0;
+        $length = strlen($source);
+
+        for ($pos = $start; $pos < $length; $pos++) {
+            $char = $source[$pos];
+
+            if ($quote !== null) {
+                if ($char === '\\') {
+                    $pos++;
+                } elseif ($char === $quote) {
+                    $quote = null;
+                }
+                continue;
+            }
+
+            if ($char === "'" || $char === '"') {
+                $quote = $char;
+            } elseif ($char === '(') {
+                $paren++;
+            } elseif ($char === ')' && $paren > 0) {
+                $paren--;
+            } elseif ($char === '>' && $paren === 0) {
+                return $pos + 1;
+            }
+        }
+
+        return $length;
+    }
+
+    /**
+     * `@on('tên', handler)` → tên sự kiện lấy từ đối số thứ nhất.
+     *
+     * Dạng tổng quát bên cạnh `@edit(handler)`: tên là DỮ LIỆU nên đặt được cả
+     * những tên không phải định danh (`@on('user:saved', h)`), và không thể đọc
+     * nhầm với một sự kiện DOM trùng tên.
+     *
+     * Cả hai cách viết ra CÙNG một khoá `on$<tên>` ở hạ nguồn.
+     *
+     * @return array{string, string} [tên sự kiện, biểu thức handler]
+     */
+    private static function splitOnDirective(string $directive, string $inner): array
+    {
+        if ($directive !== 'on') {
+            return [$directive, $inner];
+        }
+
+        $comma = self::topLevelComma($inner);
+        $name = $comma === -1 ? trim($inner) : trim(substr($inner, 0, $comma));
+
+        if ($comma === -1 || ! Re::match('/^([\'"])(.+)\1$/s', $name, $m)) {
+            throw new \RuntimeException(
+                "@on() cần tên sự kiện dạng chuỗi rồi tới handler: @on('tên', handler). Nhận được: @on({$inner})",
+            );
+        }
+
+        return [$m[2], substr($inner, $comma + 1)];
+    }
+
+    /** Vị trí dấu ',' đầu tiên ở mức ngoài cùng, -1 nếu không có. */
+    private static function topLevelComma(string $value): int
+    {
+        $depth = 0;
+        $quote = null;
+        for ($i = 0, $n = strlen($value); $i < $n; $i++) {
+            $ch = $value[$i];
+            if ($quote !== null) {
+                if ($ch === '\\') $i++;
+                elseif ($ch === $quote) $quote = null;
+                continue;
+            }
+            if ($ch === '"' || $ch === "'" || $ch === '`') $quote = $ch;
+            elseif ($ch === '(' || $ch === '[' || $ch === '{') $depth++;
+            elseif ($ch === ')' || $ch === ']' || $ch === '}') $depth--;
+            elseif ($ch === ',' && $depth === 0) return $i;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Chỉ nhận `@name(` NGOÀI nháy: `title="a@b(c)"` là văn bản của thuộc tính,
+     * không phải khai báo sự kiện.
+     */
+    private function rewriteTagEvents(string $tag): string
+    {
+        $out = '';
+        $kept = 0;
+        $quote = null;
+        $length = strlen($tag);
+
+        for ($pos = 0; $pos < $length; $pos++) {
+            $char = $tag[$pos];
+
+            if ($quote !== null) {
+                if ($char === '\\') $pos++;
+                elseif ($char === $quote) $quote = null;
+                continue;
+            }
+
+            if ($char === "'" || $char === '"') {
+                $quote = $char;
+                continue;
+            }
+
+            if ($char !== '@' || ! Re::match('/\G@([A-Za-z_][\w-]*)\s*\(/', $tag, $m, PREG_OFFSET_CAPTURE, $pos)) {
+                continue;
+            }
+
+            [$inner, $end] = Balanced::extractParensAt($tag, $pos + strlen($m[0][0]) - 1);
+            if ($inner === null) {
+                break;
+            }
+
+            [$name, $inner] = self::splitOnDirective($m[1][0], $inner);
+            $expr = $this->transformExpression(trim($inner));
+            // Nháy kép trong giá trị thì bọc bằng nháy đơn — cùng quy ước với
+            // `:prop="..."`; chứa cả hai loại thì không biểu diễn được.
+            $wrap = str_contains($expr, '"') ? "'" : '"';
+            $out .= substr($tag, $kept, $pos - $kept) . '@' . $name . '=' . $wrap . $expr . $wrap;
+            $kept = $end;
+            $pos = $end - 1;
+        }
+
+        return $out . substr($tag, $kept);
     }
 
     // ── Binding thuộc tính ────────────────────────────────────────────
@@ -280,6 +508,15 @@ final class ExpressionTransformer
                 continue;
             }
 
+            // Dấu ':' GIỮA tên một thuộc tính `@…` là của tên sự kiện
+            // (`@on('user:saved', …)` đã thành `@user:saved="…"`), không phải
+            // mở đầu một binding. Khớp nhầm thì giá trị bị dịch LẦN HAI.
+            if (self::insideEventAttrName($result)) {
+                $result .= $ch;
+                $i++;
+                continue;
+            }
+
             if (Re::match('/^(x-bind:|:)([A-Za-z_][\w:.\-]*)\s*=\s*(["\'])/', substr($template, $i), $attr)) {
                 $name = $attr[2];
                 $quote = $attr[3];
@@ -324,6 +561,22 @@ final class ExpressionTransformer
         }
 
         return $result;
+    }
+
+    /**
+     * Con trỏ đang nằm giữa tên một thuộc tính directive (`@name`)?
+     *
+     * Nhìn lui trong phần đã dựng tới khoảng trắng gần nhất: mảnh đó bắt đầu
+     * bằng '@' nghĩa là ta đang ở giữa `@user:saved`, không phải ở đầu `:prop`.
+     */
+    private static function insideEventAttrName(string $out): bool
+    {
+        $cut = strcspn(strrev($out), " \t\n\r<");
+        if ($cut === 0 || $cut === strlen($out)) {
+            return false;
+        }
+
+        return $out[strlen($out) - $cut] === '@';
     }
 
     // ── Token ─────────────────────────────────────────────────────────
@@ -379,10 +632,20 @@ final class ExpressionTransformer
     private function transformTokens(array $tokens): string
     {
         $tokens = $this->handlePlusOperator($tokens);
+        $paramBraces = self::arrowParamBraces($tokens);
 
         $result = '';
         $ternaryPending = 0;
         $count = count($tokens);
+        /**
+         * Mỗi '{' đang mở là object literal (→ '[') hay THÂN HÀM (giữ '{')?
+         *
+         * `(a, b) => { f(a); g(b) }` mà đổi thành '[' sẽ ra `[f(a); g(b)]` —
+         * vừa sai JS vừa sai PHP. Ngăn xếp để '}' đóng đúng loại của '{' đã mở.
+         *
+         * @var list<bool> true = thân hàm
+         */
+        $braceIsBlock = [];
 
         for ($i = 0; $i < $count; $i++) {
             $token = $tokens[$i];
@@ -428,10 +691,18 @@ final class ExpressionTransformer
                         continue;
                     }
                 } elseif ($token->value === '{') {
-                    $result .= '[';
+                    $previous = self::prevNonWhitespace($tokens, $i);
+                    // Giữ '{' khi nó là THÂN hàm (`=> { … }`) hoặc PATTERN gỡ
+                    // rối trong danh sách tham số (`({id, title}) => …`).
+                    $isBlock = isset($paramBraces[$i])
+                        || ($previous !== null
+                            && $previous->is(TokenType::Operator)
+                            && $previous->value === '=>');
+                    $braceIsBlock[] = $isBlock;
+                    $result .= $isBlock ? '{' : '[';
                     continue;
                 } elseif ($token->value === '}') {
-                    $result .= ']';
+                    $result .= array_pop($braceIsBlock) === true ? '}' : ']';
                     continue;
                 }
             }
@@ -440,6 +711,67 @@ final class ExpressionTransformer
         }
 
         return $result;
+    }
+
+    /**
+     * Chỉ số các token '{' nằm trong DANH SÁCH THAM SỐ của một arrow.
+     *
+     * `({id, title}) => f(id)` — dấu ngoặc nhọn ở đây là pattern gỡ rối, không
+     * phải object literal, nên không được đổi thành '[' của mảng PHP.
+     *
+     * Nhận diện đi NGƯỢC từ '=>': token liền trước là ')' thì dò về '(' khớp,
+     * mọi '{' trong khoảng đó là pattern. Đi ngược là cách duy nhất chắc chắn —
+     * lúc gặp '{' thì chưa biết phía sau có '=>' hay không.
+     *
+     * @param list<Token> $tokens
+     * @return array<int, true>
+     */
+    private static function arrowParamBraces(array $tokens): array
+    {
+        $marks = [];
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            if (! $tokens[$i]->is(TokenType::Operator) || $tokens[$i]->value !== '=>') {
+                continue;
+            }
+
+            $close = $i - 1;
+            while ($close >= 0 && $tokens[$close]->is(TokenType::Whitespace)) {
+                $close--;
+            }
+            if ($close < 0 || ! $tokens[$close]->is(TokenType::Operator) || $tokens[$close]->value !== ')') {
+                continue;
+            }
+
+            $depth = 0;
+            $open = -1;
+            for ($k = $close; $k >= 0; $k--) {
+                if (! $tokens[$k]->is(TokenType::Operator)) {
+                    continue;
+                }
+                if ($tokens[$k]->value === ')') {
+                    $depth++;
+                } elseif ($tokens[$k]->value === '(') {
+                    $depth--;
+                    if ($depth === 0) {
+                        $open = $k;
+                        break;
+                    }
+                }
+            }
+            if ($open < 0) {
+                continue;
+            }
+
+            for ($m = $open; $m <= $close; $m++) {
+                if ($tokens[$m]->is(TokenType::Operator) && ($tokens[$m]->value === '{' || $tokens[$m]->value === '}')) {
+                    $marks[$m] = true;
+                }
+            }
+        }
+
+        return $marks;
     }
 
     /** @param list<Token> $tokens */
@@ -554,6 +886,9 @@ final class ExpressionTransformer
         }
 
         if (! $hasParens) {
+            if ($this->computedExpression) {
+                return [substr($result, 0, strlen($result) - strlen($objExpr))."data_get({$objExpr}, '{$methodName}')", $methodIdx];
+            }
             return null;
         }
 
@@ -569,6 +904,10 @@ final class ExpressionTransformer
         }
 
         $args = trim($args);
+        if ($this->computedExpression && in_array($methodName, ['filter', 'map', 'reduce'], true)) {
+            $mapping = $this->computedCollection($methodName, $objExpr, $args);
+            return [substr($result, 0, strlen($result) - strlen($objExpr)).$mapping, $closeIdx];
+        }
         $phpArgs = $args === '' ? '' : $this->transformExpression($args);
         $mapping = JsMethodMap::map($methodName, $objExpr, $phpArgs);
 
@@ -577,6 +916,32 @@ final class ExpressionTransformer
         }
 
         return [substr($result, 0, strlen($result) - strlen($objExpr)) . $mapping, $closeIdx];
+    }
+
+    /** Collection callbacks use PHP arrow closures (capture inputs by value). */
+    private function computedCollection(string $method, string $object, string $arguments): string
+    {
+        $args = Balanced::splitTopLevelStripped($arguments, ',');
+        $callback = $args[0] ?? '';
+        if (!Re::match('/^\s*(?:\(([^()]*)\)|([A-Za-z_]\w*))\s*=>\s*([\s\S]+)$/', $callback, $m)) {
+            throw new \InvalidArgumentException('Computed .'.$method.' requires an expression arrow callback.');
+        }
+        $params = array_map('trim', explode(',', trim($m[1] !== '' ? $m[1] : $m[2])));
+        if (count($params) > 2 || str_starts_with(trim($m[3]), '{')) {
+            throw new \InvalidArgumentException('Computed callbacks support one or two parameters and an expression body.');
+        }
+        foreach ($params as $param) {
+            if (!Re::match('/^[A-Za-z_]\w*$/', $param)) throw new \InvalidArgumentException('Invalid computed callback parameter: '.$param);
+        }
+        $closure = 'fn('.implode(', ', array_map(static fn(string $p): string => '$'.$p, $params)).') => '.$this->transformExpression($m[3]);
+        $array = "array_values({$object})";
+        return match ($method) {
+            'filter' => "array_values(array_filter({$array}, {$closure}, ARRAY_FILTER_USE_BOTH))",
+            'map' => "array_map({$closure}, {$array}, array_keys({$array}))",
+            'reduce' => count($args) === 2
+                ? "array_reduce({$array}, {$closure}, ".$this->transformExpression($args[1]).')'
+                : throw new \InvalidArgumentException('Computed .reduce requires an explicit initial value.'),
+        };
     }
 
     /** Biểu thức đối tượng ngay trước dấu chấm, đọc ngược từ cuối kết quả. */
@@ -665,7 +1030,7 @@ final class ExpressionTransformer
             $result = $this->replaceDirectiveArgs($result, $dir, $plain);
         }
 
-        foreach (['class', 'style', 'exec', 'show', 'hide', 'switch', 'case'] as $dir) {
+        foreach (['class', 'style', 'exec', 'switch', 'case'] as $dir) {
             $result = $this->replaceDirectiveArgs($result, $dir, $plain);
         }
 

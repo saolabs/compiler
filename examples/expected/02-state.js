@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class StateViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -37,8 +36,11 @@ class StateView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, StateViewController);
         const App = app("App");
+        const $view = this;
+        const $app = App;
+        const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -88,6 +90,7 @@ class StateView extends View {
         const __VARIABLE_LIST__ = [];
 
 
+
         this.__ctrl__.setUserDefinedConfig({
 
         });
@@ -125,7 +128,7 @@ class StateView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -140,18 +143,25 @@ class StateView extends View {
             this.html(`e1`, "div", parentElement,
                 { classes: [{ type: 'static', value: "counter" }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "span", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["name"], (parentElement) => name),
                     this.text(' đã bấm '),
                     this.output(`e11o2`, parentElement, true, ["count"], (parentElement) => count),
                     this.text(' lần')
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e12`, "button", parentElement,
                     { events: { click: [(event) => setCount(count + 1)] } },
                     (parentElement) => [
                     this.text('Tăng')
-                    ])
-                ])
+                    ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

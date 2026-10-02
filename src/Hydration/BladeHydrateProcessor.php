@@ -20,13 +20,6 @@ use Saola\Compiler\Support\Re;
 final class BladeHydrateProcessor
 {
     /** @var array<string, true> */
-    private const VOID_ELEMENTS = [
-        'area' => true, 'base' => true, 'br' => true, 'col' => true,
-        'embed' => true, 'hr' => true, 'img' => true, 'input' => true,
-        'link' => true, 'meta' => true, 'param' => true, 'source' => true,
-        'track' => true, 'wbr' => true,
-    ];
-
     /** @var array<string, true> */
     private const EVENT_NAMES = [
         'click' => true, 'dblclick' => true, 'mousedown' => true, 'mouseup' => true,
@@ -127,6 +120,7 @@ final class BladeHydrateProcessor
         // TỪNG DÒNG nên thẻ nhiều dòng không khớp được — element đó mất hydrate
         // id, tức không hydrate được. Chỉ ghép phần BÊN TRONG thẻ mở; nội dung
         // không bị đụng.
+        $templateContent = Html::normalizeTextareaBindings($templateContent);
         $templateContent = Html::joinMultilineOpenTags($templateContent);
         // Directive điều khiển phải đứng riêng dòng: cả hai emitter xử lý
         // theo DÒNG nên nội dung dính cùng dòng sẽ mất (§14).
@@ -146,6 +140,12 @@ final class BladeHydrateProcessor
         $inSsr = false;
 
         foreach ($lines as $index => $rawLine) {
+            // RCDATA is text, even when a line looks like a directive or HTML.
+            // Comment markers would become part of textarea.value/title text.
+            if (in_array(end($tagStack), ['textarea', 'title'], true)) {
+                $output[] = $this->processHtmlAndOutputs($rawLine, $tagStack, $loopScopes);
+                continue;
+            }
             $stripped = self::pyStrip($rawLine);
             Re::match('/^(\s*)/u', $rawLine, $indentMatch);
             $indent = $indentMatch[1] ?? '';
@@ -481,6 +481,21 @@ final class BladeHydrateProcessor
         while ($pos < $length) {
             $remaining = substr($line, $pos);
 
+            $textTag = end($tagStack);
+            if (in_array($textTag, ['textarea', 'title'], true)) {
+                // Only the matching end tag is markup in RCDATA. Preserve Blade
+                // echoes for SSR, without allocating output IDs or markers.
+                if (!preg_match('~</\\s*' . $textTag . '\\s*>~i', $remaining, $end, PREG_OFFSET_CAPTURE)) {
+                    $parts[] = $remaining;
+                    break;
+                }
+                if ($end[0][1] > 0) {
+                    $parts[] = substr($remaining, 0, $end[0][1]);
+                    $pos += $end[0][1];
+                    continue;
+                }
+            }
+
             // Quét theo byte: $pos có thể đang ở giữa một codepoint UTF-8 khi
             // nhánh "regular char" tiến từng byte; thêm /u ở đây sẽ làm PCRE
             // ném malformed UTF-8 trên text tiếng Việt/emoji.
@@ -499,7 +514,7 @@ final class BladeHydrateProcessor
                 $tagName = strtolower($open['tag']);
                 $attrsSource = $open['attrs'];
                 $slash = $open['slash'];
-                $isVoid = isset(self::VOID_ELEMENTS[$tagName]) || $slash !== '';
+                $isVoid = isset(Html::VOID_ELEMENTS[$tagName]) || $slash !== '';
                 if ($isVoid) {
                     $elementId = $this->idGenerator->nextElement($tagName);
                 } else {

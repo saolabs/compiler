@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class PropsChildrenViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -37,8 +36,11 @@ class PropsChildrenView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, PropsChildrenViewController);
         const App = app("App");
+        const $view = this;
+        const $app = App;
+        const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -65,6 +67,7 @@ class PropsChildrenView extends View {
         __UPDATE_DATA_TRAIT__.tone = __next => { tone = __next; updateStateByKey('tone', __next); };
         __UPDATE_DATA_TRAIT__.__ONE_CHILDREN_CONTENT__ = __next => { __ONE_CHILDREN_CONTENT__ = __next; updateStateByKey('__ONE_CHILDREN_CONTENT__', __next); };
         const __VARIABLE_LIST__ = ["title", "tone", "__ONE_CHILDREN_CONTENT__"];
+
 
 
         this.__ctrl__.setUserDefinedConfig({
@@ -103,7 +106,7 @@ class PropsChildrenView extends View {
 
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -118,15 +121,22 @@ class PropsChildrenView extends View {
             this.html(`e1`, "article", parentElement,
                 { classes: [{ type: 'static', value: "card" }, { type: 'binding', value: "card-accent", factory: () => tone === 'accent', stateKeys: ["tone"] }] },
                 (parentElement) => [
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e11`, "h2", parentElement, {}, (parentElement) => [
                     this.output(`e11o1`, parentElement, true, ["title"], (parentElement) => title)
                 ]),
+                this.text('\n'),
+                this.text('        '),
                 this.html(`e12`, "div", parentElement,
                     { classes: [{ type: 'static', value: "card-body" }] },
                     (parentElement) => [
                     ...this.__children(__ONE_CHILDREN_CONTENT__, parentElement)
-                    ])
-                ])
+                    ]),
+                this.text('\n'),
+                this.text('    ')
+                ]),
+            this.text('\n')
             ]);
             }
         });

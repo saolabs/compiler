@@ -2,16 +2,13 @@
 
 Trình biên dịch `.sao` viết bằng PHP thuần. Cài qua Composer.
 
-> **Trạng thái: P0–P6 xong. Byte parity đầu-cuối, đã chạy thật trong app.**
-> `builder/src/index.js` gọi `vendor/bin/saoc` (có cả worker `serve`).
-> `php artisan sao:compile` chạy được không cần Node.
-> Bản Python **không còn trên đường build**. Bộ oracle/parity chỉ giữ cục bộ
-> trong `tests/Parity/`, đã được `.gitignore` và không phân phối cùng package.
-> Theme runtime (P7) chưa triển khai.
+> Compiler PHP sinh Blade và JavaScript/TypeScript từ `.sao` trong cùng một lời gọi.
+> Builder gọi `vendor/bin/saoc`; Artisan có thể compile bằng PHP không cần Node.
+> Bắt đầu với [quy ước `.sao`](../saola/docs/SAO_FILE.md),
+> [setup declarations](docs/setup-declarations.md) và [types/computed](docs/typed-computed.md).
+> Số liệu parity chuyển đổi bên dưới là lịch sử di trú, không phải release gate hiện tại.
 
-
-
-## Bằng chứng mạnh nhất
+## Lịch sử chuyển đổi compiler
 
 Compile lại **toàn bộ 56 view production** bằng `bin/saoc` rồi so với output đã
 commit (do pipeline Python cũ sinh ra):
@@ -128,14 +125,13 @@ tổng khoảng 4.500–5.000 dòng.
 
 ## Vì sao có package này
 
-Compiler hiện tại là Python, được Node spawn ra — nên chỉ chạy được lúc build.
+Compiler cũ dùng Python được Node spawn khi build.
 Bản PHP mở ra: compile in-process, không cần Python3/Node ở production, và về sau
 là cài theme từ trang admin mà không cần redeploy.
 
-Phần thưởng ngoài dự kiến: bản Python duyệt cây **hai lần độc lập** (một cho
-Blade, một cho JS) rồi hai bên phải tự khớp marker id với nhau. Bản PHP duyệt
-**một lần, hai bộ phát mã**, dùng chung một allocator — marker desync trở thành
-trạng thái không biểu diễn được.
+Hai emitter hiện dùng quy tắc marker chung. Chúng vẫn có các bước xử lý riêng;
+contract tests và kiểm marker giữa Blade/client là cần thiết để phát hiện lệch.
+Không coi việc gọi compiler một lần là bằng chứng marker không thể lệch.
 
 ## Chuẩn code
 

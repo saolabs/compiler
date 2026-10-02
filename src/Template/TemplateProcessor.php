@@ -12,6 +12,7 @@ use Saola\Compiler\Directive\LoopHandlers;
 use Saola\Compiler\Directive\SectionHandlers;
 use Saola\Compiler\Expr\ExpressionCompiler;
 use Saola\Compiler\Support\Balanced;
+use Saola\Compiler\Support\Re;
 
 /** Orchestrator port of sao2js/template_processor.py. */
 final class TemplateProcessor
@@ -278,6 +279,11 @@ final class TemplateProcessor
 
     private function includeOutput(string $path, string $data): string
     {
+        // Khoá `on$<tên>` là listener của component, không phải dữ liệu — đường
+        // string-template này không gắn được listener nên chúng vô nghĩa ở đây.
+        // Bỏ trước khi compile: để lại thì `resolveUserMethodCalls` soi vào thân
+        // handler và cảnh báo nhầm về setter state, trên chính đầu ra bị vứt đi.
+        $data = $this->dropListenerEntries($data);
         preg_match_all('/\$(\w+)/', $data, $matches);
         $used = array_values(array_intersect($matches[1] ?? [], array_keys($this->stateVariables)));
         $dataJs = str_starts_with($data, '[') && str_ends_with($data, ']') ? $this->convertPhpArrayToObject($data) : (preg_replace('/\$(\w+)/', '$1', $data) ?? $data);
@@ -299,6 +305,23 @@ final class TemplateProcessor
         return '{' . implode(', ', $parts) . '}';
     }
 
+    /** Bỏ các cặp `'on$<tên>' => …` khỏi một mảng data dạng PHP. */
+    private function dropListenerEntries(string $data): string
+    {
+        if (! str_contains($data, 'on$')) return $data;
+        $trimmed = trim($data);
+        $wrapped = str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']');
+        $inner = $wrapped ? substr($trimmed, 1, -1) : $trimmed;
+        $kept = [];
+        foreach ($this->splitTopLevel($inner, ',') as $entry) {
+            if (Re::match('/^[\'"]on\$/', ltrim($entry))) continue;
+            if (trim($entry) !== '') $kept[] = trim($entry);
+        }
+        $joined = implode(', ', $kept);
+
+        return $wrapped ? '[' . $joined . ']' : $joined;
+    }
+
     private function resolveImportIncludes(string $code): string
     {
         for ($iteration = 0; $iteration < 100 && preg_match('/@importInclude\s*\(/', $code, $match, PREG_OFFSET_CAPTURE) === 1; $iteration++) {
@@ -317,8 +340,11 @@ final class TemplateProcessor
             $children = $this->processMultilineIncludes($this->resolveImportIncludes($children));
             $argsParts = $this->splitTopLevel(trim($args), ',');
             if (count($argsParts) === 1) { $path = $argsParts[0]; $data = null; }
-            else { array_shift($argsParts); $path = array_shift($argsParts) ?? "''"; $data = $argsParts === [] ? null : implode(',', $argsParts); }
+            // $argsParts[2] (nếu có) là mảng listener — chỉ có nghĩa ở cây render
+            // AST, đường string-template này bỏ qua.
+            else { array_shift($argsParts); $path = array_shift($argsParts) ?? "''"; $data = $argsParts === [] ? null : $argsParts[0]; }
             $dataParts = [];
+            if ($data !== null) $data = $this->dropListenerEntries($data);
             if ($data !== null) foreach ($this->splitTopLevel(trim(trim($data), '[]'), ',') as $pair) {
                 $halves = $this->splitTopLevel($pair, '=>');
                 if (count($halves) >= 2) $dataParts[] = '"' . trim(trim(array_shift($halves)), "'\"") . '": ' . $this->expressions->compileStatement(trim(implode('=>', $halves)));

@@ -1,33 +1,38 @@
-# 03 — Cơ chế đăng ký directive
+# 03 — Directive registry
 
-## 1. Vấn đề đang có
+Chỗ ứng dụng, package và theme thêm directive `.sao` của riêng mình.
 
-Thêm directive `@money` vào compiler hôm nay phải sửa **ba file lõi**:
+Tài liệu này mô tả **thứ đang chạy**. Phần thiết kế chưa xây nằm riêng ở §7 và
+được đánh dấu rõ — đừng viết code dựa vào nó.
 
-| File | Sửa gì |
-|---|---|
-| `sao2js/template_ast.py` (1.601 dòng) | thêm một nhánh vào chuỗi `if re.match(r'@money\s*\(')` |
-| `sao2js/render_generator.py` (1.273 dòng) | thêm một nhánh vào chuỗi `isinstance($node, ...)` |
-| `sao2blade/hydrate_processor.py` (858 dòng) | thêm xử lý cho phía SSR |
+## 1. Registry làm gì
 
-Ba nơi, ba chuỗi điều kiện dài. Quên một chỗ = SSR và CSR lệch nhau, và triệu
-chứng hiện ra ở tận trình duyệt dưới dạng DOM nhân đôi.
-
-Hiện có ~70 directive, tất cả đều nằm trong ba chuỗi `if` đó.
-
-## 2. Mô hình mới
-
-`if/elif` → **bảng tra**. Directive là object tự mang đủ mọi thứ nó cần.
+`SaolaCompiler::compile()` chạy registry **hai lần trên cùng một nguồn**, mỗi
+lần cho một đích:
 
 ```php
-use Saola\Compiler\SaolaCompiler;
+$bladeSource = $this->directiveRegistry->transform($source, 'blade');
+$jsSource    = $this->directiveRegistry->transform($source, 'js');
+```
 
-SaolaCompiler::directive('money', function (string $expr) {
-    return [
-        'blade' => "{{ number_format({$expr}, 0, ',', '.') }} đ",
-        'js'    => "`\${fmtMoney({$expr})} đ`",
-    ];
-});
+Hai chuỗi kết quả đi tiếp vào pipeline bình thường. Nghĩa là directive người
+dùng là một bước **thay thế văn bản trước khi parse**, không phải một node trong
+AST. Hệ quả của điều đó nằm ở §6.
+
+Vì sao phải hai đích chứ không một, như `Blade::directive()` của Laravel:
+Laravel chỉ sinh PHP. Saola sinh cả Blade lẫn JavaScript cho cùng một nguồn, và
+hai bên phải ra cùng một DOM. Một directive chỉ khai một đích là mở đường cho
+đúng lớp bug tốn nhiều thời gian nhất của dự án này — SSR và CSR lệch nhau.
+
+## 2. API
+
+```php
+use Saola\Compiler\Directive\DirectiveRegistry;
+
+$registry->directive('money', fn (string $expr) => [
+    'blade' => "{{ number_format({$expr}, 0, ',', '.') }} đ",
+    'js'    => "`\${fmtMoney({$expr})} đ`",
+]);
 ```
 
 Dùng trong `.sao`:
@@ -36,263 +41,209 @@ Dùng trong `.sao`:
 <span>@money(product.price)</span>
 ```
 
-Giống tinh thần `Blade::directive()` của Laravel, khác một điểm cốt tử: **Saola
-phải phát ra hai đích, không phải một.** Laravel chỉ sinh PHP. Saola sinh cả
-Blade (SSR) lẫn JS (CSR), và hai cái phải khớp nhau.
+Dạng khối nhận thêm phần thân:
 
-Đó là lý do closure trả về `['blade' => ..., 'js' => ...]` chứ không phải một chuỗi.
+```php
+$registry->blockDirective('repeat', fn (string $expr, string $body) => [
+    'blade' => "@for(\$i = 0; \$i < {$expr}; \$i++){$body}@endfor",
+    'js'    => "this.__range({$expr}, (i) => [{$body}])",
+]);
+```
 
-## 3. Ba tầng — không phải directive nào cũng mở
+Ba entrypoint, tất cả trả `$this` để nối chuỗi:
 
-Không nên cho phép ghi đè mọi thứ. Cấu trúc điều khiển quyết định hình dạng AST
-và thứ tự cấp phát marker; cho ghi đè là mời bug hydration vào nhà.
+| Method | Dùng khi |
+|---|---|
+| `directive(string $name, callable $handler, bool $override = false)` | dạng inline `@money(...)` |
+| `blockDirective(string $name, callable $handler, bool $override = false)` | dạng khối `@repeat(...) … @endrepeat` |
+| `registerUser(UserDirective $directive, bool $override = false)` | khi tự dựng `UserDirective` |
+
+### Thiếu một đích là lỗi compile
+
+Handler phải trả mảng có **cả** `blade` lẫn `js`, cả hai là chuỗi. Thiếu thì
+`UserDirective::emit()` ném ngay:
+
+```
+CompileException: Directive @money phải phát đủ hai đích 'blade' và 'js'.
+```
+
+Đây là chỗ duy nhất trong compiler biến "quên một phía" từ một bug im lặng ở
+trình duyệt thành một lỗi lúc build. Không có cờ nào tắt được nó — muốn một
+directive chỉ có tác dụng ở một phía thì trả chuỗi rỗng cho phía kia, và bọc
+nội dung trong `@ssr`/`@csr` nếu cần khối chỉ thuộc một bên.
+
+## 3. Ba tầng
+
+Không phải directive nào cũng cho ghi đè. Cấu trúc điều khiển quyết định hình
+dạng AST và thứ tự cấp phát marker; cho ghi đè là mời bug hydration vào nhà.
 
 | Tầng | Directive | Ghi đè? |
 |---|---|---|
-| **T0 — Khoá** | `@if @elseif @else @foreach @for @while @switch @case @default @break` `@startMarker @endMarker @startReactive @endReactive @pageStart @pageEnd @out` | ❌ Không bao giờ. Đây là hình dạng AST và hợp đồng marker |
-| **T1 — Lõi** | `@useState @states @vars @props @let @const @computed @include @importInclude @children @extends @yield @section @block @wrapper @await @fetch @subscribe` | ⚠️ Chỉ ghi đè khi khai báo `override: true` tường minh. Có cảnh báo |
-| **T2 — Mở** | Mọi directive người dùng tự tạo: inline, attribute, block | ✅ Đây là mục tiêu thật của registry |
+| **T0 — Khoá** | `@if @elseif @else @foreach @for @while @switch @case @default @break` `@startMarker @endMarker @startReactive @endReactive @pageStart @pageEnd @hydrate @out` | ❌ Không bao giờ. `registerUser()` ném `InvalidArgumentException` kể cả khi có cờ |
+| **T1 — Lõi** | `@useState @states @vars @props @let @const @computed @include @importInclude @children @extends @yield @section @block @wrapper @await @fetch @subscribe`, cộng toàn bộ directive sự kiện, binding và element | ⚠️ Cần `override: true` tường minh, nếu không ném exception |
+| **T2 — Mở** | Mọi tên còn lại | ✅ Đăng ký tự do |
 
-Toàn bộ ~70 directive lõi được viết lại thành class ở tầng T0/T1, **dùng chung
-đúng interface với directive người dùng**. Không có đường tắt riêng cho directive
-lõi — nếu interface không đủ để biểu diễn `@foreach`, thì interface đó chưa đúng.
-
-## 4. Interface đầy đủ
-
-Closure là lối tắt cho trường hợp đơn giản. Directive phức tạp cài interface:
-
-```php
-namespace Saola\Compiler\Directive;
-
-interface Directive
-{
-    /** 'money' → khớp @money */
-    public function name(): string;
-
-    /** true nếu là dạng khối: @repeat ... @endrepeat */
-    public function isBlock(): bool;
-
-    /** Nguồn → node AST. Trả null = không nhận, thử directive kế tiếp. */
-    public function parse(ParseContext $ctx): ?Node;
-}
-
-/** Phát mã SSR. */
-interface EmitsBlade
-{
-    public function toBlade(Node $node, BladeContext $ctx): string;
-}
-
-/** Phát mã CSR. */
-interface EmitsJs
-{
-    public function toJs(Node $node, JsContext $ctx): string;
-}
-
-/** Chạy TRƯỚC khi parse — dịch cú pháp Saola sang PHP/Blade. */
-interface Preprocesses
-{
-    public function transform(string $source, PreContext $ctx): string;
-}
-```
-
-### Quy tắc phải có cả hai đích
-
-Một directive cài `EmitsBlade` mà không cài `EmitsJs` (hoặc ngược lại) sẽ
-**dừng compile với lỗi**, không phải cảnh báo:
-
-```
-CompileException: Directive @money khai báo EmitsBlade nhưng thiếu EmitsJs.
-  Directive sinh DOM phải phát cả hai đích, nếu không hydration sẽ lệch.
-  Nếu cố ý chỉ dùng một phía, khai báo tường minh:
-    - implements SsrOnly     (chỉ SSR, client bỏ qua)
-    - implements ClientOnly  (chỉ CSR, SSR phát chuỗi rỗng)
-```
-
-Đây là bản dịch của lớp bug được ghi lại nhiều nhất trong repo này thành một
-**lỗi lúc compile**. Nó là lý do chính đáng nhất để registry tồn tại — quan trọng
-hơn cả sự tiện tay.
-
-## 5. Marker id: lấy từ context, không tự bịa
-
-Directive sinh nội dung reactive **phải** xin id qua context:
-
-```php
-public function toBlade(Node $node, BladeContext $ctx): string
-{
-    $id = $ctx->markerId($node);          // ✅ đúng
-    // $id = md5($node->expr);            // ❌ SAI — sẽ lệch với phía JS
-    return "@startMarker('text', '{$id}'){{ ... }}@endMarker('text', '{$id}')";
-}
-
-public function toJs(Node $node, JsContext $ctx): string
-{
-    $id = $ctx->markerId($node);          // cùng node → CÙNG id, đã bảo đảm
-    return "this.reactive('{$id}', () => ...)";
-}
-```
-
-`markerId()` tra vào `MarkerAllocator` dùng chung, khoá theo identity của node.
-Hai emitter hỏi cùng một node thì nhận về cùng một id — theo cấu trúc, không phải
-theo quy ước. Directive **không thể** làm lệch marker kể cả khi cố tình.
-
-## 6. Các dạng lối tắt
-
-### Inline (trường hợp 90%)
-
-```php
-SaolaCompiler::directive('money', fn(string $e) => [
-    'blade' => "{{ number_format({$e}, 0, ',', '.') }}",
-    'js'    => "fmtMoney({$e})",
-]);
-```
-
-### Attribute — bám vào element
-
-```php
-SaolaCompiler::attributeDirective('tooltip', fn(string $e) => [
-    'blade' => ['data-tooltip' => "{{ {$e} }}"],
-    'js'    => ['data-tooltip' => $e],
-]);
-```
-
-```blade
-<button @tooltip('Lưu lại')>Lưu</button>
-```
-
-### Block
-
-```php
-SaolaCompiler::blockDirective('repeat', fn(string $e, string $body) => [
-    'blade' => "@for(\$i = 0; \$i < {$e}; \$i++){$body}@endfor",
-    'js'    => "this.__range({$e}, (i) => [{$body}])",
-]);
-```
-
-## 7. Đăng ký ở đâu
-
-### Trong app Laravel
-
-```php
-// app/Providers/AppServiceProvider.php
-public function boot(): void
-{
-    SaolaCompiler::directive('money', ...);
-}
-```
-
-### Trong package
-
-```php
-// SaolaCompilerServiceProvider tự quét
-$compiler->directives()->registerFrom(MyPackageDirectives::class);
-```
-
-### Trong theme — `sao.directives.php` ở gốc theme
-
-```php
-// themes/dark/sao.directives.php
-return [
-    new \Theme\Dark\Directives\HeroDirective(),
-];
-```
-
-> ⚠️ File này là **code PHP do theme cung cấp**. Nạp nó = chạy code của theme.
-> Xem [04 §5](04-runtime-compile.md#5-bảo-mật-đọc-kỹ-mục-này) và câu hỏi mở Q5.
-> Ở chế độ `sandbox: true`, file này **không được nạp**.
-
-### Cho Node CLI
-
-```bash
-php bin/saoc compile in.sao --directives=./sao.directives.php --json
-```
-
-## 8. Thứ tự phân giải
-
-1. Directive T0 (khoá) — khớp trước, không thể chặn
-2. Directive người dùng đăng ký (sau nhất thắng — cho phép ghi đè T1 có chủ ý)
-3. Directive lõi T1
-4. Không khớp → giữ nguyên văn bản gốc, kèm cảnh báo trong `CompileResult::$warnings`
-
-`parse()` trả `null` nghĩa là "không phải của tôi" → thử tiếp. Cho phép một
-directive nhận có điều kiện tuỳ ngữ cảnh.
-
-## 9. Lợi ích phụ: kiểm thử
-
-Registry biến mỗi directive thành một đơn vị test độc lập, không cần compile cả view:
-
-```php
-it('@money khớp giữa blade và js', function () {
-    $d = new MoneyDirective();
-    expect($d)->toEmitMatchingMarkers('@money(price)');
-});
-```
-
-Hôm nay muốn test một directive phải compile trọn một file `.sao` rồi so chuỗi
-output — chính là cách 20 test hiện tại đang làm.
-
----
-
-## 10. Rà soát registry — kết quả
-
-Rà lại sau khi registry đã đi vào dùng. Bốn phát hiện, hai đã sửa.
-
-### ✅ Đã sửa — 32 directive nằm ngoài mọi tầng
-
-`@class`, `@style`, `@attr`, `@bind`, `@checked`, `@val`, và **toàn bộ** directive
-sự kiện (`@click`, `@change`, `@submit`, …) trước đây **không thuộc T0 lẫn T1**.
-Đăng ký đè chúng được chấp nhận mà **không cần cờ, không cảnh báo**.
-
-Hậu quả im lặng — đè `@class` không cờ:
+T0 là hằng `LOCKED`, T1 là hằng `CORE` **cộng** ba hằng lấy thẳng từ
+`ExpressionTransformer`: `EVENT_DIRECTIVES`, `BIND_DIRECTIVES`,
+`ELEMENT_DIRECTIVES`. Lấy từ nguồn thay vì chép tay là có lý do: trước đây 32
+directive (`@class`, `@style`, `@attr`, `@bind`, `@checked`, `@val` và mọi
+directive sự kiện) **không thuộc tầng nào**, nên đè được mà không cần cờ và
+không có cảnh báo nào. Hậu quả im lặng khi đè `@class`:
 
 ```blade
 trước : <div @class([$__VIEW_ID__ . '-e1', 'a'=> $on])>x</div>
 sau   : <div @class([$__VIEW_ID__ . '-e1']) @attr(['X' => true])>x</div>
 ```
 
-Class điều kiện biến mất, lại còn chèn thêm một thuộc tính rác. Không lỗi gì.
+Class điều kiện biến mất, lại chèn thêm một thuộc tính rác, không lỗi gì. Có
+unit test khẳng định mọi directive compiler xử lý đều thuộc một tầng — thêm
+directive mới mà quên khai tầng thì test đỏ.
 
-**Sửa:** tầng T1 lấy danh sách từ chính hằng của `ExpressionTransformer`
-(`EVENT_DIRECTIVES`, `BIND_DIRECTIVES`, `ELEMENT_DIRECTIVES`) thay vì chép tay
-— hai bản chép tay chắc chắn lệch nhau theo thời gian, mà lệch ở đây nghĩa là
-lại hở. Có unit test khẳng định **mọi** directive compiler xử lý đều thuộc một
-tầng; thêm directive mới mà quên khai tầng thì test đỏ.
+### 3.1. Namespace `#` là tập ĐÓNG
 
-### ✅ Đã sửa — `transform()` viết lại cả trong `@verbatim` và comment
+`#if="cond"` viết trên thẻ là cách viết khác của `@if(cond)` bọc quanh thẻ đó.
+Compiler hạ nó về directive khối tương ứng ở
+`Support\Html::expandTagDirectives()`, gọi từ
+`ExpressionTransformer::transformTemplate()` **trước** `transformDirectives()` —
+tức trước cả registry. Chi tiết: [SAO_ELEMENT_DIRECTIVES_RFC.md](../../docs/SAO_ELEMENT_DIRECTIVES_RFC.md).
 
-Directive người dùng bị thay cả bên trong `@verbatim` và `{{-- --}}`. Trang docs
-in ví dụ `@money(2)` sẽ bị chính `@money` của người dùng viết lại — tài liệu
-hiện ra thứ khác thứ nó đang mô tả.
+| `#` | hạ thành | ghi chú |
+|---|---|---|
+| `#if` `#elseif` `#else` | `@if` `@elseif` `@else` | chuỗi nhánh phải là sibling liền kề, chỉ cách nhau bởi khoảng trắng |
+| `#switch` | `@switch` | ca DUY NHẤT bọc **ruột** thẻ, không bọc thẻ; con phải toàn `#case`/`#default` |
+| `#case` `#default` | `@case` `@default` | `@break` do compiler tự chèn |
+| `#foreach` `#for` `#while` | `@foreach` `@for` `@while` | bọc thẻ như `#if` |
+| `#key` | `@key` | bạn đồng hành của directive lặp; ngoại lệ duy nhất của quy tắc một-directive-mỗi-thẻ |
 
-**Sửa:** che hai vùng đó trước khi thay, khôi phục sau. Cùng cách preprocessor
-và hydrate processor đã làm.
+**Không đăng ký được `#` mới.** Registry chỉ nhận tên `@`. Bảng trên là tập
+đóng nằm trong `Html::TAG_DIRECTIVES`; đây là quyết định E-07 của RFC, không
+phải thiếu sót.
 
-### ⚠️ Chưa sửa — `parse()` KHÔNG nằm trên đường compile
+Khác `@` một điểm quan trọng: **`#` lạ là LỖI biên dịch**, không im lặng đi qua
+như `@chua_dang_ky` (§6). Bắt buộc phải thế, vì `parseElementAttributes` nhảy
+qua dấu `#` rồi khớp phần còn lại như thuộc tính thường — gõ nhầm `#fi="x"` sẽ
+lặng lẽ thành `fi="x"` trong HTML nếu không chặn.
 
-`DirectiveRegistry::parse()` và 14 directive dựng sẵn trong `builtins()` **chỉ
-được gọi từ cổng parity**, không nơi nào trong pipeline. `MainCompiler` dùng
-thẳng `DirectiveParsers`.
+Dấu `#` chỉ được coi là directive khi đứng ở **vị trí tên thuộc tính**: ngoài
+nháy, ngoài ngoặc của `@class(...)`, và ngay sau khoảng trắng. Nên
+`style="color: #fff"`, `href="#section"` và `title="xem #quan-trọng"` không bị
+đụng tới.
 
-Tức registry hiện là **mặt tiền song song**: nó có danh sách directive lõi, có
-phân tầng, có test — nhưng việc phân tích thật diễn ra ở chỗ khác. Không sai,
-nhưng cần biết để khỏi hiểu nhầm về khả năng của nó.
+## 4. `transform()` không đụng vào `@verbatim` và comment
 
-### ⚠️ Chưa sửa — `override: true` là THAY VĂN BẢN, không phải thay parser
+Trước khi thay, registry che `{{-- … --}}` và `@verbatim … @endverbatim`, thay
+xong mới khôi phục. Không có bước này thì trang tài liệu in ví dụ `@money(2)`
+sẽ bị chính `@money` của người dùng viết lại — tài liệu hiện ra thứ khác thứ nó
+đang mô tả. Cùng cách preprocessor và hydrate processor đang làm.
+
+## 5. Đăng ký ở đâu
+
+### Trong app Laravel
+
+`SaolaCompilerServiceProvider` đăng ký `DirectiveRegistry` và `SaolaCompiler`
+làm singleton, compiler dùng chính registry đó.
+
+```php
+// app/Providers/AppServiceProvider.php
+public function boot(): void
+{
+    $this->app->make(DirectiveRegistry::class)->directive('money', fn (string $e) => [
+        'blade' => "{{ number_format({$e}, 0, ',', '.') }}",
+        'js'    => "fmtMoney({$e})",
+    ]);
+}
+```
+
+> **Octane:** registry là singleton **có chủ ý**, để directive khai lúc boot còn
+> hiệu lực cho mọi lần compile. Nhưng một worker Octane sống hàng nghìn request,
+> nên đăng ký directive **trong request** sẽ rò sang các request sau. Chỉ đăng
+> ký lúc boot.
+
+### Cho CLI
+
+```bash
+php bin/saoc compile in.sao --directives=./sao.directives.php --json
+```
+
+File phải `return` một iterable. Mỗi phần tử là `UserDirective`,
+`BuiltinDirective`, hoặc cặp `'tên' => callable`; thứ khác thì `bin/saoc` ném
+`RuntimeException`.
+
+### Trong theme — `sao.directives.php` ở gốc theme
+
+> ⚠️ File này là **code PHP do theme cung cấp**. Nạp nó = chạy code của theme.
+> Ở chế độ `sandbox: true`, `bin/saoc` **từ chối nạp** và ném
+> `RuntimeException`. Xem [04 §5](04-runtime-compile.md#5-bảo-mật-đọc-kỹ-mục-này).
+
+## 6. Giới hạn của thiết kế hiện tại
+
+Hai điều dưới đây không phải bug, nhưng hiểu sai chúng sẽ dẫn tới kỳ vọng sai.
+
+### `parse()` và `builtins()` KHÔNG nằm trên đường compile
+
+`DirectiveRegistry::parse()` cùng 14 directive dựng sẵn trong `builtins()`
+(`ExtendsDirective`, `VarsDirective`, `PropsDirective`, …) **chỉ được gọi từ
+cổng parity**. Pipeline thật dùng thẳng `DirectiveParsers`: `MainCompiler` dựng
+`new DirectiveParsers($this->expressions)` và không hỏi registry.
+
+Tức phần `BuiltinDirective` của registry hiện là **mặt tiền song song**: nó có
+danh sách directive lõi, có phân tầng, có test — nhưng việc phân tích thật diễn
+ra ở chỗ khác. Chỉ nhánh `UserDirective` (`transform()`) là thực sự chạy khi
+compile.
+
+### `override: true` là thay VĂN BẢN, không phải thay parser
 
 Hệ quả trực tiếp của mục trên. Ghi đè một directive T1 chỉ chèn một bước thay
-thế văn bản **trước** khi parser chạy; parser lõi vẫn nguyên. Nên:
+thế văn bản **trước** khi parser chạy; parser lõi vẫn nguyên:
 
 ```php
 $registry->directive('states', fn () => ['blade' => '/*x*/', 'js' => '/*x*/'], override: true);
 // → @states({n:1}) bị xoá trước khi tới parser ⇒ view MẤT SẠCH state, không lỗi
 ```
 
-Đó là quyền của người dùng khi họ đã bật cờ, nhưng tài liệu trước đây gợi ý
-rằng ghi đè là *thay thế cách xử lý* — không phải. Dùng `override` để **viết
-lại cú pháp trước khi compile**, không phải để đổi ngữ nghĩa directive.
+Đó là quyền của người dùng khi họ đã bật cờ. Nhưng dùng `override` để **viết lại
+cú pháp trước khi compile**, đừng dùng nó để đổi ngữ nghĩa một directive lõi.
 
-### Ghi chú Octane
+### Directive lạ không có cảnh báo
 
-`SaolaCompilerServiceProvider` đăng ký `DirectiveRegistry` là **singleton** — cố
-ý, để directive khai trong `AppServiceProvider::boot()` còn hiệu lực cho mọi lần
-compile. Nhưng dưới Octane một worker sống hàng nghìn request: đăng ký directive
-**trong request** sẽ rò sang các request sau. Chỉ đăng ký lúc boot.
+`transform()` chỉ đụng tới tên đã đăng ký. `@chua_dang_ky(x)` đi qua nguyên vẹn
+và rơi xuống parser lõi như văn bản thường — không có cảnh báo nào trong
+`CompileResult::$warnings`.
+
+Namespace `#` thì ngược lại: tên lạ ném `CompileException` ngay (§3.1).
+
+## 7. Chưa xây — parse hai đích với marker id dùng chung
+
+Phần này là **hướng đi, không phải API**. Không có class nào dưới đây tồn tại
+trong `src/`.
+
+Mô hình hiện tại đủ cho directive sinh ra biểu thức hoặc đoạn markup tĩnh. Nó
+**không** đủ cho directive sinh vùng reactive, vì vùng reactive cần một marker
+id mà hai đích phải nhất trí. Hôm nay directive người dùng không có cách nào xin
+id đó, nên tự bịa id là con đường duy nhất — và tự bịa thì Blade với JS sẽ lệch.
+
+Hướng giải là cho directive nói chuyện với bộ cấp phát marker thay vì với chuỗi:
+
+```php
+// CHƯA CÓ — minh hoạ hướng đi
+public function toBlade(Node $node, BladeContext $ctx): string
+{
+    $id = $ctx->markerId($node);          // ✅ xin từ context
+    // $id = md5($node->expr);            // ❌ sẽ lệch với phía JS
+    return "@startMarker('text', '{$id}'){{ … }}@endMarker('text', '{$id}')";
+}
+```
+
+Điều kiện đúng đắn là: hai emitter hỏi **cùng một node** thì nhận **cùng một
+id**, theo cấu trúc chứ không theo quy ước. Chừng nào chưa có nó thì directive
+người dùng nên tránh sinh vùng reactive; sinh markup tĩnh hoặc biểu thức thì an
+toàn.
+
+## 8. Kiểm thử
+
+`tests/Unit/Directive/` — 18 test cho registry và tham số sự kiện. Directive
+người dùng test được mà không cần compile trọn một file `.sao`: dựng
+`UserDirective`, gọi `emit('blade', …)` và `emit('js', …)`, so hai chuỗi.
+
+Với directive lõi thì vẫn phải compile thật rồi so output, vì chúng nằm ở
+`DirectiveParsers` chứ không ở registry (§6).

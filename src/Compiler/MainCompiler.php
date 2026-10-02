@@ -8,7 +8,6 @@ use Saola\Compiler\Ast\Parser as AstParser;
 use Saola\Compiler\Declaration\DeclarationTracker;
 use Saola\Compiler\Directive\BindingDirectiveService;
 use Saola\Compiler\Directive\DirectiveParsers;
-use Saola\Compiler\Directive\ShowDirectiveHandler;
 use Saola\Compiler\Directive\StyleDirectiveHandler;
 use Saola\Compiler\Emit\JsEmitter;
 use Saola\Compiler\Expr\ExpressionCompiler;
@@ -25,6 +24,13 @@ use Saola\Compiler\Template\TemplateStructure;
 /** Pure-PHP orchestration port of sao2js/main_compiler.py::BladeCompiler. */
 final class MainCompiler
 {
+    private const LIFECYCLE_METHODS = [
+        'mounting', 'mounted', 'starting', 'started', 'pausing', 'paused',
+        'resuming', 'resumed', 'stopping', 'stopped', 'unmounting', 'unmounted',
+        'destroying', 'destroyed', 'onInit', 'onMounted', 'onUpdated', 'onDestroy',
+        'onActivated', 'onDeactivated', 'onPause', 'onResume',
+    ];
+
     private readonly ExpressionCompiler $expressions;
     private readonly DirectiveParsers $parsers;
     private readonly CompilerUtils $utils;
@@ -37,11 +43,15 @@ final class MainCompiler
     private bool $isTypescript = false;
     private string $scopeClass = '';
     /** @var array<string,true> */ private array $dataVarNames = [];
+    /** @var list<array<string,mixed>> */ private array $inlineStyles = [];
 
     public function __construct(
         ?string $viewTemplate = null,
         private readonly IdMode $idMode = IdMode::Terse,
         ?string $wrapperTemplate = null,
+        private readonly array $declarationTypes = [],
+        private readonly array $nativeComputed = [],
+        private readonly array $emptyObjectDefaults = [],
     )
     {
         $this->expressions = new ExpressionCompiler();
@@ -49,7 +59,7 @@ final class MainCompiler
         $this->utils = new CompilerUtils();
         $this->wrapperParser = new WrapperParser($wrapperTemplate);
         $this->registerParser = new RegisterParser();
-        $this->declarations = new DeclarationTracker($this->expressions);
+        $this->declarations = new DeclarationTracker($this->expressions, $this->nativeComputed);
         $this->analyzer = new TemplateAnalyzer();
         $this->bindings = new BindingDirectiveService();
         $path = dirname(__DIR__, 2).'/resources/templates/view.js';
@@ -85,6 +95,18 @@ final class MainCompiler
         return $this->expressions->helpers()->warnings();
     }
 
+    /**
+     * `<style>` của lượt compile vừa rồi, ĐÚNG như đã ghi vào `styles` của JS
+     * (đã scope). SaolaCompiler đăng ký chính bản này cho SSR, vì AssetManager
+     * so nội dung để adopt `<style>` server in sẵn — lệch một byte là chèn trùng.
+     *
+     * @return list<array{content: string, id?: string, className?: string, attributes?: array<string, mixed>}>
+     */
+    public function inlineStyles(): array
+    {
+        return $this->inlineStyles;
+    }
+
     public function compileBladeToJs(
         string $bladeCode,
         string $viewName,
@@ -95,23 +117,30 @@ final class MainCompiler
     {
         $this->scopeClass = ScopedStyle::classFor(ScopedStyle::extract($bladeCode));
         $bladeCode = trim($bladeCode);
-        $bladeCode = preg_replace('/@state\b(?=\s*\()/i', '@states', $bladeCode) ?? $bladeCode;
         $functionName ??= $this->convertViewPathToFunctionName($viewName);
         $factoryFunctionName ??= $functionName;
 
         [$bladeCode, $verbatimBlocks] = $this->protectVerbatim($bladeCode);
         $bladeCode = preg_replace('/@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\b[\s\S]*?@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\b/i', '', $bladeCode) ?? $bladeCode;
         [$bladeCode, $setupBlocks] = $this->protectScriptSetup($bladeCode);
-        $sentinel = '@@@@@@@@@@@@@@@@@@@@@@@--------------------------------$$$$$$$$$$$$$$$$$$$$$$$$$$';
-        $bladeCode = str_replace(['\\`', '`'], [$sentinel, '\\`'], $bladeCode);
-        $bladeCode = str_replace($sentinel, '\\`', $bladeCode);
+        $bladeCode = preg_replace('/@state\b(?=\s*\()/i', '@states', $bladeCode) ?? $bladeCode;
+        // Inspect template flags while setup literals are still protected.
+        // A string containing @fetch/@await must not enable data requests.
+        $flagCode = preg_replace('/{{--.*?--}}/s', '', $bladeCode) ?? $bladeCode;
+        $hasAwait = str_contains($flagCode, '@await') && (str_contains($flagCode, '@await(') || preg_match('/@await\s*$/m', $flagCode) === 1 || preg_match('/@await\s+/', $flagCode) === 1);
+        $hasFetch = str_contains($flagCode, '@fetch(');
+        // KHÔNG escape backtick toàn cục ở đây. Bản cũ đổi mọi ` thành \` cho ngữ
+        // cảnh template literal, nhưng nó sai cả hai đầu:
+        //   - văn xuôi: text đi tiếp vào jsTextLiteral (chuỗi nháy đơn), nơi \ lại
+        //     thành \\ → người đọc thấy dấu \ thừa (`.sao` hiện ra \`.sao\`);
+        //   - biểu thức: template literal lồng trong id `${...}` là JS HỢP LỆ, còn
+        //     bản escape thì SyntaxError — hỏng đúng ca nó định bảo vệ.
+        // @verbatim và <script setup> vốn đã được bóc ra trước đó nên không liên quan.
         foreach ($setupBlocks as $placeholder => $content) $bladeCode = str_replace($placeholder, $content, $bladeCode);
 
         $this->registerParser->reset();
         [$wrapperFunction, $wrapperConfigContent] = $this->wrapperParser->parseWrapperFile();
         $bladeCode = preg_replace('/{{--.*?--}}/s', '', $bladeCode) ?? $bladeCode;
-        $hasAwait = str_contains($bladeCode, '@await') && (str_contains($bladeCode, '@await(') || preg_match('/@await\s*$/m', $bladeCode) === 1 || preg_match('/@await\s+/', $bladeCode) === 1);
-        $hasFetch = str_contains($bladeCode, '@fetch(');
 
         $registerData = null;
         $assetPattern = '/<script\b[^>]*>|<style\b[^>]*>|<link\b(?=[^>]*\brel\s*=\s*["\'][^"\']*\bstylesheet\b[^"\']*["\'])[^>]*>/i';
@@ -121,6 +150,7 @@ final class MainCompiler
         $this->expressions->setUserMethods(array_keys($this->registerParser->getUserMethodNames()), $viewName);
         $this->isTypescript = $forceTypescript ?? (($registerData['setupLang'] ?? null) === 'typescript');
 
+        $this->expressions->setComputedNames([]);
         $tracked = array_map(static fn ($declaration): array => $declaration->toArray(), $this->declarations->parseAll($bladeCode));
         if (ChildrenSlot::has($bladeCode)) {
             $child = ['name' => '__ONE_CHILDREN_CONTENT__', 'hasDefault' => true, 'value' => "''"];
@@ -135,6 +165,20 @@ final class MainCompiler
             unset($declaration);
             if (!$found) array_unshift($tracked, ['type'=>'vars','variables'=>[$child]]);
         }
+        foreach ($tracked as &$declaration) {
+            foreach ($declaration['variables'] as &$var) {
+                if (isset($this->emptyObjectDefaults[$var['name'] ?? ''])) $var['value'] = '{}';
+            }
+            unset($var);
+        }
+        unset($declaration);
+        $computedNames = [];
+        foreach ($tracked as $declaration) {
+            if ($declaration['type'] === 'computed') {
+                foreach ($declaration['variables'] as $var) $computedNames[] = $var['name'];
+            }
+        }
+        $this->expressions->setComputedNames($computedNames);
         $dataDeclarations = $tracked;
 
         [$wrapperDeclarations, $variableList, $stateDeclarations] = $this->generateWrapperDeclarations($tracked);
@@ -209,10 +253,9 @@ final class MainCompiler
         $hasPrerender = $this->calculatePrerenderNeed($hasAwait, $hasFetch, $varsDeclaration, $sectionsInfo, $legacyCode, $useStateDeclarations, $letDeclarations, $constDeclarations);
         $templateContent = $this->bindings->processAllBindingDirectives($templateContent);
         $templateContent = (new StyleDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processStyleDirective($templateContent);
-        $templateContent = (new ShowDirectiveHandler($this->stringKeys($stateVariables), $this->expressions))->processShowDirective($templateContent);
 
-        $renderFunction = $this->generateStructuredRender($bladeForAst, $stateVariables, $variableList, $constDeclarations, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $hasPrerender, $hasAwait, $hasFetch);
-        $prerender = (new FunctionGenerators($this->isTypescript))->generatePrerenderFunction($hasAwait, $hasFetch, $varsDeclaration === '' ? '' : '    '.$varsDeclaration."\n", "    \n", $templateContent, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $conditionalContent, $hasPrerender);
+        [$renderFunction, $prerenderStaticBody] = $this->generateStructuredRender($bladeForAst, $stateVariables, $variableList, $constDeclarations, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $hasPrerender, $hasAwait, $hasFetch);
+        $prerender = (new FunctionGenerators($this->isTypescript))->generatePrerenderFunction($hasAwait, $hasFetch, $varsDeclaration === '' ? '' : '    '.$varsDeclaration."\n", "    \n", $templateContent, $extendedView, $extendsExpression, $extendsData, $sectionsInfo, $conditionalContent, $hasPrerender, $prerenderStaticBody);
 
         return $this->buildView(
             $viewName, $functionName, $factoryFunctionName, $registerData, $dataDeclarations,
@@ -228,7 +271,7 @@ final class MainCompiler
     private function protectVerbatim(string $code): array
     {
         $blocks=[]; $counter=0;
-        $code = preg_replace_callback('/@verbatim\s*(.*?)\s*@endverbatim/is', static function(array $m) use (&$blocks,&$counter): string { $p='__VERBATIM_BLOCK_'.$counter++.'__';$blocks[$p]=$m[1];return$p; }, $code) ?? $code;
+        $code = preg_replace_callback('/@verbatim([\s\S]*?)@endverbatim/i', static function(array $m) use (&$blocks,&$counter): string { $p='__VERBATIM_BLOCK_'.$counter++.'__';$blocks[$p]=$m[1];return$p; }, $code) ?? $code;
         return [$code,$blocks];
     }
 
@@ -236,7 +279,7 @@ final class MainCompiler
     private function protectScriptSetup(string $code): array
     {
         $blocks=[];$counter=0;
-        $code=preg_replace_callback('/<script\s+setup[^>]*>.*?<\/script>/is',static function(array$m)use(&$blocks,&$counter):string{$p='__SCRIPT_SETUP_BLOCK_'.$counter++.'__';$blocks[$p]=$m[0];return$p;},$code)??$code;
+        $code=preg_replace_callback('/<script\b(?=[^>]*\ssetup(?:\s|=|>))[^>]*>.*?<\/script>/is',static function(array$m)use(&$blocks,&$counter):string{$p='__SCRIPT_SETUP_BLOCK_'.$counter++.'__';$blocks[$p]=$m[0];return$p;},$code)??$code;
         return [$code,$blocks];
     }
 
@@ -269,7 +312,11 @@ final class MainCompiler
     }
 
     /** @param array<string,true> $stateVariables @param list<string> $variableList @param list<array<string,mixed>> $sectionsInfo */
-    private function generateStructuredRender(string $code, array $stateVariables, array $variableList, string $constDeclarations, ?string $extendedView, ?string $extendsExpression, ?string $extendsData, array $sectionsInfo, bool $hasPrerender, bool $hasAwait, bool $hasFetch): string
+    /**
+     * @return array{string,?string} [thân `render()`, thân `prerender()` cho phần
+     *   tĩnh khi có `@await`/`@fetch` — null nếu không có phần nào bị tách ra]
+     */
+    private function generateStructuredRender(string $code, array $stateVariables, array $variableList, string $constDeclarations, ?string $extendedView, ?string $extendsExpression, ?string $extendsData, array $sectionsInfo, bool $hasPrerender, bool $hasAwait, bool $hasFetch): array
     {
         foreach(['setup','import','imports','scope','scoped']as$type)$code=preg_replace('/<script\s+'.$type.'[^>]*>.*?<\/script>/is','',$code)??$code;
         $code=preg_replace('/@viewtype\s*\([^)]*\)/i','',$code)??$code;
@@ -293,9 +340,15 @@ final class MainCompiler
         $pre=[];if($hasPrerender&&($hasAwait||$hasFetch))foreach($sectionsInfo as$section)if(empty($section['useVars']))$pre[]=$section['name'];
         $hasExtends=$extendedView!==null||$extendsExpression!==null;
         $expression=$extendedView!==null?"__layout__ + '{$extendedView}'":$extendsExpression;
-        $body=(new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode))->generate($root,$hasExtends,$expression,$extendsData,null,$pre);
+        $emitter=fn():JsEmitter=>new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode);
+        $body=$emitter()->generate($root,$hasExtends,$expression,$extendsData,null,$pre);
         $lines=array_map(static fn(string$line):string=>trim($line)===''?'':'    '.$line,explode("\n",$body));
-        return "function () {\n".implode("\n",$lines)."\n}";
+        // Phần tĩnh bị `$pre` loại khỏi render() phải được sinh lại ở đây bằng
+        // chính các generator đó — trước kia FunctionGenerators tự viết tay
+        // `this.section(name, ..., () => '')` nên nội dung block/section tĩnh
+        // biến mất khỏi JS.
+        $preBody=($pre!==[]&&$hasExtends)?$emitter()->generate($root,$hasExtends,$expression,$extendsData,null,$pre,true):null;
+        return ["function () {\n".implode("\n",$lines)."\n}",$preBody];
     }
 
     /** @return list<array{int,int}> */
@@ -350,16 +403,33 @@ final class MainCompiler
             if(in_array($type,['vars','props'],true))continue;
             if(in_array($type,['let','const','useState','states'],true)){
                 if(!empty($var['isDestructuring'])){
-                    if(!empty($var['isUseState'])){if(($info=$this->extractStateInfo($var))!==null){$states[]=$info;array_push($lines,...$this->generateStateRegistrationLines($info));}}
+                    if(!empty($var['isUseState'])){if(($info=$this->extractStateInfo($var))!==null){$info['initialValue']=isset($this->emptyObjectDefaults[$info['stateKey']])?'{}':$info['initialValue'];$states[]=$info;array_push($lines,...$this->generateStateRegistrationLines($info));}}
                     elseif(in_array($type,['let','const'],true)){$open=($var['destructuringType']??'array')==='array'?'[':'{';$close=$open==='['?']':'}';$lines[]='    '.($type==='const'?'const':'let').' '.$open.implode(', ',$var['names']).$close.' = '.$var['value'].';';}
-                }elseif($type==='let')$lines[]='    let '.$var['name'].(!empty($var['hasDefault'])?' = '.$var['value']:'').';';
-                elseif($type==='const'&&!empty($var['hasDefault']))$lines[]='    const '.$var['name'].' = '.$var['value'].';';
+                }elseif($type==='let')$lines[]='    let '.$var['name'].$this->typeAnnotation($var['name']).(!empty($var['hasDefault'])?' = '.$var['value']:'').';';
+                elseif($type==='const'&&!empty($var['hasDefault']))$lines[]='    const '.$var['name'].$this->typeAnnotation($var['name']).' = '.$var['value'].';';
                 continue;
             }
-            if($type==='computed'){$name=$var['name'];preg_match_all('/\$?([A-Za-z_]\w*)/',$var['valuePhp']??'',$m);$deps=[];foreach($m[1]??[]as$dep)if(isset($known[$dep])&&$dep!==$name)$deps[$dep]=true;$deps=array_keys($deps);sort($deps);$depsJson=json_encode($deps,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);$lines[]="    let {$name};";$lines[]="    const get\${$name} = __STATE__.__.computed('{$name}', () => {$var['value']}, {$depsJson});";$lines[]="    {$name} = get\${$name}();";if($deps!==[])$lines[]="    __STATE__.__.subscribe(['{$name}'], () => { {$name} = get\${$name}(); });";}
+            if ($type === 'computed') {
+                $name = $var['name'];
+                $deps = [];
+                foreach (token_get_all('<?php '.($var['valuePhp'] ?? '')) as $token) {
+                    if (is_array($token) && $token[0] === T_VARIABLE) {
+                        $dep = substr($token[1], 1);
+                        if (isset($known[$dep])) $deps[$dep] = true;
+                    }
+                }
+                $deps = array_keys($deps);
+                sort($deps);
+                $depsJson = json_encode($deps, JSON_THROW_ON_ERROR);
+                $value = isset($this->nativeComputed[$name])
+                    ? $this->expressions->compileNativeComputed($this->nativeComputed[$name])
+                    : $this->expressions->compile($var['valuePhp']);
+                $returnType = $this->typeAnnotation($name);
+                $lines[] = "    const get\${$name} = __STATE__.__.computed('{$name}', (){$returnType} => {$value}, {$depsJson});";
+            }
         }
         if(in_array($type,['vars','props'],true)){
-            $parts=[];foreach($declaration['variables']as$var){$name=$var['name'];$parts[]=$name.(!empty($var['hasDefault'])?' = '.$var['value']:'');$traits[]=$this->isTypescript?"    __UPDATE_DATA_TRAIT__.{$name} = (__next: any) => { {$name} = __next; updateStateByKey('{$name}', __next); };":"    __UPDATE_DATA_TRAIT__.{$name} = __next => { {$name} = __next; updateStateByKey('{$name}', __next); };";$variables[]=$name;}if($parts!==[])$lines[]='    let {'.implode(', ',$parts).'} = __data__;';foreach($declaration['variables']as$var)$lines[]="    __STATE__.__.register('{$var['name']}', {$var['name']});";}
+            $parts=[];foreach($declaration['variables']as$var){$name=$var['name'];$parts[]=$name.(!empty($var['hasDefault'])?' = '.$var['value']:'');$traits[]=$this->isTypescript?"    __UPDATE_DATA_TRAIT__.{$name} = (__next: any) => { {$name} = __next; updateStateByKey('{$name}', __next); };":"    __UPDATE_DATA_TRAIT__.{$name} = __next => { {$name} = __next; updateStateByKey('{$name}', __next); };";$variables[]=$name;}if($parts!==[])$lines[]='    let {'.implode(', ',$parts).'}'.$this->propsBindingType($declaration['variables']).' = __data__;';foreach($declaration['variables']as$var)$lines[]="    __STATE__.__.register('{$var['name']}', {$var['name']});";}
         }
         array_push($lines,...$traits);$quoted=array_map(static fn($v)=>'"'.$v.'"',$variables);$lines[]='    const __VARIABLE_LIST__'.($this->isTypescript?': any':'').' = ['.implode(', ',$quoted).'];';$this->dataVarNames=array_fill_keys($variables,true);return[implode("\n",$lines),$variables,$states];
     }
@@ -379,7 +449,7 @@ final class MainCompiler
     /** @param array{stateKey:string,setterName:string,initialValue:string} $state @return list<string> */
     private function generateStateRegistrationLines(array$state):array
     {
-        $key=$state['stateKey'];$setter=$state['setterName'];$seed=$state['initialValue']!==''?$state['initialValue']:'null';$type=$this->isTypescript?': any':'';return[
+        $key=$state['stateKey'];$setter=$state['setterName'];$seed=$state['initialValue']!==''?$state['initialValue']:'null';$type=$this->isTypescript?': '.($this->declarationTypes[$key]??'any'):'';return[
             "    const set\${$key} = __STATE__.__.register('{$key}');",
             "    let {$key}{$type} = {$seed};",
             "    const {$setter} = (state{$type}) => {",
@@ -392,7 +462,25 @@ final class MainCompiler
     /** @param list<array<string,mixed>> $declarations */
     private function generatePropsInterface(array$declarations,string$component):string
     {
-        if(!$this->isTypescript)return'';$fields=[];$seen=[];foreach($declarations as$decl)if(in_array($decl['type'],['vars','props'],true))foreach($decl['variables']as$var){$name=$var['name']??null;if(!$name||isset($seen[$name]))continue;$seen[$name]=true;$type=!empty($var['hasDefault'])?$this->inferPropType((string)($var['value']??'')):'any';$fields[]="    {$name}?: {$type};";}$body=$fields===[]?'':implode("\n",$fields)."\n";return "/**\n * Props của view — sinh tự động từ @props/@vars, không sửa tay.\n * Optional hết vì khai báo nào cũng có default.\n */\nexport interface {$component}Props {\n{$body}    /** viewId server gán khi hydrate */\n    __SSR_VIEW_ID__?: string;\n    [key: string]: any;\n}\n";
+        if(!$this->isTypescript)return'';$fields=[];$seen=[];foreach($declarations as$decl)if(in_array($decl['type'],['vars','props'],true))foreach($decl['variables']as$var){$name=$var['name']??null;if(!$name||isset($seen[$name]))continue;$seen[$name]=true;$type=$this->declarationTypes[$name]??(!empty($var['hasDefault'])?$this->inferPropType((string)($var['value']??'')):'any');$fields[]="    {$name}?: {$type};";}$body=$fields===[]?'':implode("\n",$fields)."\n";return "/**\n * Props của view — sinh tự động từ @props/@vars, không sửa tay.\n * Optional hết vì khai báo nào cũng có default.\n */\nexport interface {$component}Props {\n{$body}    /** viewId server gán khi hydrate */\n    __SSR_VIEW_ID__?: string;\n    [key: string]: any;\n}\n";
+    }
+
+    /** @param list<array<string, mixed>> $variables */
+    private function propsBindingType(array $variables): string
+    {
+        if (!$this->isTypescript || $this->declarationTypes === []) return '';
+        $fields = [];
+        foreach ($variables as $var) {
+            $name = $var['name'];
+            $type = $this->declarationTypes[$name] ?? 'any';
+            $fields[] = $name.(!empty($var['hasDefault']) ? '?' : '').': '.$type;
+        }
+        return ': { '.implode('; ', $fields).' }';
+    }
+
+    private function typeAnnotation(string $name): string
+    {
+        return $this->isTypescript && isset($this->declarationTypes[$name]) ? ': '.$this->declarationTypes[$name] : '';
     }
 
     private function inferPropType(string$value):string
@@ -402,7 +490,23 @@ final class MainCompiler
 
     /** @param list<array<string,string>> $states */
     private function generateStateUpdates(array$states):string
-    { $out=[];foreach($states as$state)$out[]='update$'.$state['stateKey'].'('.$state['initialValue'].');';return implode("\n            ",$out); }
+    {
+        $out = [];
+        foreach ($states as $state) {
+            $value = $state['initialValue'];
+            // Pure object/array literals were already allocated in the constructor.
+            // Re-evaluating them at commit changes every item's reference after
+            // the first render and defeats reference-keyed row reconciliation.
+            $clean = preg_replace('/\'[^\']*\'|"[^"]*"/', '', $value) ?? $value;
+            preg_match_all('/[A-Za-z_$][\p{L}\p{N}_$]*/u', $clean, $matches);
+            $literal = in_array(substr(ltrim($value), 0, 1), ['[', '{'], true)
+                && !str_contains($value, '`')
+                && array_diff($matches[0] ?? [], ['true', 'false', 'null', 'undefined']) === [];
+            if ($literal) $value = $state['stateKey'];
+            $out[] = 'update$' . $state['stateKey'] . '(' . $value . ');';
+        }
+        return implode("\n            ", $out);
+    }
 
     /** @param list<array<string,string>> $states */
     private function generateDataStateUpdates(array$states):string
@@ -437,8 +541,20 @@ final class MainCompiler
 
         [$scriptsLine,$stylesLine,$resourcesLine]=$this->buildAssets($registerData);
         $stateUpdates=$this->generateStateUpdates($stateDeclarations);$dataStateUpdates=$this->generateDataStateUpdates($stateDeclarations);$lock=$stateDeclarations===[]?'':'lockUpdateRealState();';
-        $setupLang=$registerData['setupLang']??null;$ts=$setupLang==='typescript';$commitParams=$ts?'this: any':'';$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: any, data: any':$dataParam;$itemParams=$ts?'this: any, key: string, value: any':'key, value';
-        $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            this.data[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
+        // Đầu ra .ts KHÔNG chỉ đến từ <script setup lang="ts">: @state(n: number)…
+        // cũng bật nó qua $forceTypescript. Dùng chung $this->isTypescript (nguồn
+        // sự thật ở dòng ~139) — bám riêng setupLang thì view khai kiểu mà không
+        // có <script setup> vẫn ra .ts nhưng thiếu `this: ViewConfigThis`, và
+        // `this.config` lọt xuống `any` qua index signature của ViewRuntimeConfig.
+        $ts=$this->isTypescript;
+        // Tham số `this` là cú pháp CHỈ có ở TypeScript, bị xoá khi emit — không
+        // bao giờ là đối số thật. Cần nó vì ViewController gọi mấy hàm này bằng
+        // `fn.call(makeConfigThis(), …)`, tức receiver KHÔNG phải object chứa
+        // chúng; thiếu khai báo thì `tsc --strict` suy `this` = object literal và
+        // báo TS2339 ở `this.config`. Kiểu thật thay cho `any` để thân hàm vẫn
+        // được kiểm — xem ViewConfigThis trong @saolabs/client.
+        $configThis=$ts?'this: ViewConfigThis':'';$commitParams=$configThis;$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: ViewConfigThis, data: any':$dataParam;$itemParams=$ts?'this: ViewConfigThis, key: string, value: any':'key, value';
+        $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            (this.data ??= {})[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
 
         $config="hasSuperView: {$hasSuper},\n    viewType: '{$viewType}',\n    sections: {$sectionsJson},\n    wrapperConfig: {$wrapperValue},{$wrapperProps}\n    hasAwaitData: ".$this->bool($hasAwait).",\n    hasFetchData: ".$this->bool($hasFetch).",\n    usesVars: ".$this->bool($varsDeclaration!=='').",\n    hasSections: ".$this->bool($sections!==[]).",\n    hasSectionPreload: ".$this->bool($this->anyPreloader($sectionsInfo)).",\n    hasPrerender: ".$this->bool($hasPrerender).",\n    renderLongSections: {$renderLong},\n    renderSections: {$renderSectionsJson},\n    prerenderSections: {$preSectionsJson}";
 
@@ -447,10 +563,15 @@ final class MainCompiler
         $raw=($wrapperFunction!==''?$wrapperFunction."\n":'').($wrapperDeclarations!==''?$wrapperDeclarations."\n":'');$wrapperContent=$this->indentNonEmpty($raw,'    ');
         $out=str_replace('[COMPONENT_DECLARE_VARIABLES_AND_STATES]',$wrapperContent,$out);
         $interface=$this->generatePropsInterface($dataDeclarations,$functionName);$out=$interface!==''?str_replace('[COMPONENT_PROPS_INTERFACE]',$interface,$out):str_replace(["[COMPONENT_PROPS_INTERFACE]\n",'[COMPONENT_PROPS_INTERFACE]'],'',$out);
-        $lifecycle=(string)($registerData['lifecycle']??'');$user=trim($lifecycle);if(str_starts_with($user,'{')&&str_ends_with($user,'}'))$user=trim(substr($user,1,-1));$user=$this->reindentBase($user,4,12);
+        $lifecycle=(string)($registerData['lifecycle']??'');$legacyUser=trim($lifecycle);if(str_starts_with($legacyUser,'{')&&str_ends_with($legacyUser,'}'))$legacyUser=trim(substr($legacyUser,1,-1));$userParts=[];if($legacyUser!=='')$userParts[]=$legacyUser;$usedCode=$renderFunction."\n".$prerender."\n".$setupConfig;foreach($this->usedSetupFunctions($registerData['setupFunctions']??[],$usedCode)as$name)$userParts[]=$name;$user=$this->reindentBase(implode(",\n",$userParts),4,12);
         $out=str_replace('[USER_DEFINED_PROPERTIES_PLACEHOLDER]',$user,$out);$out=str_replace('[VIEW_SETUP_CONFIG_PLACEHOLDER]',$this->reindentBase($setupConfig,8,12),$out);
 
-        [$imports,$contents]=$this->splitSetupScript((string)($registerData['setupContent']??''));$out=trim($imports)!==''?str_replace('[COMPONENT_IMPORTS]',$imports,$out):str_replace(["[COMPONENT_IMPORTS]\n",'[COMPONENT_IMPORTS]'],'',$out);$out=trim($contents)!==''?str_replace('[COMPONENT_SCRIPT_CONTENTS]',$contents,$out):str_replace(["[COMPONENT_SCRIPT_CONTENTS]\n",'[COMPONENT_SCRIPT_CONTENTS]'],'',$out);
+        // Import kiểu chỉ cho đầu ra .ts: `import type` là cú pháp TypeScript, để lọt
+        // vào file .js là lỗi cú pháp ngay khi trình duyệt nạp.
+        $out=$ts
+            ? str_replace('[TYPE_IMPORTS]', "import type { ViewConfigThis } from '@saolabs/client';", $out)
+            : str_replace(["[TYPE_IMPORTS]\n", '[TYPE_IMPORTS]'], '', $out);
+        [$imports,$contents]=$this->splitSetupScript((string)($registerData['setupContent']??''));$out=trim($imports)!==''?str_replace('[COMPONENT_IMPORTS]',$imports,$out):str_replace(["[COMPONENT_IMPORTS]\n",'[COMPONENT_IMPORTS]'],'',$out);$instanceContents=$this->indentBlock($contents,8);$out=trim($instanceContents)!==''?str_replace('[COMPONENT_SCRIPT_CONTENTS]',$instanceContents,$out):str_replace(["[COMPONENT_SCRIPT_CONTENTS]\n",'[COMPONENT_SCRIPT_CONTENTS]'],'',$out);
         foreach($verbatimBlocks as$placeholder=>$content){$out=str_replace("'{$placeholder}'","'".$this->jsTextLiteral($content)."'",$out);$out=str_replace($placeholder,$this->escapeTemplateContent($content),$out);}
         return $this->isTypescript?$this->processTypeMarkers($out):$this->removeTypeMarkers($out);
     }
@@ -465,12 +586,23 @@ final class MainCompiler
     {
         $resources=[];foreach($data['resources']??[]as$r){$attrs=[];$templates=false;foreach($r['attrs']as$key=>$value){if(is_string($value)&&str_contains($value,'{{')&&str_contains($value,'}}')){$attrs[$key]='`'.$this->convertBladeToTemplateString($value).'`';$templates=true;}else$attrs[$key]=$value;}if($templates){$parts=[];foreach($attrs as$key=>$value)$parts[]='"'.$key.'":'.(is_string($value)&&str_starts_with($value,'`')&&str_ends_with($value,'`')?$value:'"'.$this->pyString($value).'"');$attrsJs='{'.implode(',',$parts).'}';}else$attrsJs=$this->utils->formatAttrs($r['attrs']);$resources[]='{"tag":"'.$r['tag'].'","uuid":"'.$r['uuid'].'","attrs":'.$attrsJs.'}';}$resourcesLine="\n        resources: [".implode(',',$resources).']';
         $scripts=[];foreach($data['scripts']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code')$parts[]='"content":'.$this->json($s['content']);else{$src=$s['src'];$parts[]='"src":'.(str_contains($src,'{{')&&str_contains($src,'}}')?'`'.$this->convertBladeToTemplateString($src).'`':'"'.$src.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$scripts[]='{'.implode(',',$parts).'}';}$scriptsLine="\n        scripts: [".implode(',',$scripts).']';
-        $styles=[];foreach($data['styles']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code'){$content=$s['content'];if(!empty($s['scoped']))$content=ScopedStyle::apply($content,$this->scopeClass);$parts[]='"content":"'.str_replace(['"',"\n"],['\\"','\\n'],$content).'"';}else{$href=$s['href'];$parts[]='"href":'.(str_contains($href,'{{')&&str_contains($href,'}}')?'`'.$this->convertBladeToTemplateString($href).'`':'"'.$href.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$styles[]='{'.implode(',',$parts).'}';}$stylesLine="\n        styles: [".implode(',',$styles).']';return[$scriptsLine,$stylesLine,$resourcesLine];
+        $styles=[];$this->inlineStyles=[];foreach($data['styles']??[]as$s){$parts=['"type":"'.$s['type'].'"'];if($s['type']==='code'){$content=$s['content'];if(!empty($s['scoped']))$content=ScopedStyle::apply($content,$this->scopeClass);$parts[]='"content":'.$this->json($content);$this->inlineStyles[]=['content'=>$content]+array_intersect_key($s,['id'=>1,'className'=>1,'attributes'=>1]);}else{$href=$s['href'];$parts[]='"href":'.(str_contains($href,'{{')&&str_contains($href,'}}')?'`'.$this->convertBladeToTemplateString($href).'`':'"'.$href.'"');}if(!empty($s['id']))$parts[]='"id":"'.$s['id'].'"';if(!empty($s['className']))$parts[]='"className":"'.$s['className'].'"';if(!empty($s['attributes']))$parts[]='"attributes":'.$this->utils->formatAttributesToJson($s['attributes']);$styles[]='{'.implode(',',$parts).'}';}$stylesLine="\n        styles: [".implode(',',$styles).']';return[$scriptsLine,$stylesLine,$resourcesLine];
     }
 
     private function pyString(mixed$value):string{return is_bool($value)?($value?'True':'False'):(is_null($value)?'None':(string)$value);}
     private function indentNonEmpty(string$text,string$prefix):string{$out=[];foreach(explode("\n",$text)as$line)$out[]=trim($line)===''?$line:$prefix.$line;return implode("\n",$out);}
     private function reindentBase(string$text,int$from,int$to):string{$out=[];foreach(explode("\n",$text)as$line){if(trim($line)===''){$out[]='';continue;}$leading=strlen($line)-strlen(ltrim($line));$extra=max(0,$leading-$from);$out[]=str_repeat(' ',$to+$extra).ltrim($line);}return implode("\n",$out);}
+
+    private function indentBlock(string$text,int$to):string
+    {
+        $min=null;foreach(explode("\n",$text)as$line){if(trim($line)==='')continue;$leading=strlen($line)-strlen(ltrim($line));$min=$min===null?$leading:min($min,$leading);}return$this->reindentBase($text,$min??0,$to);
+    }
+
+    /** @param list<string> $names @return list<string> */
+    private function usedSetupFunctions(array$names,string$generated):array
+    {
+        $used=[];foreach($names as$name){$name=(string)$name;if(in_array($name,self::LIFECYCLE_METHODS,true)||preg_match('/["\']handler["\']\s*:\s*["\']'.preg_quote($name,'/').'["\']|\bthis\.view\.'.preg_quote($name,'/').'\b/',$generated)===1)$used[]=$name;}return$used;
+    }
 
     /** @return array{string,string} */
     private function splitSetupScript(string$setup):array

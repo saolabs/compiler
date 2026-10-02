@@ -1,4 +1,4 @@
-{"name":"synthetic-01","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"handleClick\",\"params\":[]}])}","items":["{\"handler\":\"handleClick\",\"params\":[]}"],"split":["handleClick"]}}
+{"name":"synthetic-01","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"handleClick\"}])}","items":["{\"handler\":\"handleClick\"}"],"split":["handleClick"]}}
 {"name":"synthetic-02","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"handleClick\",\"params\":[]}])}","items":["{\"handler\":\"handleClick\",\"params\":[]}"],"split":["handleClick()"]}}
 {"name":"synthetic-03","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"handleClick\",\"params\":[\"@EVENT\",'x']}])}","items":["{\"handler\":\"handleClick\",\"params\":[\"@EVENT\",'x']}"],"split":["handleClick(@event, 'x')"]}}
 {"name":"synthetic-04","result":{"directive":"${this.__addEventConfig(\"change\", [(event) => event.target.value])}","items":["(event) => event.target.value"],"split":["$event->target->value"]}}
@@ -15,7 +15,7 @@
 {"name":"synthetic-15","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"outer\",\"params\":[() => inner(id),(event) => \"#ATTR:data-id\",\"@EVENT\"]}])}","items":["{\"handler\":\"outer\",\"params\":[() => inner(id),(event) => \"#ATTR:data-id\",\"@EVENT\"]}"],"split":["outer(inner($id), @attr(\"data-id\"), @event)"]}}
 {"name":"synthetic-16","result":{"directive":"${this.__addEventConfig(\"click\", [(event) => run(event)])}","items":["(event) => run(event)"],"split":["(event) => run(event)"]}}
 {"name":"synthetic-17","result":{"directive":"${this.__addEventConfig(\"click\", [event => run(event)])}","items":["event => run(event)"],"split":["event => run(event)"]}}
-{"name":"synthetic-18","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"true\",\"params\":[]}])}","items":["{\"handler\":\"true\",\"params\":[]}"],"split":["true"]}}
+{"name":"synthetic-18","result":{"directive":"${this.__addEventConfig(\"click\", [{\"handler\":\"true\"}])}","items":["{\"handler\":\"true\"}"],"split":["true"]}}
 {"name":"synthetic-19","result":{"directive":"${this.__addEventConfig(\"click\", [() => 42])}","items":["() => 42"],"split":["42"]}}
 {"name":"synthetic-20","result":{"directive":"${this.__addEventConfig(\"click\", [() => 'literal'])}","items":["() => 'literal'"],"split":["'literal'"]}}
 {"name":"synthetic-21","result":{"directive":"","items":[],"split":[]}}

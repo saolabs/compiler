@@ -147,7 +147,7 @@ final class SymbolCollector
      */
     private function collectLets(string $content): void
     {
-        foreach ($this->directiveBodies($content, '/@let\s*\(/') as $inner) {
+        foreach ($this->directiveBodies($content, '/@(?:let|computed)\s*\(/') as $inner) {
             $eqIdx = strpos($inner, '=');
 
             if ($eqIdx === false) {

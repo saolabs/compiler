@@ -1,4 +1,5 @@
 import { View, ViewController, app, Application } from '@saolabs/client';
+[TYPE_IMPORTS]
 
 [COMPONENT_IMPORTS]
 
@@ -10,8 +11,6 @@ const __VIEW_CONFIG__ = {
 };
 
 [COMPONENT_PROPS_INTERFACE]
-
-[COMPONENT_SCRIPT_CONTENTS]
 
 class [COMPONENT_NAME]ViewController extends ViewController {
     constructor(view:[TYPE:View]) {
@@ -28,8 +27,11 @@ class [COMPONENT_NAME]View extends View {
     constructor(__data__:[TYPE:any] = {}, systemData:[TYPE:any] = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, [COMPONENT_NAME]ViewController);
         const App:[TYPE:Application] = app("App") as [TYPE:Application];
+        const $view:[TYPE:[COMPONENT_NAME]View] = this;
+        const $app:[TYPE:Application] = App;
+        const $controller:[TYPE:[COMPONENT_NAME]ViewController] = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value:[TYPE:any]) => {
@@ -48,6 +50,8 @@ class [COMPONENT_NAME]View extends View {
 
 
 [COMPONENT_DECLARE_VARIABLES_AND_STATES]
+
+[COMPONENT_SCRIPT_CONTENTS]
 
         this.__ctrl__.setUserDefinedConfig({
 [USER_DEFINED_PROPERTIES_PLACEHOLDER]

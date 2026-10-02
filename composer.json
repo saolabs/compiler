@@ -53,6 +53,11 @@
         }
     },
     "scripts": {
+        "check": [
+            "composer validate --strict --no-interaction",
+            "composer audit --locked",
+            "@test"
+        ],
         "test": "@test:unit",
         "test:unit": "phpunit",
         "lint": "php -l src/SaolaCompiler.php"

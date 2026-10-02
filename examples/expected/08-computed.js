@@ -21,7 +21,6 @@ const __VIEW_CONFIG__ = {
 };
 
 
-
 class ComputedViewController extends ViewController {
     constructor(view) {
         super(view, __VIEW_PATH__, __VIEW_TYPE__);
@@ -37,8 +36,11 @@ class ComputedView extends View {
     constructor(__data__ = {}, systemData = {}) {
         super(__VIEW_PATH__, __VIEW_TYPE__, ComputedViewController);
         const App = app("App");
+        const $view = this;
+        const $app = App;
+        const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -85,7 +87,9 @@ class ComputedView extends View {
                 qty = value;
             }
         };
+        const get$total = __STATE__.__.computed('total', () => price * qty, ["price","qty"]);
         const __VARIABLE_LIST__ = [];
+
 
 
         this.__ctrl__.setUserDefinedConfig({
@@ -125,7 +129,7 @@ class ComputedView extends View {
                 lockUpdateRealState();
             },
             updateVariableItemData: function(key, value) {
-                this.data[key] = value;
+                (this.data ??= {})[key] = value;
                 if (typeof __UPDATE_DATA_TRAIT__[key] === "function") {
                     __UPDATE_DATA_TRAIT__[key](value);
                 }
@@ -139,8 +143,9 @@ class ComputedView extends View {
             return this.wrapper((parentElement) => [
             this.html(`e1`, "p", parentElement, {}, (parentElement) => [
                 this.text('Tổng: '),
-                this.text(String(total ?? ''))
-            ])
+                this.output(`e1o1`, parentElement, true, ["total"], (parentElement) => get$total())
+            ]),
+            this.text('\n')
             ]);
             }
         });

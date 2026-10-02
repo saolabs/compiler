@@ -27,10 +27,39 @@ final class ExpressionCompiler
 
     private readonly PhpJsBridge $legacy;
 
+    /** @var array<string, true> */
+    private array $computedNames = [];
+
+    /** @param list<string> $names */
+    public function setComputedNames(array $names): void
+    {
+        $this->computedNames = array_fill_keys($names, true);
+    }
+
     public function __construct(
         private readonly HelperResolver $helpers = new HelperResolver(),
     ) {
         $this->legacy = new PhpJsBridge($this->helpers);
+    }
+
+    /** Preserve JS collection callbacks while resolving computed reads and helper calls. */
+    public function compileNativeComputed(string $expression): string
+    {
+        $out = '';
+        $previous = '';
+        $reads = [];
+        foreach (array_slice(token_get_all('<?php '.$expression), 1) as $token) {
+            $value = is_array($token) ? $token[1] : $token;
+            if (is_array($token) && $token[0] === T_STRING && isset($this->computedNames[$value]) && $previous !== '.') {
+                $marker = '__SAOLA_COMPUTED_READ_'.$value.'__';
+                $reads[$marker] = 'get$'.$value.'()';
+                $out .= $marker;
+            } else {
+                $out .= $value;
+            }
+            if (trim($value) !== '') $previous = $value;
+        }
+        return strtr($this->helpers->resolve($out), $reads);
     }
 
     public function helpers(): HelperResolver
@@ -56,7 +85,22 @@ final class ExpressionCompiler
      */
     public function compile(string $expr): string
     {
-        return self::renameLoopIdentifier($this->convert($expr));
+        $reads = [];
+        if ($this->computedNames !== []) {
+            $tokens = token_get_all('<?php '.$expr);
+            $expr = '';
+            foreach (array_slice($tokens, 1) as $token) {
+                if (is_array($token) && $token[0] === T_VARIABLE && isset($this->computedNames[substr($token[1], 1)])) {
+                    $name = substr($token[1], 1);
+                    $marker = '__SAOLA_COMPUTED_READ_'.$name.'__';
+                    $reads[$marker] = 'get$'.$name.'()';
+                    $expr .= '$'.$marker;
+                } else {
+                    $expr .= is_array($token) ? $token[1] : $token;
+                }
+            }
+        }
+        return strtr(self::renameLoopIdentifier($this->convert($expr)), $reads);
     }
 
     /**

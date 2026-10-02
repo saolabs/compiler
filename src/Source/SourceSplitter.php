@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Saola\Compiler\Source;
 
+use Saola\Compiler\CompileException;
+use Saola\Compiler\Declaration\DeclarationTracker;
+use Saola\Compiler\Declaration\TypedDeclarations;
 use Saola\Compiler\Support\Balanced;
 use Saola\Compiler\Support\BladeComment;
 use Saola\Compiler\Support\Re;
@@ -25,7 +28,7 @@ final class SourceSplitter
      */
     private const DECLARATION_TYPES = [
         'useState', 'const', 'let', 'var', 'vars',
-        'state', 'props', 'states', 'import', 'asset', 'assets',
+        'state', 'props', 'states', 'computed', 'import', 'asset', 'assets',
     ];
 
     /** Khối chỉ chạy phía server — có mặt trong Blade, vắng mặt trong JS. */
@@ -50,15 +53,17 @@ final class SourceSplitter
         // JS thì bỏ hẳn khối @ssr — cả directive lẫn nội dung
         $content = Re::replace(self::SSR_BLOCK, '', $source);
 
+        [$content, $setupDeclarations] = (new SetupDeclarations())->extract($content);
         $wrappers = $this->wrappers->scan($content);
-        $declarations = $this->extractDeclarations($content, $wrappers);
+        $declarations = $this->extractDeclarations($content, $wrappers, $setupDeclarations);
+        if ($setupDeclarations !== []) $this->assertUniqueDeclarations($declarations);
 
         // @await / @fetch không phải khai báo mà là cờ cho compiler; chúng
         // được chèn lại lên đầu template.
         // @await/@fetch nêu trong chú thích không phải cờ thật — không che thì
         // view đi gọi API chỉ vì tài liệu có nhắc tới nó (§21). Làm trắng giữ
         // nguyên độ dài nên offset dưới đây vẫn trỏ đúng $content gốc.
-        $flagScan = BladeComment::blank($content);
+        $flagScan = self::blankScriptsAndStyles(BladeComment::blank($content));
 
         $hasAwait = Re::match('/@await(\s|$)/D', $flagScan);
         // Phải lấy TRỌN `@fetch(...)`, không chỉ `@fetch(`.
@@ -119,14 +124,15 @@ final class SourceSplitter
      * @param  list<WrapperTag> $wrappers
      * @return list<string>
      */
-    private function extractDeclarations(string $content, array $wrappers): array
+    private function extractDeclarations(string $content, array $wrappers, array $setupDeclarations = []): array
     {
-        $found = [];
+        $found = $setupDeclarations;
         $length = strlen($content);
 
         // Ví dụ minh hoạ trong comment không phải khai báo thật. Làm trắng giữ
         // nguyên độ dài nên offset vẫn trỏ đúng vào $content gốc.
-        $scan = BladeComment::blank($content);
+        $scan = self::blankScriptsAndStyles(BladeComment::blank($content));
+        $scan = preg_replace_callback('/@verbatim\b[\s\S]*?@endverbatim\b/', static fn ($m) => preg_replace('/[^\r\n]/', ' ', $m[0]), $scan) ?? $scan;
 
         foreach (self::DECLARATION_TYPES as $type) {
             $offset = 0;
@@ -138,18 +144,8 @@ final class SourceSplitter
 
                 $start = $offset + $m[0][1];
                 $cursor = $start + strlen($m[0][0]);
-                $depth = 1;
-
-                while ($cursor < $length && $depth > 0) {
-                    if ($scan[$cursor] === '(') {
-                        $depth++;
-                    } elseif ($scan[$cursor] === ')') {
-                        $depth--;
-                    }
-                    $cursor++;
-                }
-
-                if ($depth === 0 && ! $this->isInsideAnyWrapper($wrappers, $start, $cursor)) {
+                [$inner, $cursor] = Balanced::extractParensAt($content, $cursor - 1);
+                if ($inner !== null && ! $this->isInsideAnyWrapper($wrappers, $start, $cursor)) {
                     $found[] = ['index' => $start, 'text' => substr($content, $start, $cursor - $start)];
                 }
 
@@ -160,6 +156,33 @@ final class SourceSplitter
         usort($found, static fn (array $a, array $b): int => $a['index'] <=> $b['index']);
 
         return array_map(static fn (array $d): string => $d['text'], $found);
+    }
+
+    private static function blankScriptsAndStyles(string $content): string
+    {
+        return preg_replace_callback('/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/i',
+            static fn ($m) => preg_replace('/[^\r\n]/', ' ', $m[0]), $content) ?? $content;
+    }
+
+    /** Mixed syntax must not silently overwrite a view-scoped binding. */
+    private function assertUniqueDeclarations(array $declarations): void
+    {
+        $seen = [];
+        foreach ($declarations as $text) {
+            $parts = new SourceParts([$text], '', '', '', '', '', null);
+            $normalized = (new TypedDeclarations())->normalize($parts);
+            $source = preg_replace('/@state\b/', '@states', implode("\n", $normalized->declarations));
+            foreach ((new DeclarationTracker())->parseAll($source) as $declaration) {
+                foreach ($declaration->variables as $variable) {
+                    $names = isset($variable['name']) ? [$variable['name']] : ($variable['names'] ?? []);
+                    foreach ($names as $name) {
+                        $name = ltrim($name, '$');
+                        if (isset($seen[$name])) throw new CompileException('Duplicate view declaration "'.$name.'" across setup/outside declarations.');
+                        $seen[$name] = true;
+                    }
+                }
+            }
+        }
     }
 
     /** @param list<WrapperTag> $wrappers */

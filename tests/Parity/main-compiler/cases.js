@@ -3,6 +3,10 @@
 const fs=require('fs'),path=require('path');
 function root(){let d=__dirname;while(d!==path.dirname(d)){d=path.dirname(d);if(fs.existsSync(path.join(d,'builder','src','index.js')))return d;}throw new Error('root');}
 const repo=root(),Compiler=require(path.join(repo,'builder','src','index.js')),compiler=new Compiler();
+// Preprocessor JS chỉ còn dùng ở ĐÂY — để dựng input cho cổng, không phải để so
+// sánh. Đường build thật gửi thẳng source tới `php bin/saoc`. Tự khởi tạo thay vì
+// bám vào field trên Compiler, để lớp production không phải mang nó vì một cổng test.
+const preprocessor=new (require(path.join(repo,'builder','src','preprocessor')))();
 const synthetic=[
  ['plain','<template>\n<div>Hello</div>\n</template>'],
  ['props',"@props({ title: 'Hello', count: 2 })\n<template>\n<h1>{{ title }}</h1>\n</template>"],
@@ -19,7 +23,7 @@ let index=0,real=0;
 function pascal(s){return s.split(/[-_\s]+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join('');}
 function emit(name,source,file){
  const parts=compiler.parseSaoFile(source,file||name+'.sao');
- const blade=compiler.preprocessor.preprocess(parts,{assetPrefix:'static/parity/assets/'});
+ const blade=preprocessor.preprocess(parts,{assetPrefix:'static/parity/assets/'});
  const scripts=parts.cleanedContent.match(/<script[^>]*>[\s\S]*?<\/script>/gi)||[];
  const styles=parts.cleanedContent.match(/<style[^>]*>[\s\S]*?<\/style>/gi)||[];
  const links=parts.cleanedContent.match(/<link\b(?=[^>]*\brel\s*=\s*["'][^"']*\bstylesheet\b[^"']*["'])[^>]*>/gi)||[];
