@@ -1,4 +1,4 @@
-# Saola Compiler v1.0.0
+# Saola Compiler v1.0.2
 
 Compiles .sao templates to Blade SSR and JavaScript CSR, including typed declarations, hydration scopes, translation helpers and inline language directives.
 
@@ -12,4 +12,4 @@ Composer validate and audit passed; 265 tests, 571 assertions.
 
 ## Release scope
 
-Coordinated v1.0.0 source release of the Saola ecosystem on GitHub. Registry publishing (npm, Packagist or VS Code Marketplace) is a separate step. Existing tags and previously published registry versions are unchanged.
+Coordinated v1.0.2 registry release using the tested v1.0.0 source. Package manifests are normalized to 1.0.2 for registry availability. Runtime source is unchanged from v1.0.0. Existing tags and previously published versions are preserved.
