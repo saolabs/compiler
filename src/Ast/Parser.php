@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Saola\Compiler\Ast;
 
 use Saola\Compiler\Support\Html;
+use Saola\Compiler\Support\Balanced;
 use Saola\Compiler\Directive\EventDirectiveProcessor;
 use Saola\Compiler\Expr\ExpressionCompiler;
 use Saola\Compiler\Support\Re;
@@ -549,6 +550,16 @@ final class Parser
                 $this->addEchoOrChildren($stack, $m[1], true);
                 $pos += strlen($m[0]);
                 continue;
+            }
+            if (Re::match('/\G@(lang|choice)\s*\(/', $content, $m, 0, $pos)) {
+                [$arguments, $end] = Balanced::extractParensAt($content, $pos + strlen($m[0]) - 1);
+                if ($arguments !== null) {
+                    $this->flushText($buffer, $stack);
+                    $helper = $m[1] === 'lang' ? '__' : 'trans_choice';
+                    $this->addEchoOrChildren($stack, $helper . '(' . $arguments . ')', true);
+                    $pos = $end;
+                    continue;
+                }
             }
             if (Re::match('/\G@children\b[^\S\r\n]*(?:\([^\S\r\n]*\))?/i', $content, $m, 0, $pos)) {
                 $this->flushText($buffer, $stack);

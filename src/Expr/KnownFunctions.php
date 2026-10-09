@@ -33,6 +33,7 @@ final class KnownFunctions
 
     /** Hàm được nhận diện tường minh và gắn tiền tố trước vòng fallback. */
     public const KNOWN = [
+        '__', 'trans', 'lang', 'trans_choice', 'choice', 'getLocale', 'setLocale',
         'count', 'min', 'max', 'abs', 'ceil', 'floor', 'round', 'sqrt',
         'strlen', 'substr', 'trim', 'ltrim', 'rtrim', 'strtolower', 'strtoupper',
         'isset', 'empty', 'is_null', 'is_array', 'is_string', 'is_numeric',

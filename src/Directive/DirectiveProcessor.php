@@ -156,14 +156,14 @@ final class DirectiveProcessor
 
     public function processLangDirective(string $line): ?string
     {
-        if (! str_starts_with($line, '@lang') || preg_match('/^@lang\s*\(\s*[\'\"]([^\'\"]*)[\'\"]\s*\)/', $line, $m) !== 1) return null;
-        return '${App.Helper.lang(\'' . $m[1] . '\')}';
+        $expr = $this->directiveExpression($line, '@lang');
+        return $expr === null ? null : '${App.Helper.lang(' . $this->expressions->compileStatement($expr) . ')}';
     }
 
     public function processChoiceDirective(string $line): ?string
     {
-        if (! str_starts_with($line, '@choice') || preg_match('/^@choice\s*\(\s*[\'\"]([^\'\"]*)[\'\"]\s*,\s*(\d+)\s*\)/', $line, $m) !== 1) return null;
-        return '${App.Helper.choice(\'' . $m[1] . '\', ' . $m[2] . ')}';
+        $expr = $this->directiveExpression($line, '@choice');
+        return $expr === null ? null : '${App.Helper.choice(' . $this->expressions->compileStatement($expr) . ')}';
     }
 
     public function processExecDirective(string $line): ?string
