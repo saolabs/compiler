@@ -46,6 +46,9 @@ return [
 
     // <div #busy>  → không nhận giá trị
     Sao::attr('busy', fn () => 'aria-busy="true"', value: false),
+
+    // formatMoney(x) trong biểu thức: có ở cả PHP lẫn App.Helper
+    Sao::helper('formatMoney'),
 ];
 ```
 
@@ -55,6 +58,7 @@ return [
 | `Sao::block($name, $fn)` | `@name(expr) … @endname` | `expr`, `body` | chuỗi `.sao` |
 | `Sao::tag($name, $fn, value: true)` | `<x #name="expr">…</x>` | `expr`, tên thẻ | `[.sao trước, .sao sau]` |
 | `Sao::attr($name, $fn, value: true)` | `<x #name="expr">` | `expr`, tên thẻ | chuỗi thuộc tính `.sao` |
+| `Sao::helper($name)` | `name(...)` trong biểu thức | — | — (chỉ khai báo) |
 
 Mọi khai báo nhận thêm `override: true` (§3). Registry có cùng các cửa đó dưới
 dạng method: `directive()`, `blockDirective()`, `tag()`, `attr()`, và `add()`
@@ -63,9 +67,18 @@ nhận thẳng một khai báo.
 ### Hàm runtime phải có ở cả hai phía
 
 Output là `.sao`, nên hàm gọi trong đó (`formatMoney`, `canDo`) phải chạy được
-ở **cả** Blade (PHP) lẫn client (JS), cùng tên. Đây là phần duy nhất tác giả
-thư viện lo cho hai đầu. Builtin JS như `String(x)` không có ở PHP — compiler
-đã cảnh báo `[sao2blade]` cho trường hợp đó.
+ở **cả** Blade (PHP) lẫn client (JS), cùng tên. Lời gọi trần `name(x)` compile
+thành hàm PHP toàn cục `name($x)` ở Blade và `App.Helper.name(x)` ở JS:
+
+- PHP: `autoload.files` trong composer.json của package.
+- JS: `helpers` của bundle client (`extra.saola.client`, xem
+  docs/EXTENSION_ARCHITECTURE.md §8.0); dữ liệu theo request đi qua
+  `Saola::share()` → `App.shared()`.
+- `Sao::helper('name')` báo cho compiler rằng hai nửa đó tồn tại, để nó thôi
+  cảnh báo `[sao2js] … không khớp … helper đã biết`.
+
+Builtin JS như `String(x)` không có ở PHP — compiler đã cảnh báo `[sao2blade]`
+cho trường hợp đó. Ví dụ đủ bốn mảnh: `saola/permission` (`canRoute`, `#permission`).
 
 ### Khi hai đầu buộc phải khác
 

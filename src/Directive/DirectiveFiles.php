@@ -91,7 +91,8 @@ final class DirectiveFiles
         }
 
         foreach (self::$loaded[$key] as $name => $definition) {
-            if ($definition instanceof BuiltinDirective || $definition instanceof UserDirective || $definition instanceof TagDirective) {
+            if ($definition instanceof BuiltinDirective || $definition instanceof UserDirective
+                || $definition instanceof TagDirective || $definition instanceof UserHelper) {
                 $registry->add($definition);
             } elseif (is_string($name) && is_callable($definition)) {
                 $registry->directive($name, $definition);

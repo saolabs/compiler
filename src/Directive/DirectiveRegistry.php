@@ -76,6 +76,9 @@ final class DirectiveRegistry
     /** @var array<string, TagDirective> */
     private array $tagDirectives = [];
 
+    /** @var array<string, true> */
+    private array $helpers = [];
+
     public static function builtins(?DirectiveParsers $parsers = null): self
     {
         $parsers ??= new DirectiveParsers();
@@ -113,15 +116,33 @@ final class DirectiveRegistry
     }
 
     /** Một cửa cho mọi khai báo trong `sao.directives.php`. */
-    public function add(BuiltinDirective|UserDirective|TagDirective $definition): self
+    public function add(BuiltinDirective|UserDirective|TagDirective|UserHelper $definition): self
     {
         match (true) {
             $definition instanceof BuiltinDirective => $this->register($definition),
             $definition instanceof UserDirective => $this->registerUser($definition),
+            $definition instanceof UserHelper => $this->helper($definition->name),
             default => $this->registerTag($definition),
         };
 
         return $this;
+    }
+
+    /**
+     * Khai báo `name(...)` là helper có ở CẢ hai phía: hàm PHP toàn cục (Blade)
+     * và `App.Helper.name` (JS, thường từ bundle client của package).
+     */
+    public function helper(string $name): self
+    {
+        $this->helpers[(new UserHelper($name))->name] = true;
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function helpers(): array
+    {
+        return array_keys($this->helpers);
     }
 
     /** `#name="expr"` bọc element; handler trả [đoạn .sao trước, đoạn .sao sau]. */

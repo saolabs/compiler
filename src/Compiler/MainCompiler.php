@@ -52,9 +52,11 @@ final class MainCompiler
         private readonly array $declarationTypes = [],
         private readonly array $nativeComputed = [],
         private readonly array $emptyObjectDefaults = [],
+        array $declaredHelpers = [],
     )
     {
         $this->expressions = new ExpressionCompiler();
+        $this->expressions->helpers()->declareHelpers($declaredHelpers);
         $this->parsers = new DirectiveParsers($this->expressions);
         $this->utils = new CompilerUtils();
         $this->wrapperParser = new WrapperParser($wrapperTemplate);

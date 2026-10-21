@@ -12,9 +12,10 @@ namespace Saola\Compiler\Directive;
  *         Sao::block('can', fn (string $e, string $body) => "@if(canDo({$e})){$body}@endif"),
  *         Sao::tag('can', fn (string $e) => ["@if(canDo({$e}))", '@endif']),
  *         Sao::attr('tooltip', fn (string $e) => 'data-tooltip="{{ ' . $e . ' }}"'),
+ *         Sao::helper('formatMoney'),
  *     ];
  *
- * Mọi handler trả về `.sao`, không phải Blade hay JS. Xem docs/03-directives.md §4.
+ * Mọi handler trả về `.sao`, không phải Blade hay JS. Xem docs/03-directives.md §2.
  */
 final class Sao
 {
@@ -34,6 +35,15 @@ final class Sao
     public static function tag(string $name, callable $handler, bool $value = true, bool $override = false): TagDirective
     {
         return new TagDirective($name, $handler, true, $value, $override);
+    }
+
+    /**
+     * `name(...)` trong biểu thức là helper có ở cả hai phía: hàm PHP toàn cục
+     * cho Blade, `App.Helper.name` cho JS. Compiler thôi cảnh báo "tên lạ".
+     */
+    public static function helper(string $name): UserHelper
+    {
+        return new UserHelper($name);
     }
 
     /** `<tag #name="expr">` → thay bằng đoạn thuộc tính .sao; handler nhận (expr, tag). */

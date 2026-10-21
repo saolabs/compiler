@@ -144,6 +144,22 @@ final class UserDirectivePipelineTest extends TestCase
         $this->assertSame($source, $registry->transform($source, 'blade'));
     }
 
+    public function test_helper_khai_bao_thi_het_canh_bao_va_goi_cung_ten_hai_phia(): void
+    {
+        $source = "@states({ r: 'admin.roles.index' })\n<template><p>{{ canRoute(r) }}</p></template>\n";
+
+        $plain = $this->compile($source, new SaolaCompiler());
+        $this->assertNotEmpty(array_filter($plain->warnings, static fn (string $w): bool => str_contains($w, '`canRoute(...)`')));
+
+        $compiler = new SaolaCompiler();
+        $compiler->directives()->add(Sao::helper('canRoute'));
+        $result = $this->compile($source, $compiler);
+
+        $this->assertSame([], array_values(array_filter($result->warnings, static fn (string $w): bool => str_contains($w, 'canRoute'))));
+        $this->assertStringContainsString('{{ canRoute($r) }}', (string) $result->blade);
+        $this->assertStringContainsString('App.Helper.canRoute(r)', (string) $result->js);
+    }
+
     public function test_dò_directives_cua_app_va_package(): void
     {
         $root = sys_get_temp_dir() . '/saoc-discover-' . bin2hex(random_bytes(4));

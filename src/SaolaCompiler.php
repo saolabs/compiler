@@ -78,7 +78,7 @@ final class SaolaCompiler
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
-            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
+            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults, $this->directiveRegistry->helpers());
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
                     $jsInput,
