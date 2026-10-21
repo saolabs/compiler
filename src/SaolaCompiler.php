@@ -15,6 +15,7 @@ use Saola\Compiler\Emit\BladeInterpolationCheck;
 use Saola\Compiler\Emit\BladeTableNestingCheck;
 use Saola\Compiler\Emit\BladeEmitter;
 use Saola\Compiler\Hydration\IdMode;
+use Saola\Compiler\Hydration\MarkerParity;
 use Saola\Compiler\Preprocessor\Preprocessor;
 use Saola\Compiler\Source\SourceParts;
 use Saola\Compiler\Source\SourceSplitter;
@@ -88,6 +89,20 @@ final class SaolaCompiler
                 );
             // Sau JS: `<style>` đăng ký cho SSR phải là CHÍNH bản đã ghi vào JS.
             $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath, $mainCompiler->inlineStyles());
+
+            // Directive trả hai đoạn .sao khác nhau cho hai đích: hai bản phải ra
+            // cùng bộ id hydrate, không thì client claim lệch DOM của SSR.
+            if ($bladeSource !== $jsSource) {
+                $parity = MarkerParity::diff($compiledBlade, $compiledJs);
+                if ($parity['blade'] !== [] || $parity['js'] !== []) {
+                    throw new CompileException(
+                        'Directive người dùng phát hai bản blade/js lệch id hydrate (chỉ Blade: '
+                        . (implode(', ', $parity['blade']) ?: '-') . '; chỉ JS: ' . (implode(', ', $parity['js']) ?: '-')
+                        . '). Trả về một chuỗi .sao chung cho cả hai đích.',
+                        $options->viewPath,
+                    );
+                }
+            }
 
             $imports = (new ImportParser())->parseImports($jsInput);
             $css = $this->scopedStyles($source);
