@@ -35,6 +35,22 @@ final class HelperResolver
     private string $viewPath = '';
 
     /**
+     * Helper do package/app khai báo (`Sao::helper`): có ở cả PHP lẫn App.Helper,
+     * nên không cảnh báo "tên lạ".
+     *
+     * @var array<string, true>
+     */
+    private array $declaredHelpers = [];
+
+    /** @param list<string> $names */
+    public function declareHelpers(array $names): void
+    {
+        foreach ($names as $name) {
+            $this->declaredHelpers[$name] = true;
+        }
+    }
+
+    /**
      * Cảnh báo đã phát, khoá theo "view\0tên" — mỗi tên chỉ cảnh báo một lần
      * cho mỗi view, tránh spam khi cùng một hàm lạ xuất hiện nhiều chỗ.
      *
@@ -182,7 +198,9 @@ final class HelperResolver
             return 'this.view.emit(';
         }
 
-        $this->warnUnknown($name);
+        if (! isset($this->declaredHelpers[$name])) {
+            $this->warnUnknown($name);
+        }
 
         return KnownFunctions::HELPER_NAMESPACE . '.' . $name . '(';
     }

@@ -56,7 +56,7 @@ final class TemplateProcessor
         $bladeCode = $this->removePageDirectives($bladeCode);
         $bladeCode = preg_replace('/@extends\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
         $bladeCode = preg_replace('/@vars\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
-        foreach (['props', 'useState', 'states', 'fetch'] as $directive) $bladeCode = $this->removeBalancedDirective($bladeCode, $directive);
+        foreach (['props', 'useState', 'states', 'fetch', 'cache'] as $directive) $bladeCode = $this->removeBalancedDirective($bladeCode, $directive);
         $bladeCode = preg_replace('/@await\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
         $bladeCode = $this->resolveImportIncludes($bladeCode);
         $bladeCode = ChildrenSlot::replaceForLegacyJs($bladeCode);

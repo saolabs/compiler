@@ -574,6 +574,216 @@ final class Html
         return $out;
     }
 
+    /**
+     * Hạ `#name` do ứng dụng/thư viện đăng ký (Sao::tag / Sao::attr) về `.sao`.
+     *
+     * Chạy TRƯỚC preprocessor, trong DirectiveRegistry::transform: output là
+     * `.sao` nên đi qua đúng mọi bước như code viết tay. `#` dựng sẵn (`#if`,
+     * `#foreach`…) và tên lạ được để nguyên cho `expandTagDirectives` xử lý/báo lỗi.
+     * Luật vị trí giống hệt `takeTagDirective`: chỉ ở vị trí tên thuộc tính.
+     *
+     * @param array<string, \Saola\Compiler\Directive\TagDirective> $defs
+     */
+    public static function expandUserTagDirectives(string $template, array $defs): string
+    {
+        if ($defs === [] || ! str_contains($template, '#')) {
+            return $template;
+        }
+
+        $regions = [];
+        $masked = Re::replaceCallback(
+            '/\{\{--[\s\S]*?--\}\}|@verbatim\b[\s\S]*?@endverbatim\b|\{!![\s\S]*?!!\}|\{\{[\s\S]*?\}\}/i',
+            static function (array $m) use (&$regions): string {
+                $regions[] = $m[0];
+
+                return '__SAO_UEXPAND_' . (count($regions) - 1) . '__';
+            },
+            $template,
+        );
+
+        $out = self::expandUserRegion($masked, $defs);
+
+        foreach ($regions as $index => $original) {
+            $out = str_replace('__SAO_UEXPAND_' . $index . '__', $original, $out);
+        }
+
+        return $out;
+    }
+
+    /** True nếu `#name` là directive dựng sẵn của compiler (tầng T0). */
+    public static function isBuiltinTagDirective(string $name): bool
+    {
+        return array_key_exists(strtolower($name), self::TAG_DIRECTIVES);
+    }
+
+    /** @param array<string, \Saola\Compiler\Directive\TagDirective> $defs */
+    private static function expandUserRegion(string $s, array $defs): string
+    {
+        $out = '';
+        $i = 0;
+        $length = strlen($s);
+
+        while ($i < $length) {
+            $lt = strpos($s, '<', $i);
+            if ($lt === false) {
+                return $out . substr($s, $i);
+            }
+
+            $out .= substr($s, $i, $lt - $i);
+
+            if (! Re::match('~^<([a-zA-Z][\w-]*)~', substr($s, $lt, 64), $m)) {
+                $out .= '<';
+                $i = $lt + 1;
+                continue;
+            }
+
+            $tag = strtolower($m[1]);
+            $openEnd = self::tagEnd($s, $lt);
+            if ($openEnd === null) {
+                $out .= '<';
+                $i = $lt + 1;
+                continue;
+            }
+
+            if (isset(self::RAW_CONTENT_ELEMENTS[$tag])) {
+                $i = self::skipRawContent($s, $openEnd, $tag);
+                $out .= substr($s, $lt, $i - $lt);
+                continue;
+            }
+
+            [$openTag, $wrap, $expr] = self::takeUserTagDirectives(substr($s, $lt, $openEnd - $lt), $tag, $defs, self::lineOf($s, $lt));
+
+            if ($wrap === null) {
+                $out .= $openTag;
+                $i = $openEnd;
+                continue;
+            }
+
+            if (isset(self::VOID_ELEMENTS[$tag]) || str_ends_with(rtrim(substr($openTag, 0, -1)), '/')) {
+                $element = $openTag;
+                $i = $openEnd;
+            } else {
+                $closeStart = self::findMatchingClose($s, $openEnd, $tag);
+                if ($closeStart === null) {
+                    throw new CompileException(
+                        "`<{$tag}>` mang `#{$wrap->name}` nhưng thiếu `</{$tag}>`",
+                        sourceLine: self::lineOf($s, $lt),
+                    );
+                }
+                $i = strpos($s, '>', $closeStart) + 1;
+                $element = $openTag
+                    . self::expandUserRegion(substr($s, $openEnd, $closeStart - $openEnd), $defs)
+                    . substr($s, $closeStart, $i - $closeStart);
+            }
+
+            [$before, $after] = $wrap->wrap($expr, $tag);
+            $out .= $before . $element . $after;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Bóc `#name` người dùng khỏi thẻ mở: attr thay tại chỗ, wrap gỡ ra để bọc.
+     *
+     * @param array<string, \Saola\Compiler\Directive\TagDirective> $defs
+     * @return array{0: string, 1: ?\Saola\Compiler\Directive\TagDirective, 2: string} [thẻ mở mới, directive bọc, biểu thức của nó]
+     */
+    private static function takeUserTagDirectives(string $openTag, string $tag, array $defs, int $line): array
+    {
+        if (! str_contains($openTag, '#')) {
+            return [$openTag, null, ''];
+        }
+
+        $out = '';
+        $wrap = null;
+        $wrapExpr = '';
+        $builtin = null;
+        $i = 0;
+        $length = strlen($openTag);
+        $quote = '';
+        $parens = 0;
+
+        while ($i < $length) {
+            $ch = $openTag[$i];
+
+            if ($quote !== '') {
+                if ($ch === $quote) {
+                    $quote = '';
+                }
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+            if ($ch === '"' || $ch === "'") {
+                $quote = $ch;
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+            if ($ch === '(') {
+                $parens++;
+            } elseif ($ch === ')' && $parens > 0) {
+                $parens--;
+            }
+
+            if ($ch !== '#' || $parens !== 0 || $i === 0 || ! ctype_space($openTag[$i - 1])
+                || ! Re::match('/^#([a-zA-Z][\w-]*)/', substr($openTag, $i), $m)) {
+                $out .= $ch;
+                $i++;
+                continue;
+            }
+
+            $name = strtolower($m[1]);
+            $def = $defs[$name] ?? null;
+            if ($def === null) {
+                // Dựng sẵn hoặc tên lạ: để nguyên cho expandTagDirectives.
+                if ($name !== 'key' && self::isBuiltinTagDirective($name)) {
+                    $builtin = $name;
+                }
+                $out .= $m[0];
+                $i += strlen($m[0]);
+                continue;
+            }
+
+            $i += strlen($m[0]);
+            $raw = null;
+            if (Re::match('/^\s*=\s*("[^"]*"|\'[^\']*\')/', substr($openTag, $i), $v)) {
+                $raw = substr($v[1], 1, -1);
+                $i += strlen($v[0]);
+            }
+            if ($def->value && ($raw === null || trim($raw) === '')) {
+                throw new CompileException("`#{$name}` trên `<{$tag}>` thiếu biểu thức", sourceLine: $line);
+            }
+            if (! $def->value && $raw !== null) {
+                throw new CompileException("`#{$name}` trên `<{$tag}>` không nhận giá trị", sourceLine: $line);
+            }
+            $expr = trim($raw ?? '');
+
+            if ($def->wraps) {
+                if ($wrap !== null) {
+                    throw new CompileException("`<{$tag}>` mang hai directive bọc: `#{$wrap->name}` và `#{$name}`", sourceLine: $line);
+                }
+                $wrap = $def;
+                $wrapExpr = $expr;
+                // Khoảng trắng đứng trước token đi cùng nó; phần sau giữ nguyên.
+                $out = rtrim($out);
+                continue;
+            }
+
+            $out .= $def->attributes($expr, $tag);
+        }
+
+        if ($wrap !== null && $builtin !== null) {
+            throw new CompileException(
+                "`<{$tag}>` mang cả `#{$wrap->name}` lẫn `#{$builtin}`; bọc thêm một thẻ ngoài để tách hai directive",
+                sourceLine: $line,
+            );
+        }
+
+        return [$out, $wrap, $wrapExpr];
+    }
+
     /** Quét một vùng, hạ mọi directive `#` gặp được. Đệ quy vào ruột thẻ mang directive. */
     private static function expandRegion(string $s): string
     {

@@ -1,0 +1,30 @@
+@exec($__ONE_COMPONENT_REGISTRY__ = []) {{-- Khai báo để sử dụng các component đã đăng ký trong $__ONE_COMPONENT_REGISTRY__ --}}
+
+@useState($n, 2)
+@useState($on, true)
+@useState($items, ['a', 'b'])
+@wrapper
+<section @class([$__VIEW_ID__ . '-e1'])>
+    <p @class([$__VIEW_ID__ . '-e11'])>@startMarker('output', 'e11o1'){{ ($n) * 2 }}@endMarker('output', 'e11o1')</p>
+    @startMarker('reactive', 'e1r1', ['stateKey' => ['on'], 'type' => 'if'])
+    @if($on)
+<em @class([$__VIEW_ID__ . '-e1r1k11'])>@startMarker('output', 'e1r1k11o1'){{ $n }}@endMarker('output', 'e1r1k11o1')</em>
+@endif
+@endMarker('reactive', 'e1r1')
+    @startMarker('reactive', 'e1r2', ['stateKey' => ['on'], 'type' => 'if'])
+    @if($on)
+<div @class([$__VIEW_ID__ . '-e1r2k11', 'box']) @attr(['data-tip' => $n, 'aria-busy' => 'true'])>
+        <span @class([$__VIEW_ID__ . '-e1r2k111'])>@startMarker('output', 'e1r2k111o1'){{ ($n) * 2 }}@endMarker('output', 'e1r2k111o1')</span>
+    </div>
+@endif
+@endMarker('reactive', 'e1r2')
+    <ul @class([$__VIEW_ID__ . '-e12'])>
+        @startMarker('reactive', 'e12l1', ['stateKey' => ['items'], 'type' => 'foreach'])
+        @foreach($items as $item)
+<li @class([$__VIEW_ID__ . "-e12l11-{$loop->index}"]) @attr(['data-tip' => $item])>@startMarker('output', "e12l11o1-{$loop->index}"){{ $item }}@endMarker('output', "e12l11o1-{$loop->index}")</li>
+@endforeach
+@endMarker('reactive', 'e12l1')
+    </ul>
+    <p @class([$__VIEW_ID__ . '-e13']) @attr(['style' => 'color: #fff', 'title' => 'xem #when'])>#when ở văn bản giữ nguyên</p>
+</section>
+@endWrapper
