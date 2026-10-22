@@ -212,6 +212,21 @@ final class DirectiveParsers
     }
 
     /** @return array{viewType:string, originalValue:string}|null */
+    /**
+     * @cache(false) | @cache(true) | @cache({ ttl: 60 }) → giá trị JS cho config `cache` của view.
+     * ViewManager đọc `getConfig('cache')`: false hoặc ttl 0 = không đưa trang vào PageCache.
+     */
+    public function parseCache(string $code): ?string
+    {
+        if (! Re::match('/@cache\s*\(/', $code, $m, PREG_OFFSET_CAPTURE)) return null;
+        [$content] = Balanced::extractParensAt($code, $m[0][1] + strlen($m[0][0]) - 1);
+        $content = trim((string) $content);
+        if ($content === '') return null;
+        if (in_array($content, ['true', 'false'], true)) return $content;
+        if (Re::match('/^\{\s*ttl\s*:\s*\d+\s*\}$/', $content)) return $content;
+        throw new \Saola\Compiler\CompileException('@cache chỉ nhận true, false hoặc { ttl: <số mili giây> }, nhận được: ' . $content);
+    }
+
     public function parseViewType(string $code): ?array
     {
         if (! Re::match('/@viewtype\s*\(/i', $code, $m, PREG_OFFSET_CAPTURE)) return null;

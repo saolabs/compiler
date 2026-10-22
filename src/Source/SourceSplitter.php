@@ -84,6 +84,16 @@ final class SourceSplitter
                 : substr($content, $fetchMatch[0][1], $parenAt - $fetchMatch[0][1] + strlen($inner) + 2);
         }
 
+        // @cache(...) — cấu hình PageCache của view; như @fetch, phải lấy TRỌN ngoặc.
+        if (Re::match('/@cache\s*\(/', $flagScan, $cacheMatch, PREG_OFFSET_CAPTURE)) {
+            $parenAt = $cacheMatch[0][1] + strlen($cacheMatch[0][0]) - 1;
+            $inner = Balanced::extractParens($content, $parenAt);
+            if ($inner !== null) {
+                $cache = substr($content, $cacheMatch[0][1], $parenAt - $cacheMatch[0][1] + strlen($inner) + 2);
+                $fetchPrefix = $fetchPrefix === null ? $cache : $fetchPrefix . "\n" . $cache;
+            }
+        }
+
         $wrapperType = null;
         $bladeFromWrapper = null;
 

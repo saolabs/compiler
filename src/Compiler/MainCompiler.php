@@ -219,10 +219,12 @@ final class MainCompiler
         $fetchConfig = $hasFetch ? $this->parsers->parseFetch($legacyCode) : null;
         [$initFunctions] = $this->parsers->parseInit($legacyCode);
         $viewTypeData = $this->parsers->parseViewType($legacyCode);
+        $cacheConfig = $this->parsers->parseCache($legacyCode);
         foreach (['setup','import','imports','scope','scoped'] as $type) $legacyCode = preg_replace('/<script\s+'.$type.'[^>]*>.*?<\/script>/is', '', $legacyCode) ?? $legacyCode;
         $legacyCode = preg_replace('/@viewtype\s*\([^)]*\)/i', '', $legacyCode) ?? $legacyCode;
         $legacyCode = preg_replace('/@await\s*(?:\([^)]*\))?\s*/i', '', $legacyCode) ?? $legacyCode;
         $legacyCode = preg_replace('/@fetch\s*\([^)]*\)\s*/i', '', $legacyCode) ?? $legacyCode;
+        $legacyCode = preg_replace('/@cache\s*\([^)]*\)\s*/i', '', $legacyCode) ?? $legacyCode;
         $legacyCode = preg_replace(['/<blade\b[^>]*>/i','/<\/blade>/i'], '', $legacyCode) ?? $legacyCode;
 
         $legacyUnresolved = $legacyCode;
@@ -265,7 +267,7 @@ final class MainCompiler
             $stateDeclarations, $variableList, $sections, $sectionsInfo, $templateContent,
             $renderFunction, $prerender, $fetchConfig, $viewTypeData, $varsDeclaration,
             $hasAwait, $hasFetch, $hasPrerender, $extendedView, $extendsExpression, $extendsData,
-            $verbatimBlocks,
+            $verbatimBlocks, $cacheConfig,
         );
     }
 
@@ -324,6 +326,7 @@ final class MainCompiler
         $code=preg_replace('/@viewtype\s*\([^)]*\)/i','',$code)??$code;
         $code=preg_replace('/@await\s*(?:\([^)]*\))?\s*/i','',$code)??$code;
         $code=preg_replace('/@fetch\s*\([^)]*\)\s*/i','',$code)??$code;
+        $code=preg_replace('/@cache\s*\([^)]*\)\s*/i','',$code)??$code;
         $code=preg_replace('/@init\s*\n.*?@endinit/is','',$code)??$code;
 
         $wrappers=$this->findWrappers($code);$ranges=[];
@@ -520,7 +523,7 @@ final class MainCompiler
     }
 
     /** @param array<string,mixed>|null $registerData @param list<array<string,mixed>> $dataDeclarations @param list<array<string,string>> $stateDeclarations @param list<string> $variableList @param list<mixed> $sections @param list<array<string,mixed>> $sectionsInfo @param array<string,mixed>|null $fetchConfig @param array<string,mixed>|null $viewTypeData @param array<string,string> $verbatimBlocks */
-    private function buildView(string$viewName,string$functionName,string$factoryName,?array$registerData,array$dataDeclarations,string$wrapperFunction,string$wrapperDeclarations,string$wrapperConfigContent,?string$wrapperConfig,array$stateDeclarations,array$variableList,array$sections,array$sectionsInfo,string$templateContent,string$renderFunction,string$prerender,?array$fetchConfig,?array$viewTypeData,string$varsDeclaration,bool$hasAwait,bool$hasFetch,bool$hasPrerender,?string$extendedView,?string$extendsExpression,?string$extendsData,array$verbatimBlocks):string
+    private function buildView(string$viewName,string$functionName,string$factoryName,?array$registerData,array$dataDeclarations,string$wrapperFunction,string$wrapperDeclarations,string$wrapperConfigContent,?string$wrapperConfig,array$stateDeclarations,array$variableList,array$sections,array$sectionsInfo,string$templateContent,string$renderFunction,string$prerender,?array$fetchConfig,?array$viewTypeData,string$varsDeclaration,bool$hasAwait,bool$hasFetch,bool$hasPrerender,?string$extendedView,?string$extendsExpression,?string$extendsData,array$verbatimBlocks,?string$cacheConfig=null):string
     {
         $sectionsMap=[];foreach($sectionsInfo as$section){$name=(string)($section['name']??'');$sectionsMap[$name]=['type'=>$section['type']??'short','preloader'=>(bool)($section['preloader']??false),'useVars'=>(bool)($section['useVars']??false),'script'=>$section['script']??'{}'];}
         $sectionParts=[];foreach($sectionsMap as$name=>$config){$body='"type":"'.$config['type'].'",'."\n            ".'"preloader":'.$this->bool($config['preloader']).','."\n            ".'"useVars":'.$this->bool($config['useVars']).','."\n            ".'"script":'.$config['script'];$sectionParts[]='        "'.$name.'":{' . "\n            {$body}\n        }";}
@@ -558,7 +561,7 @@ final class MainCompiler
         $configThis=$ts?'this: ViewConfigThis':'';$commitParams=$configThis;$dataParam=$ts?'data: any':'data';$updateDataParams=$ts?'this: ViewConfigThis, data: any':$dataParam;$itemParams=$ts?'this: ViewConfigThis, key: string, value: any':'key, value';
         $setupConfig="superView: {$super},\n        subscribe: {$subscribeJs},\n        fetch: ".($fetchConfig?$this->utils->formatFetchConfig($fetchConfig):'null').",\n        data: __data__,\n        viewId: __VIEW_ID__,\n        path: __VIEW_PATH__,{$scriptsLine},{$stylesLine},{$resourcesLine},\n        commitConstructorData: function({$commitParams}) {\n            // Then update states from data\n            {$stateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableData: function({$updateDataParams}) {\n            // Update all variables first\n            for (const key in data) {\n                if (data.hasOwnProperty(key)) {\n                    // Call updateVariableItemData directly from config\n                    if (typeof this.config.updateVariableItemData === 'function') {\n                        this.config.updateVariableItemData.call(this, key, data[key]);\n                    }\n                }\n            }\n            // Re-derive CHỈ state phụ thuộc data — state literal của instance KHÔNG reset\n            {$dataStateUpdates}\n            // Finally lock state updates\n            {$lock}\n        },\n        updateVariableItemData: function({$itemParams}) {\n            (this.data ??= {})[key] = value;\n            if (typeof __UPDATE_DATA_TRAIT__[key] === \"function\") {\n                __UPDATE_DATA_TRAIT__[key](value);\n            }\n        },\n        prerender: {$prerender},\n        render: {$renderFunction}";
 
-        $config="hasSuperView: {$hasSuper},\n    viewType: '{$viewType}',\n    sections: {$sectionsJson},\n    wrapperConfig: {$wrapperValue},{$wrapperProps}\n    hasAwaitData: ".$this->bool($hasAwait).",\n    hasFetchData: ".$this->bool($hasFetch).",\n    usesVars: ".$this->bool($varsDeclaration!=='').",\n    hasSections: ".$this->bool($sections!==[]).",\n    hasSectionPreload: ".$this->bool($this->anyPreloader($sectionsInfo)).",\n    hasPrerender: ".$this->bool($hasPrerender).",\n    renderLongSections: {$renderLong},\n    renderSections: {$renderSectionsJson},\n    prerenderSections: {$preSectionsJson}";
+        $config="hasSuperView: {$hasSuper},\n    viewType: '{$viewType}',\n    sections: {$sectionsJson},\n    wrapperConfig: {$wrapperValue},{$wrapperProps}\n    hasAwaitData: ".$this->bool($hasAwait).",\n    hasFetchData: ".$this->bool($hasFetch).",\n    usesVars: ".$this->bool($varsDeclaration!=='').",\n    hasSections: ".$this->bool($sections!==[]).",\n    hasSectionPreload: ".$this->bool($this->anyPreloader($sectionsInfo)).",\n    hasPrerender: ".$this->bool($hasPrerender).",\n    renderLongSections: {$renderLong},\n    renderSections: {$renderSectionsJson},\n    prerenderSections: {$preSectionsJson}".($cacheConfig!==null?",\n    cache: {$cacheConfig}":'');
 
         $out=$this->viewTemplate;$namespace='';$viewParts=explode('.',$viewName);if(count($viewParts)>1){array_pop($viewParts);$namespace=implode('.',$viewParts).'.';}
         $out=str_replace(['[COMPONENT_NAME]','[FACTORY_FUNCTION_NAME]',"const __VIEW_PATH__ = 'admin.pages.users';","const __VIEW_NAMESPACE__ = 'admin.pages.';","const __VIEW_TYPE__ = 'view';",'[VIEW_CONFIG_PLACEHOLDER]'],[$functionName,$factoryName,"const __VIEW_PATH__ = '{$viewName}';","const __VIEW_NAMESPACE__ = '{$namespace}';","const __VIEW_TYPE__ = '{$viewType}';",$config],$out);
