@@ -18,11 +18,12 @@ final class DirectiveParsers
     /** @return array{?string, ?string, ?string} */
     public function parseExtends(string $code): array
     {
-        if (! Re::match('/@extends\s*\(\s*([^)]+)\s*\)/s', $code, $m)) return [null, null, null];
-        $content = trim($m[1]);
-        $comma = strpos($content, ',');
-        $view = trim($comma === false ? $content : substr($content, 0, $comma));
-        $data = $comma === false ? null : $this->convertExtendsData(trim(substr($content, $comma + 1)));
+        if (! Re::match('/@extends\s*\(/s', $code, $m, PREG_OFFSET_CAPTURE)) return [null, null, null];
+        [$content] = Balanced::extractParensAt($code, $m[0][1] + strlen($m[0][0]) - 1);
+        if ($content === null) return [null, null, null];
+        $parts = $this->splitNested($content, true);
+        $view = trim($parts[0] ?? '');
+        $data = isset($parts[1]) ? $this->convertExtendsData($parts[1]) : null;
         return $this->isSimpleStringLiteral($view)
             ? [substr($view, 1, -1), null, $data]
             : [null, $this->convertExtendsExpression($view), $data];
@@ -369,17 +370,9 @@ final class DirectiveParsers
 
     private function convertExtendsData(string $value): string
     {
-        $warnings = '';
-        foreach (Re::matchAll('/\$([a-zA-Z_]\w*)/', $value) as $m) {
-            $warnings .= 'Warning: Undefined variable ' . $m[1] . " in Command line code on line 1\n";
-        }
-        if ($warnings !== '') {
-            $withoutVars = Re::replace('/\$([a-zA-Z_]\w*)/', 'null', $value);
-            $converted = $this->convertPhpArrayLikePython($withoutVars);
-            return $warnings . $converted;
-        }
-        $value = $this->convertPhpArrayLikePython($value);
-        return Re::replace('/\s+\.\s+/', ' + ', $value);
+        // Props are runtime expressions. Do not evaluate them as PHP constants
+        // or serialize missing compile-time variables to null.
+        return $this->expressions->compile($value);
     }
 
     /** Mimic convert_php_array_with_php_r, then its quote-only fallback. */

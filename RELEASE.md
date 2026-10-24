@@ -1,15 +1,7 @@
-# Saola Compiler v1.0.2
+# Saola Compiler v3.0.0
 
-Compiles .sao templates to Blade SSR and JavaScript CSR, including typed declarations, hydration scopes, translation helpers and inline language directives.
+Breaking translation contract: bare __() in .sao compiles to PHP text() and client Helper.text(). Nested keys resolve through the host's Saola language store/snapshot; they are not Laravel text-to-text lookups. Calls on objects/classes and Laravel __() in ordinary PHP are unchanged. Existing .sao templates that need Laravel translations must use trans()/choice() explicitly before upgrading.
 
-## Compatibility
+Also preserves runtime props passed to @extends on both Blade and client output. PHP ^8.3; pair the new translation contract with saola/core >=2.4 and @saolabs/client >=1.3 (GitHub tag available for the coordinated admin alpha).
 
-PHP ^8.3; optional Laravel integration.
-
-## Validation
-
-Composer validate and audit passed; 265 tests, 571 assertions.
-
-## Release scope
-
-Coordinated v1.0.2 registry release using the tested v1.0.0 source. Package manifests are normalized to 1.0.2 for registry availability. Runtime source is unchanged from v1.0.0. Existing tags and previously published versions are preserved.
+Validated with the full compiler suite in a separate checkout using its own Composer dependencies, including translation-call boundaries and extends runtime props. No source tag is overwritten.

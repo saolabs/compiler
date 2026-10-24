@@ -19,7 +19,7 @@ final class KnownFunctions
 {
     /** Hàm thuộc App.View — phần còn lại rơi về App.Helper. */
     public const VIEW = [
-        'generateViewId', 'execute', 'evaluate', 'escString', 'text', 'templateToDom',
+        'generateViewId', 'execute', 'evaluate', 'escString', 'templateToDom',
         'view', 'loadView', 'renderView', 'include', 'includeIf', 'extendView',
         'setSuperViewPath', 'addViewEngine', 'callViewEngineMounted',
         'startWrapper', 'endWrapper', 'registerSubscribe',
@@ -33,7 +33,7 @@ final class KnownFunctions
 
     /** Hàm được nhận diện tường minh và gắn tiền tố trước vòng fallback. */
     public const KNOWN = [
-        '__', 'trans', 'lang', 'trans_choice', 'choice', 'getLocale', 'setLocale',
+        '__', 'text', 'trans', 'lang', 'trans_choice', 'choice', 'getLocale', 'setLocale',
         'count', 'min', 'max', 'abs', 'ceil', 'floor', 'round', 'sqrt',
         'strlen', 'substr', 'trim', 'ltrim', 'rtrim', 'strtolower', 'strtoupper',
         'isset', 'empty', 'is_null', 'is_array', 'is_string', 'is_numeric',

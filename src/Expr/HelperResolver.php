@@ -121,12 +121,14 @@ final class HelperResolver
     {
         // KHÔNG return sớm khi không có userMethods: `emit` là method có sẵn
         // của View, phải phân giải kể cả ở view không có <script setup>.
-        if ($this->userMethods === [] && ! str_contains($expr, 'emit')) {
+        if ($this->userMethods === [] && ! str_contains($expr, 'emit')
+            && !str_contains($expr, '__') && !str_contains($expr, 'text')) {
             return $expr;
         }
 
         $mask = new LiteralMask('VIEW_METHOD_STR');
         $masked = $mask->mask($expr);
+        $masked = Re::replace('/(?<![\w.$])(?:__|text)\s*\(/', 'App.Helper.text(', $masked);
 
         foreach ($this->userMethods as $name => $_) {
             $masked = Re::replace(
@@ -165,7 +167,7 @@ final class HelperResolver
         foreach (KnownFunctions::KNOWN as $name) {
             $expr = Re::replace(
                 '/(?<![\w.])(' . preg_quote($name, '/') . ')\s*\(/',
-                KnownFunctions::namespaceFor($name) . '.${1}(',
+                KnownFunctions::namespaceFor($name) . '.' . ($name === '__' ? 'text' : $name) . '(',
                 $expr,
             );
         }

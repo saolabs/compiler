@@ -1,6 +1,10 @@
 # saola/compiler
 
+Coordinated admin alpha compatibility: see [release notes](RELEASE.md).
+
 Trình biên dịch `.sao` viết bằng PHP thuần. Cài qua Composer.
+
+Hợp đồng lang mới: bare `__()` trong biểu thức `.sao` biên dịch thành PHP `text()` và client `App.Helper.text()`, không thay hàm `__()` Laravel. Runtime phải có core resolver/client catalogs tương ứng; tham số theo `text(key, replace, default, locale)`. Xem [Language System](https://github.com/saolabs/admin/blob/main/docs/LANGUAGE_SYSTEM_PLAN.md).
 
 > Compiler PHP sinh Blade và JavaScript/TypeScript từ `.sao` trong cùng một lời gọi.
 > Builder gọi `vendor/bin/saoc`; Artisan có thể compile bằng PHP không cần Node.
