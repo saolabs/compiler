@@ -101,8 +101,15 @@ fs.mkdirSync(views, { recursive: true });
 fs.writeFileSync(path.join(dest, 'sao.config.json'), JSON.stringify(CONFIG, null, 4), 'utf8');
 
 // View thật: giữ nguyên cây thư mục để view path không đổi
-const real = path.join(ROOT, 'saola', 'resources', 'saola', 'web', 'views');
-const copied = fs.existsSync(real) ? copySao(real, views) : 0;
+const project = path.join(ROOT, 'saola');
+const config = JSON.parse(fs.readFileSync(path.join(project, 'sao.config.json'), 'utf8'));
+const sources = Object.values(config.contexts?.web?.views || {});
+if (sources.length !== 1 || typeof sources[0] !== 'string') throw new Error('Expected one starter web view source mapping');
+const source = sources[0];
+const real = path.resolve(project, config.paths?.saoView || 'resources/saola', source);
+if (!fs.existsSync(real)) throw new Error(`Starter view source does not exist: ${real}`);
+const copied = copySao(real, views);
+if (copied === 0) throw new Error('Node transport corpus must include real starter views');
 
 const stress = stressSources();
 for (const [name, source] of Object.entries(stress)) {

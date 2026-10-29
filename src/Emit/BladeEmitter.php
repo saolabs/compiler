@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Saola\Compiler\Emit;
 
 use Saola\Compiler\Declaration\DeclarationTracker;
+use Saola\Compiler\Expr\TranslationCalls;
 use Saola\Compiler\Hydration\BladeHydrateProcessor;
 use Saola\Compiler\Hydration\IdMode;
 use Saola\Compiler\Style\ScopedStyle;
@@ -320,7 +321,7 @@ BLADE;
         $output = str_replace("[BLADE_DECLARATIONS]\n", $declarationBlock, $output);
         $output = str_replace("[BLADE_SSR_CONTENT]\n", '', $output);
 
-        return str_replace('[BLADE_TEMPLATE_CONTENT]', $template, $output);
+        return TranslationCalls::blade(str_replace('[BLADE_TEMPLATE_CONTENT]', $template, $output));
     }
 
     private function insertWrapper(string $template): string
