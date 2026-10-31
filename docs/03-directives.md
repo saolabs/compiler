@@ -118,6 +118,11 @@ Chi tiết: [SAO_ELEMENT_DIRECTIVES_RFC.md](../../docs/SAO_ELEMENT_DIRECTIVES_RF
 | `#foreach` `#for` `#while` | `@foreach` `@for` `@while` | bọc thẻ như `#if` |
 | `#key` | `@key` | đi kèm directive lặp |
 
+Một thẻ có thể kết hợp nhiều `#` khác loại, thứ tự bọc ngoài → trong:
+`#case`/`#default` > `#elseif`/`#else` > loop (`#foreach`/`#for`/`#while` + `#key`) > `#if` > `#switch`.
+Ví dụ: `<li #foreach="r as x" #key="x.id" #if="!x.hidden">` sẽ hạ thành `@foreach(r as x)@key(x.id)@if(!x.hidden)<li>...</li>@endif@endforeach`.
+Cùng loại trên một thẻ (ví dụ 2 loop hoặc `#case` + `#default`) là lỗi biên dịch.
+
 `#` của người dùng (`Sao::tag`/`Sao::attr`) hạ trước, ở
 `Html::expandUserTagDirectives()` trong `DirectiveRegistry::transform()`. Luật
 kiểm tra **ngay trên thẻ**:

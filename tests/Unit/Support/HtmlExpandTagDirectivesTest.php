@@ -185,6 +185,74 @@ final class HtmlExpandTagDirectivesTest extends TestCase
             '<li #foreach="rows as row"><b #if="row[\'on\']">on</b></li>',
             '@foreach(rows as row)<li>@if(row[\'on\'])<b>on</b>@endif</li>@endforeach',
         ];
+
+        // ── Nhiều directive trên một thẻ ──────────────────────────────────
+        // Thứ tự bọc (ngoài → trong): #case/#default > #elseif/#else > loop > #if > #switch.
+        // Thứ tự viết trên thẻ không quan trọng.
+
+        // Loop bọc `#if`: `#if` lọc từng phần tử, dùng được biến lặp.
+        yield 'foreach + key + if: loop bọc if' => [
+            '<li #if="!p.archived" #foreach="rows as p" #key="p.id">x</li>',
+            '@foreach(rows as p)@key(p.id)@if(!p.archived)<li>x</li>@endif@endforeach',
+        ];
+
+        yield 'if + switch: if bọc switch' => [
+            '<div #switch="s" #if="a"><p #case="1">A</p></div>',
+            '@if(a)<div>@switch(s)@case(1)<p>A</p>@endswitch</div>@endif',
+        ];
+
+        // `#if` không có loop vẫn là đầu chuỗi: thẻ anh em `#else` nối được.
+        yield 'if + switch vẫn nối chuỗi else' => [
+            '<div #if="a" #switch="s"><p #case="1">A</p></div><p #else>B</p>',
+            '@if(a)<div>@switch(s)@case(1)<p>A</p>@endswitch</div>@else<p>B</p>@endif',
+        ];
+
+        yield 'foreach + switch: loop bọc switch' => [
+            '<div #foreach="rows as r" #switch="r.kind"><p #case="1">A</p></div>',
+            '@foreach(rows as r)<div>@switch(r.kind)@case(1)<p>A</p>@endswitch</div>@endforeach',
+        ];
+
+        yield 'foreach + if + switch' => [
+            '<div #foreach="rows as r" #if="r.ok" #switch="r.kind"><p #case="1">A</p></div>',
+            '@foreach(rows as r)@if(r.ok)<div>@switch(r.kind)@case(1)<p>A</p>@endswitch</div>@endif@endforeach',
+        ];
+
+        // `#elseif`/`#else` bọc loop để còn nối với thẻ anh em.
+        yield 'else bọc foreach' => [
+            '<p #if="empty">Trống</p><li #else #foreach="rows as r" #key="r.id">x</li>',
+            '@if(empty)<p>Trống</p>@else@foreach(rows as r)@key(r.id)<li>x</li>@endforeach@endif',
+        ];
+
+        yield 'elseif bọc foreach + switch' => [
+            '<p #if="a">A</p><div #elseif="b" #foreach="rows as r" #switch="r"><i #default>d</i></div>',
+            '@if(a)<p>A</p>@elseif(b)@foreach(rows as r)<div>@switch(r)@default<i>d</i>@endswitch</div>@endforeach@endif',
+        ];
+
+        // `#case` bọc ngoài cùng.
+        yield 'case + if' => [
+            '<div #switch="s"><p #if="z" #case="1">A</p><p #default>D</p></div>',
+            '<div>@switch(s)@case(1)@if(z)<p>A</p>@endif@break@default<p>D</p>@endswitch</div>',
+        ];
+
+        yield 'case + foreach + key' => [
+            '<ul #switch="s"><li #case="1" #foreach="rows as r" #key="r.id">x</li></ul>',
+            '<ul>@switch(s)@case(1)@foreach(rows as r)@key(r.id)<li>x</li>@endforeach@endswitch</ul>',
+        ];
+
+        yield 'case + for' => [
+            '<ul #switch="s"><li #case="1" #for="i = 0; i < n; i++">x</li></ul>',
+            '<ul>@switch(s)@case(1)@for(i = 0; i < n; i++)<li>x</li>@endfor@endswitch</ul>',
+        ];
+
+        yield 'case + switch lồng' => [
+            '<div #switch="s"><div #case="1" #switch="t"><p #case="2">x</p></div></div>',
+            '<div>@switch(s)@case(1)<div>@switch(t)@case(2)<p>x</p>@endswitch</div>@endswitch</div>',
+        ];
+
+        yield 'default + foreach + if + switch' => [
+            '<div #switch="s"><div #default #foreach="rows as r" #if="r.ok" #switch="r.k"><b #case="1">x</b></div></div>',
+            '<div>@switch(s)@default@foreach(rows as r)@if(r.ok)<div>@switch(r.k)@case(1)<b>x</b>@endswitch</div>@endif@endforeach@endswitch</div>',
+        ];
     }
 
     /**
@@ -242,7 +310,7 @@ final class HtmlExpandTagDirectivesTest extends TestCase
 
         yield 'if rỗng' => ['<div #if="">y</div>', 'thiếu biểu thức'];
         yield 'else có giá trị' => ['<div #if="a">x</div><div #else="b">y</div>', 'không nhận giá trị'];
-        yield 'hai directive một thẻ' => ['<div #if="a" #else>y</div>', 'nhiều directive điều khiển'];
+        yield 'hai directive một thẻ' => ['<div #if="a" #else>y</div>', 'nhiều directive cùng loại'];
 
         // Chuỗi phải là sibling LIỀN KỀ — chỉ được cách bởi khoảng trắng.
         yield 'có text thật giữa chuỗi' => [
@@ -278,7 +346,20 @@ final class HtmlExpandTagDirectivesTest extends TestCase
         yield 'key một mình' => ['<li #key="x">y</li>', 'phải đi kèm'];
         yield 'key với if' => ['<li #if="a" #key="x">y</li>', 'phải đi kèm'];
         yield 'hai key một thẻ' => ['<li #foreach="r as x" #key="a" #key="b">y</li>', 'mang hai `#key`'];
-        yield 'foreach cùng if' => ['<li #foreach="r as x" #if="a">y</li>', 'nhiều directive điều khiển'];
+        yield 'foreach cùng for' => ['<li #foreach="r as x" #for="i = 0; i < 2; i++">y</li>', 'nhiều directive cùng loại'];
+        yield 'case cùng default' => ['<div #switch="s"><p #case="1" #default>A</p></div>', 'nhiều directive cùng loại'];
+
+        // `#case`/`#default` bọc ngoài cùng → nhánh else bị nhốt, không nối được.
+        yield 'case cùng else' => ['<div #switch="s"><p #case="1" #else>A</p></div>', 'không đi cùng `#else`'];
+        yield 'default cùng elseif' => ['<div #switch="s"><p #default #elseif="b">A</p></div>', 'không đi cùng `#elseif`'];
+
+        // `#if` cạnh loop nằm TRONG loop → chuỗi đóng trong vòng lặp, thẻ anh
+        // em `#else` không có `#if` để nối.
+        yield 'else sau if nằm trong loop' => [
+            '<li #foreach="r as x" #if="x.a">a</li><p #else>b</p>',
+            'không có `#if` bao ngoài',
+        ];
+        yield 'case cùng switch mà ngoài không có switch' => ['<p #case="1" #switch="t"><b #case="2">x</b></p>', 'không có `#switch` bao ngoài'];
     }
 
     #[DataProvider('truongHopLoi')]

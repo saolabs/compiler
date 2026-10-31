@@ -65,6 +65,26 @@ final class Html
      */
     private const LOOP_DIRECTIVES = ['foreach' => true, 'for' => true, 'while' => true];
 
+    /**
+     * Loại (slot) của từng directive. Một thẻ mang tối đa một directive mỗi
+     * loại; khác loại thì kết hợp được. Thứ tự bọc, ngoài → trong:
+     *
+     *   #case/#default > #elseif/#else > loop (+#key) > #if > #switch
+     *
+     * `#if` đứng cạnh loop thì nằm TRONG loop (lọc từng phần tử); không có
+     * loop thì `#if` là đầu chuỗi nhánh như thường. `#elseif`/`#else` luôn bọc
+     * loop để còn nối được với thẻ anh em. `#switch` bọc ruột nên nằm trong cùng.
+     *
+     * @var array<string, string>
+     */
+    private const TAG_DIRECTIVE_SLOTS = [
+        'case' => 'case', 'default' => 'case',
+        'if' => 'branch', 'elseif' => 'branch', 'else' => 'branch',
+        'foreach' => 'loop', 'for' => 'loop', 'while' => 'loop',
+        'switch' => 'switch',
+        'key' => 'key',
+    ];
+
     private function __construct()
     {
     }
@@ -821,36 +841,37 @@ final class Html
                 continue;
             }
 
-            [$openTag, $directive, $expr, $keyExpr] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
+            [$openTag, $dirs] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
 
-            if ($directive === null) {
+            if ($dirs === []) {
                 $out .= $openTag;
                 $i = $openEnd;
                 continue;
             }
 
-            if (isset(self::LOOP_DIRECTIVES[$directive])) {
-                [$chunk, $i] = self::expandLoop($s, $lt, $tag, $openTag, $directive, $expr, $keyExpr, $openEnd);
-                $out .= $chunk;
-                continue;
-            }
-
-            if ($directive === 'switch') {
-                [$chunk, $i] = self::expandSwitch($s, $lt, $tag, $openTag, $expr, $openEnd);
-                $out .= $chunk;
-                continue;
-            }
-
-            if ($directive !== 'if') {
-                $owner = $directive === 'case' || $directive === 'default' ? '#switch' : '#if';
+            if (isset($dirs['case'])) {
                 throw new CompileException(
-                    "`#{$directive}` trên `<{$tag}>` không có `{$owner}` bao ngoài",
+                    "`#{$dirs['case'][0]}` trên `<{$tag}>` không có `#switch` bao ngoài",
                     sourceLine: self::lineOf($s, $lt),
                 );
             }
 
-            [$chain, $i] = self::expandChain($s, $lt, $tag, $openTag, $expr, $openEnd);
-            $out .= $chain;
+            $branch = $dirs['branch'][0] ?? null;
+            if ($branch === 'elseif' || $branch === 'else') {
+                throw new CompileException(
+                    "`#{$branch}` trên `<{$tag}>` không có `#if` bao ngoài",
+                    sourceLine: self::lineOf($s, $lt),
+                );
+            }
+
+            // `#if` không đi cùng loop → đầu chuỗi nhánh. Có loop thì `#if` nằm
+            // trong loop (lọc từng phần tử), chuỗi đóng ngay trong vòng lặp.
+            if ($branch === 'if' && ! isset($dirs['loop'])) {
+                [$chunk, $i] = self::expandChain($s, $lt, $tag, $openTag, $dirs, $openEnd);
+            } else {
+                [$chunk, $i] = self::renderTagged($s, $lt, $tag, $openTag, $dirs, $openEnd, true);
+            }
+            $out .= $chunk;
         }
 
         return $out;
@@ -861,15 +882,17 @@ final class Html
      *
      * Các nhánh phải là element sibling liền kề, chỉ được cách nhau bởi
      * khoảng trắng. Khoảng trắng đó giữ nguyên — nó là text node thường.
+     * Mỗi nhánh vẫn mang được loop/`#switch`; nhánh bọc chúng.
      *
+     * @param array<string, array{0: string, 1: ?string}> $dirs
      * @return array{0: string, 1: int} [đoạn đã hạ, vị trí quét tiếp]
      */
-    private static function expandChain(string $s, int $lt, string $tag, string $openTag, ?string $expr, int $openEnd): array
+    private static function expandChain(string $s, int $lt, string $tag, string $openTag, array $dirs, int $openEnd): array
     {
-        $out = '@if(' . $expr . ')';
+        $out = '@if(' . $dirs['branch'][1] . ')';
 
         while (true) {
-            [$element, $after] = self::takeElement($s, $lt, $tag, $openTag, $openEnd);
+            [$element, $after] = self::renderTagged($s, $lt, $tag, $openTag, $dirs, $openEnd, false);
             $out .= $element;
 
             $next = self::nextChainBranch($s, $after);
@@ -877,30 +900,45 @@ final class Html
                 return [$out . '@endif', $after];
             }
 
-            [$lt, $tag, $openTag, $directive, $expr, $openEnd, $gap] = $next;
-            $out .= $gap . ($directive === 'else' ? '@else' : '@elseif(' . $expr . ')');
+            [$lt, $tag, $openTag, $dirs, $openEnd, $gap] = $next;
+            $out .= $gap . ($dirs['branch'][0] === 'else' ? '@else' : '@elseif(' . $dirs['branch'][1] . ')');
         }
     }
 
     /**
-     * Hạ `#foreach`/`#for`/`#while` — bọc thẻ y như `#if`, không có chuỗi nhánh.
+     * Phát một element theo các directive nó mang (trừ `#case`/`#default` và
+     * nhánh chuỗi — chỗ gọi lo), thứ tự ngoài → trong: loop > `#if` > `#switch`.
      *
      * `#key` đi kèm được phát thành `@key(...)` ngay sau directive lặp; nó là
      * directive riêng đứng trong khối lặp (Ast\Parser::tryDirective), không phải
      * tham số của `@foreach`.
      *
+     * @param array<string, array{0: string, 1: ?string}> $dirs
+     * @param bool $withIf phát `#if` tại đây (false khi `#if` là đầu chuỗi nhánh)
      * @return array{0: string, 1: int} [đoạn đã hạ, vị trí quét tiếp]
      */
-    private static function expandLoop(string $s, int $lt, string $tag, string $openTag, string $directive, ?string $expr, ?string $keyExpr, int $openEnd): array
+    private static function renderTagged(string $s, int $lt, string $tag, string $openTag, array $dirs, int $openEnd, bool $withIf): array
     {
-        [$element, $after] = self::takeElement($s, $lt, $tag, $openTag, $openEnd);
-
-        $out = '@' . $directive . '(' . $expr . ')';
-        if ($keyExpr !== null) {
-            $out .= '@key(' . $keyExpr . ')';
+        if (isset($dirs['switch'])) {
+            [$out, $after] = self::expandSwitch($s, $lt, $tag, $openTag, $dirs['switch'][1], $openEnd);
+        } else {
+            [$out, $after] = self::takeElement($s, $lt, $tag, $openTag, $openEnd);
         }
 
-        return [$out . $element . '@end' . $directive, $after];
+        if ($withIf && ($dirs['branch'][0] ?? null) === 'if') {
+            $out = '@if(' . $dirs['branch'][1] . ')' . $out . '@endif';
+        }
+
+        if (isset($dirs['loop'])) {
+            [$loop, $expr] = $dirs['loop'];
+            $head = '@' . $loop . '(' . $expr . ')';
+            if (isset($dirs['key'])) {
+                $head .= '@key(' . $dirs['key'][1] . ')';
+            }
+            $out = $head . $out . '@end' . $loop;
+        }
+
+        return [$out, $after];
     }
 
     /**
@@ -985,8 +1023,8 @@ final class Html
                 throw new CompileException("thẻ `<{$childTag}>` trong `#switch` không đóng", sourceLine: self::lineOf($s, $i));
             }
 
-            [$childOpen, $childDirective, $childExpr, ] = self::takeTagDirective(substr($s, $i, $childOpenEnd - $i), $childTag);
-            if ($childDirective !== 'case' && $childDirective !== 'default') {
+            [$childOpen, $childDirs] = self::takeTagDirective(substr($s, $i, $childOpenEnd - $i), $childTag);
+            if (! isset($childDirs['case'])) {
                 throw new CompileException(
                     "`<{$childTag}>` trong `#switch` phải mang `#case` hoặc `#default`",
                     sourceLine: self::lineOf($s, $i),
@@ -996,24 +1034,14 @@ final class Html
             if ($branches !== '') {
                 $branches .= '@break';
             }
+            [$childDirective, $childExpr] = $childDirs['case'];
             $branches .= $childDirective === 'default' ? '@default' : '@case(' . $childExpr . ')';
-            $branches .= $childOpen;
 
-            if (isset(self::VOID_ELEMENTS[$childTag]) || str_ends_with(rtrim(substr($childOpen, 0, -1)), '/')) {
-                $i = $childOpenEnd;
-            } else {
-                $childClose = self::findMatchingClose($s, $childOpenEnd, $childTag);
-                if ($childClose === null) {
-                    throw new CompileException(
-                        "`<{$childTag}>` mang directive `#` nhưng thiếu `</{$childTag}>`",
-                        sourceLine: self::lineOf($s, $i),
-                    );
-                }
-                $childCloseEnd = strpos($s, '>', $childClose) + 1;
-                $branches .= self::expandRegion(substr($s, $childOpenEnd, $childClose - $childOpenEnd));
-                $branches .= substr($s, $childClose, $childCloseEnd - $childClose);
-                $i = $childCloseEnd;
-            }
+            // `#case`/`#default` bọc ngoài cùng; phần còn lại (loop, `#if`,
+            // `#switch` lồng) phát như một element thường bên trong nhánh.
+            unset($childDirs['case']);
+            [$childChunk, $i] = self::renderTagged($s, $i, $childTag, $childOpen, $childDirs, $childOpenEnd, true);
+            $branches .= $childChunk;
 
             $seen++;
         }
@@ -1031,7 +1059,7 @@ final class Html
     /**
      * Nhánh kế tiếp của chuỗi, nếu có.
      *
-     * @return array{0: int, 1: string, 2: string, 3: string, 4: ?string, 5: int, 6: string}|null
+     * @return array{0: int, 1: string, 2: string, 3: array<string, array{0: string, 1: ?string}>, 4: int, 5: string}|null
      */
     private static function nextChainBranch(string $s, int $from): ?array
     {
@@ -1054,27 +1082,32 @@ final class Html
             return null;
         }
 
-        [$openTag, $directive, $expr] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
-        if ($directive !== 'elseif' && $directive !== 'else') {
+        [$openTag, $dirs] = self::takeTagDirective(substr($s, $lt, $openEnd - $lt), $tag);
+        $branch = $dirs['branch'][0] ?? null;
+        if ($branch !== 'elseif' && $branch !== 'else') {
             return null;
         }
 
-        return [$lt, $tag, $openTag, $directive, $expr, $openEnd, substr($s, $from, $lt - $from)];
+        return [$lt, $tag, $openTag, $dirs, $openEnd, substr($s, $from, $lt - $from)];
     }
 
     /**
      * Bóc directive `#` khỏi thẻ mở.
      *
-     * @return array{0: string, 1: ?string, 2: ?string, 3: ?string} [thẻ đã bỏ directive, tên directive, biểu thức, biểu thức #key]
+     * Một thẻ mang được nhiều directive, mỗi loại (slot) tối đa một cái:
+     * `case` (#case/#default), `branch` (#if/#elseif/#else), `loop`
+     * (#foreach/#for/#while), `switch`, `key`. Thứ tự bọc do `renderTagged`
+     * và các chỗ gọi quyết định, không phụ thuộc thứ tự viết trên thẻ.
+     *
+     * @return array{0: string, 1: array<string, array{0: string, 1: ?string}>} [thẻ đã bỏ directive, slot => [tên, biểu thức]]
      */
     private static function takeTagDirective(string $openTag, string $tag): array
     {
         if (! str_contains($openTag, '#')) {
-            return [$openTag, null, null, null];
+            return [$openTag, []];
         }
 
-        $found = null;
-        $expr = null;
+        $found = [];
         $keyExpr = null;
         $out = '';
         $i = 0;
@@ -1129,8 +1162,9 @@ final class Html
                     . ' (hỗ trợ: ' . implode(', ', array_map(static fn (string $d): string => '#' . $d, array_keys(self::TAG_DIRECTIVES))) . ')',
                 );
             }
-            if ($name !== 'key' && $found !== null) {
-                throw new CompileException("`<{$tag}>` mang nhiều directive điều khiển: `#{$found}` và `#{$name}`");
+            $slot = self::TAG_DIRECTIVE_SLOTS[$name];
+            if ($name !== 'key' && isset($found[$slot])) {
+                throw new CompileException("`<{$tag}>` mang nhiều directive cùng loại: `#{$found[$slot][0]}` và `#{$name}`");
             }
             if ($name === 'key' && $keyExpr !== null) {
                 throw new CompileException("`<{$tag}>` mang hai `#key`");
@@ -1154,20 +1188,30 @@ final class Html
             if ($name === 'key') {
                 $keyExpr = trim((string) $raw);
             } else {
-                $found = $name;
-                $expr = $raw === null ? null : trim($raw);
+                $found[$slot] = [$name, $raw === null ? null : trim($raw)];
             }
             $out = rtrim($out);
         }
 
         // `#key` là bạn đồng hành của directive lặp, không đứng một mình.
-        if ($keyExpr !== null && ! isset(self::LOOP_DIRECTIVES[(string) $found])) {
+        if ($keyExpr !== null && ! isset($found['loop'])) {
             throw new CompileException(
                 "`#key` trên `<{$tag}>` phải đi kèm `#foreach`/`#for`/`#while`",
             );
         }
+        if ($keyExpr !== null) {
+            $found['key'] = ['key', $keyExpr];
+        }
 
-        return [$out, $found, $expr, $keyExpr];
+        // `#case`/`#default` bọc ngoài cùng nên nhánh `#elseif`/`#else` bị nhốt
+        // trong case — không còn nối được với `#if` của thẻ anh em.
+        if (isset($found['case'], $found['branch']) && $found['branch'][0] !== 'if') {
+            throw new CompileException(
+                "`#{$found['case'][0]}` trên `<{$tag}>` không đi cùng `#{$found['branch'][0]}` được",
+            );
+        }
+
+        return [$out, $found];
     }
 
     /**
