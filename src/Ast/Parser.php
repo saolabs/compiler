@@ -84,7 +84,7 @@ final class Parser
     ];
 
     private const SKIP_DIRECTIVES = [
-        'extends', 'vars', 'useState', 'props', 'states', 'fetch', 'await',
+        'extends', 'vars', 'useState', 'props', 'states', 'fetch', 'await', 'cache',
         'oninit', 'endoninit', 'register', 'endregister', 'setup', 'endsetup',
         'script', 'endscript', 'import', 'pageStart', 'pageEnd', 'pageOpen',
         'pageClose', 'docStart', 'docEnd', 'wrapper', 'endWrapper', 'startMarker',

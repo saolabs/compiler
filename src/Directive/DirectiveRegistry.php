@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Saola\Compiler\Directive;
 
 use Saola\Compiler\Preprocessor\ExpressionTransformer;
+use Saola\Compiler\Support\Html;
 use Saola\Compiler\Support\Re;
 use InvalidArgumentException;
 use Saola\Compiler\Directive\Builtin\BlockDirective;
@@ -62,7 +63,7 @@ final class DirectiveRegistry
         'useState'=>true, 'states'=>true, 'vars'=>true, 'props'=>true, 'let'=>true,
         'const'=>true, 'computed'=>true, 'include'=>true, 'importInclude'=>true,
         'children'=>true, 'extends'=>true, 'yield'=>true, 'section'=>true,
-        'block'=>true, 'wrapper'=>true, 'await'=>true, 'fetch'=>true,
+        'block'=>true, 'wrapper'=>true, 'await'=>true, 'fetch'=>true, 'cache'=>true,
         'subscribe'=>true,
     ];
 
@@ -71,6 +72,12 @@ final class DirectiveRegistry
 
     /** @var array<string, UserDirective> */
     private array $userDirectives = [];
+
+    /** @var array<string, TagDirective> */
+    private array $tagDirectives = [];
+
+    /** @var array<string, true> */
+    private array $helpers = [];
 
     public static function builtins(?DirectiveParsers $parsers = null): self
     {
@@ -108,13 +115,67 @@ final class DirectiveRegistry
         return array_values(array_unique([...array_keys($this->directives), ...array_keys($this->userDirectives)]));
     }
 
-    /** @param callable(string, ...string): array{blade:string,js:string} $handler */
+    /** Một cửa cho mọi khai báo trong `sao.directives.php`. */
+    public function add(BuiltinDirective|UserDirective|TagDirective|UserHelper $definition): self
+    {
+        match (true) {
+            $definition instanceof BuiltinDirective => $this->register($definition),
+            $definition instanceof UserDirective => $this->registerUser($definition),
+            $definition instanceof UserHelper => $this->helper($definition->name),
+            default => $this->registerTag($definition),
+        };
+
+        return $this;
+    }
+
+    /**
+     * Khai báo `name(...)` là helper có ở CẢ hai phía: hàm PHP toàn cục (Blade)
+     * và `App.Helper.name` (JS, thường từ bundle client của package).
+     */
+    public function helper(string $name): self
+    {
+        $this->helpers[(new UserHelper($name))->name] = true;
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function helpers(): array
+    {
+        return array_keys($this->helpers);
+    }
+
+    /** `#name="expr"` bọc element; handler trả [đoạn .sao trước, đoạn .sao sau]. */
+    public function tag(string $name, callable $handler, bool $value = true, bool $override = false): self
+    {
+        return $this->registerTag(Sao::tag($name, $handler, $value), $override);
+    }
+
+    /** `#name="expr"` thay bằng đoạn thuộc tính .sao. */
+    public function attr(string $name, callable $handler, bool $value = true, bool $override = false): self
+    {
+        return $this->registerTag(Sao::attr($name, $handler, $value), $override);
+    }
+
+    public function registerTag(TagDirective $directive, bool $override = false): self
+    {
+        if (Html::isBuiltinTagDirective($directive->name)) {
+            throw new InvalidArgumentException("Directive #{$directive->name} thuộc tầng T0 và không thể ghi đè.");
+        }
+        if (isset($this->tagDirectives[$directive->name]) && !($override || $directive->override)) {
+            throw new InvalidArgumentException("Directive #{$directive->name} đã được khai báo; cần override: true để thay.");
+        }
+        $this->tagDirectives[$directive->name] = $directive;
+        return $this;
+    }
+
+    /** @param callable(string): (string|array{blade:string,js:string}) $handler */
     public function directive(string $name, callable $handler, bool $override = false): self
     {
         return $this->registerUser(new UserDirective($name, $handler), $override);
     }
 
-    /** @param callable(string, string): array{blade:string,js:string} $handler */
+    /** @param callable(string, string): (string|array{blade:string,js:string}) $handler */
     public function blockDirective(string $name, callable $handler, bool $override = false): self
     {
         return $this->registerUser(new UserDirective($name, $handler, true), $override);
@@ -122,11 +183,15 @@ final class DirectiveRegistry
 
     public function registerUser(UserDirective $directive, bool $override = false): self
     {
+        $override = $override || $directive->override;
         if (isset(self::LOCKED[$directive->name])) {
             throw new InvalidArgumentException("Directive @{$directive->name} thuộc tầng T0 và không thể ghi đè.");
         }
         if ((isset(self::CORE[$directive->name]) || isset(self::elementTier()[$directive->name])) && !$override) {
             throw new InvalidArgumentException("Directive @{$directive->name} thuộc tầng T1; cần override: true.");
+        }
+        if (isset($this->userDirectives[$directive->name]) && !$override) {
+            throw new InvalidArgumentException("Directive @{$directive->name} đã được khai báo; cần override: true để thay.");
         }
         $this->userDirectives[$directive->name] = $directive;
         return $this;
@@ -137,7 +202,7 @@ final class DirectiveRegistry
         if (!in_array($target, ['blade', 'js'], true)) {
             throw new InvalidArgumentException("Đích directive không hợp lệ: {$target}");
         }
-        if ($this->userDirectives === []) {
+        if ($this->userDirectives === [] && $this->tagDirectives === []) {
             return $source;
         }
 
@@ -157,9 +222,14 @@ final class DirectiveRegistry
             $source,
         );
 
+        // `#tag` trước để output của nó dùng được `@directive` người dùng; chạy
+        // lại sau để `@directive` cũng phát được `#tag`. Không còn `#` người dùng
+        // nào thì lần hai không làm gì.
+        $source = Html::expandUserTagDirectives($source, $this->tagDirectives);
         foreach ($this->userDirectives as $directive) {
             $source = $this->transformOne($source, $directive, $target);
         }
+        $source = Html::expandUserTagDirectives($source, $this->tagDirectives);
 
         foreach ($regions as $i => $region) {
             $source = str_replace('__SAO_DIRECTIVE_SKIP_' . $i . '__', $region, $source);

@@ -35,6 +35,22 @@ final class HelperResolver
     private string $viewPath = '';
 
     /**
+     * Helper do package/app khai báo (`Sao::helper`): có ở cả PHP lẫn App.Helper,
+     * nên không cảnh báo "tên lạ".
+     *
+     * @var array<string, true>
+     */
+    private array $declaredHelpers = [];
+
+    /** @param list<string> $names */
+    public function declareHelpers(array $names): void
+    {
+        foreach ($names as $name) {
+            $this->declaredHelpers[$name] = true;
+        }
+    }
+
+    /**
      * Cảnh báo đã phát, khoá theo "view\0tên" — mỗi tên chỉ cảnh báo một lần
      * cho mỗi view, tránh spam khi cùng một hàm lạ xuất hiện nhiều chỗ.
      *
@@ -105,12 +121,14 @@ final class HelperResolver
     {
         // KHÔNG return sớm khi không có userMethods: `emit` là method có sẵn
         // của View, phải phân giải kể cả ở view không có <script setup>.
-        if ($this->userMethods === [] && ! str_contains($expr, 'emit')) {
+        if ($this->userMethods === [] && ! str_contains($expr, 'emit')
+            && !str_contains($expr, '__') && !str_contains($expr, 'text')) {
             return $expr;
         }
 
         $mask = new LiteralMask('VIEW_METHOD_STR');
         $masked = $mask->mask($expr);
+        $masked = Re::replace('/(?<![\w.$])(?:__|text)\s*\(/', 'App.Helper.text(', $masked);
 
         foreach ($this->userMethods as $name => $_) {
             $masked = Re::replace(
@@ -149,7 +167,7 @@ final class HelperResolver
         foreach (KnownFunctions::KNOWN as $name) {
             $expr = Re::replace(
                 '/(?<![\w.])(' . preg_quote($name, '/') . ')\s*\(/',
-                KnownFunctions::namespaceFor($name) . '.${1}(',
+                KnownFunctions::namespaceFor($name) . '.' . ($name === '__' ? 'text' : $name) . '(',
                 $expr,
             );
         }
@@ -182,7 +200,9 @@ final class HelperResolver
             return 'this.view.emit(';
         }
 
-        $this->warnUnknown($name);
+        if (! isset($this->declaredHelpers[$name])) {
+            $this->warnUnknown($name);
+        }
 
         return KnownFunctions::HELPER_NAMESPACE . '.' . $name . '(';
     }
