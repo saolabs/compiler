@@ -360,7 +360,7 @@ final class EventDirectiveProcessor
     private function convertPhpArrayToJsObject(string $param): string
     {
         $trimmed = trim($param);
-        if ($this->isPhpArrayLiteral($trimmed)) return $this->expressions->compile($trimmed);
+        if ($this->isPhpArrayLiteral($trimmed)) return $this->compileEventArray($trimmed);
         $param = $this->convertEmbeddedPhpArrays($param);
         $param = str_replace(['->', '::'], '.', $param);
         return $this->renameLoopIdentifier($param);
@@ -402,12 +402,19 @@ final class EventDirectiveProcessor
 
             $slice = substr($expr, $i, $end - $i + 1);
             $out .= $this->isPhpArrayLiteral($slice)
-                ? $this->expressions->compile($slice)
+                ? $this->compileEventArray($slice)
                 : $slice;
             $i = $end;
         }
 
         return $out;
+    }
+
+    private function compileEventArray(string $expression): string
+    {
+        return $this->expressions->helpers()->withEventContext(
+            fn () => $this->expressions->compile($expression),
+        );
     }
 
     /** Vị trí ']' khớp với '[' tại $start, -1 nếu không cân bằng. */

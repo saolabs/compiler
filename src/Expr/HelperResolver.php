@@ -25,6 +25,19 @@ use Saola\Compiler\Support\Re;
  */
 final class HelperResolver
 {
+    private bool $eventContext = false;
+
+    /** Nested event objects keep the same function scope as their handler. */
+    public function withEventContext(callable $compile): string
+    {
+        $previous = $this->eventContext;
+        $this->eventContext = true;
+        try {
+            return $compile();
+        } finally {
+            $this->eventContext = $previous;
+        }
+    }
     /**
      * Tên method khai báo trong <script setup> của view ĐANG compile.
      *
@@ -160,6 +173,7 @@ final class HelperResolver
      */
     public function resolve(string $expr): string
     {
+        if ($this->eventContext) return $this->resolveUserMethodCalls($expr);
         $mask = new LiteralMask('FN_STR');
         $masked = $mask->mask($expr);
         $this->checkBareCalls($masked);
