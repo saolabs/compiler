@@ -42,11 +42,22 @@ final class HelperResolver
      */
     private array $declaredHelpers = [];
 
+    /** App.Helper names loaded from resources/saola/_app/HelperProvider.ts. */
+    private array $clientHelpers = [];
+
     /** @param list<string> $names */
     public function declareHelpers(array $names): void
     {
         foreach ($names as $name) {
             $this->declaredHelpers[$name] = true;
+        }
+    }
+
+    /** @param list<string> $names */
+    public function declareClientHelpers(array $names): void
+    {
+        foreach ($names as $name) {
+            $this->clientHelpers[$name] = true;
         }
     }
 
@@ -89,6 +100,52 @@ final class HelperResolver
         return $this->warnings;
     }
 
+    /** Kiểm tra lời gọi PHP trong đoạn SSR-only; không tác động tới source. */
+    public function inspectPhpOnly(string $source): void
+    {
+        $tokens = token_get_all('<?php ' . $source);
+        $previous = null;
+        $count = count($tokens);
+
+        for ($i = 1; $i < $count; $i++) {
+            $token = $tokens[$i];
+            if (! is_array($token) || $token[0] !== T_STRING) {
+                if (! is_array($token) || ! in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                    $previous = $token;
+                }
+                continue;
+            }
+
+            $next = $i + 1;
+            while ($next < $count && is_array($tokens[$next])
+                && in_array($tokens[$next][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                $next++;
+            }
+
+            $isCall = $next < $count && $tokens[$next] === '(';
+            $isDeclarationOrMember = is_array($previous)
+                && in_array($previous[0], [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_NEW], true);
+
+            if ($isCall && ! $isDeclarationOrMember) {
+                $name = $token[1];
+                if (! function_exists($name) && ! isset($this->declaredHelpers[$name])) {
+                    $key = 'ssr' . "\0" . $this->viewPath . "\0" . $name;
+                    if (! isset($this->warnedUnknown[$key])) {
+                        $this->warnedUnknown[$key] = true;
+                        $where = $this->viewPath === '' ? '' : sprintf(' trong "%s"', $this->viewPath);
+                        $this->warnings[] = sprintf(
+                            '[sao2ssr] Cảnh báo%s: hàm PHP `%s(...)` không tồn tại trong đoạn SSR-only; compile vẫn tiếp tục.',
+                            $where,
+                            $name,
+                        );
+                    }
+                }
+            }
+
+            $previous = $token;
+        }
+    }
+
     /**
      * Gắn tiền tố cho lời gọi hàm trần trong biểu thức.
      *
@@ -104,8 +161,10 @@ final class HelperResolver
     public function resolve(string $expr): string
     {
         $mask = new LiteralMask('FN_STR');
+        $masked = $mask->mask($expr);
+        $this->checkBareCalls($masked);
 
-        return $mask->unmask($this->prefixBareCalls($mask->mask($expr)));
+        return $mask->unmask($this->prefixBareCalls($masked));
     }
 
     /**
@@ -128,6 +187,7 @@ final class HelperResolver
 
         $mask = new LiteralMask('VIEW_METHOD_STR');
         $masked = $mask->mask($expr);
+        $this->checkBareCalls($masked, true);
         $masked = Re::replace('/(?<![\w.$])(?:__|text)\s*\(/', 'App.Helper.text(', $masked);
 
         foreach ($this->userMethods as $name => $_) {
@@ -190,13 +250,6 @@ final class HelperResolver
             return $whole;
         }
 
-        // FIX(F3): method khai báo trong <script setup> của CHÍNH view này phải
-        // gọi qua this.view — compiled output đã bind chúng lên view. Rơi vào
-        // App.Helper là TypeError lúc chạy và giết cả view.
-        if (isset($this->userMethods[$name])) {
-            return 'this.view.' . $name . '(';
-        }
-
         // `emit` là method CÓ SẴN của View, không phải biến ma thuật — phân
         // giải y như method người dùng viết trong <script setup>. Thiếu nhánh
         // này nó rơi vào `App.Helper.emit(...)`, chỉ nổ lúc chạy.
@@ -204,19 +257,49 @@ final class HelperResolver
             return 'this.view.emit(';
         }
 
-        if (! isset($this->declaredHelpers[$name])) {
-            $this->warnUnknown($name);
-        }
-
         return KnownFunctions::HELPER_NAMESPACE . '.' . $name . '(';
     }
 
     /**
-     * Tên lạ: không phải helper đã biết, không phải method của view, không phải
-     * builtin JS. Vẫn compile thành App.Helper.<name> như cũ, nhưng báo lúc
-     * compile thay vì đợi tới lúc chạy mới nổ.
+     * Cảnh báo về các tên hàm trần mà SSR và CSR không thể đồng bộ.
+     * PHP có thể cung cấp hàm từ core hoặc package, nên chỉ dùng function_exists
+     * thay vì giới hạn vào danh sách compiler. Danh sách KNOWN đại diện cho
+     * helper đã có trong runtime client; Sao::helper đại diện helper khai báo
+     * đồng bộ ở cả hai phía.
      */
-    private function warnUnknown(string $name): void
+    private function checkBareCalls(string $expr, bool $allowViewMethods = false): void
+    {
+        Re::replaceCallback(
+            '/(?<![\\w.$])([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(/',
+            function (array $m) use ($allowViewMethods): string {
+                $name = $m[1];
+
+                if ($name === 'route'
+                    || KnownFunctions::isJsBuiltin($name)
+                    || KnownFunctions::isViewFunction($name)
+                    || ($allowViewMethods && isset($this->userMethods[$name]))) {
+                    return $m[0];
+                }
+
+                $hasPhp = function_exists($name)
+                    || in_array($name, ['isset', 'empty'], true)
+                    || isset($this->declaredHelpers[$name]);
+                $hasClient = in_array($name, KnownFunctions::KNOWN, true)
+                    || in_array($name, KnownFunctions::CLIENT_HELPERS, true)
+                    || isset($this->clientHelpers[$name])
+                    || isset($this->declaredHelpers[$name]);
+
+                if (! $hasPhp || ! $hasClient) {
+                    $this->warnHelperAvailability($name, $hasPhp, $hasClient);
+                }
+
+                return $m[0];
+            },
+            $expr,
+        );
+    }
+
+    private function warnHelperAvailability(string $name, bool $hasPhp, bool $hasClient): void
     {
         $key = $this->viewPath . "\0" . $name;
 
@@ -225,17 +308,19 @@ final class HelperResolver
         }
 
         $this->warnedUnknown[$key] = true;
-
         $where = $this->viewPath === '' ? '' : sprintf(' trong "%s"', $this->viewPath);
+        $missing = match (true) {
+            ! $hasPhp && ! $hasClient => 'không tồn tại ở PHP lẫn App.Helper',
+            ! $hasPhp => 'chưa có hàm PHP tương ứng',
+            default => 'chưa có hàm App.Helper tương ứng',
+        };
 
         $this->warnings[] = sprintf(
-            '[sao2js] Cảnh báo%s: `%s(...)` không khớp method nào trong <script setup> '
-            . 'lẫn danh sách helper đã biết — sẽ compile thành `%s.%s(...)`. '
-            . 'Nếu đây là method của component, kiểm tra chính tả / đã export trong <script setup> chưa.',
+            '[sao2js] Cảnh báo%s: `%s(...)` %s. Biểu thức vẫn được compile; hãy khai báo helper tương ứng nếu cần SSR/CSR đồng bộ.',
             $where,
             $name,
-            KnownFunctions::HELPER_NAMESPACE,
-            $name,
+            $missing,
         );
     }
+
 }

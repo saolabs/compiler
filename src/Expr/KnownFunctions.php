@@ -53,6 +53,26 @@ final class KnownFunctions
         'getDeviceType', 'isMobile', 'isTablet', 'isDesktop',
     ];
 
+    /** HelperService public methods that the compiler must recognize as client-side. */
+    public const CLIENT_HELPERS = [
+        'applyLanguageConfig', 'installLanguage', 'loadLanguage', 'changeLanguage',
+        'getLanguageScope', 'is_bool', 'is_int', 'is_float', 'is_object', 'sizeof',
+        'mb_substr', 'mb_strtolower', 'mb_strtoupper', 'mb_strlen', 'ucwords',
+        'str_ireplace', 'strpos', 'strrpos', 'stripos', 'str_starts_with',
+        'str_ends_with', 'str_word_count', 'str_getcsv', 'htmlspecialchars_decode',
+        'strip_tags', 'base64_encode', 'base64_decode', 'crc32', 'rawurlencode',
+        'rawurldecode', 'array_shift', 'array_unshift', 'array_keys', 'array_values',
+        'array_reverse', 'array_slice', 'array_splice', 'array_map', 'array_filter',
+        'array_reduce', 'array_find', 'array_find_key', 'array_column', 'array_combine',
+        'array_chunk', 'array_pad', 'array_flip', 'array_sum', 'array_product',
+        'array_count_values', 'array_fill', 'array_fill_keys', 'array_intersect',
+        'array_diff', 'array_intersect_key', 'array_diff_key', 'array_search',
+        'ksort', 'krsort', 'rsort', 'usort', 'uasort', 'uksort', 'range', 'mt_rand',
+        'array_rand', 'data_get', 'data_set', 'deepClone', 'escapeHtml', 'intdiv', 'fmod',
+        'microtime', 'floatval', 'strval', 'boolval', 'gettype', 'function_exists',
+        'class_exists', 'uniqid', 'var_dump', 'print_r',
+    ];
+
     /** Tên có sẵn của JS/TS — không bao giờ gắn tiền tố. */
     public const JS_BUILTINS = [
         'function', 'return', 'if', 'else', 'for', 'while', 'do', 'switch',

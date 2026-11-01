@@ -53,10 +53,12 @@ final class MainCompiler
         private readonly array $nativeComputed = [],
         private readonly array $emptyObjectDefaults = [],
         array $declaredHelpers = [],
+        array $clientHelpers = [],
     )
     {
         $this->expressions = new ExpressionCompiler();
         $this->expressions->helpers()->declareHelpers($declaredHelpers);
+        $this->expressions->helpers()->declareClientHelpers($clientHelpers);
         $this->parsers = new DirectiveParsers($this->expressions);
         $this->utils = new CompilerUtils();
         $this->wrapperParser = new WrapperParser($wrapperTemplate);
@@ -123,6 +125,11 @@ final class MainCompiler
         $factoryFunctionName ??= $functionName;
 
         [$bladeCode, $verbatimBlocks] = $this->protectVerbatim($bladeCode);
+        if (preg_match_all('/@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\\b([\\s\\S]*?)@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\\b/i', $bladeCode, $serverBlocks) > 0) {
+            foreach ($serverBlocks[1] as $serverBlock) {
+                $this->expressions->helpers()->inspectPhpOnly($serverBlock);
+            }
+        }
         $bladeCode = preg_replace('/@(?:serverside|serverSide|ssr|SSR|useSSR|useSsr)\b[\s\S]*?@end(?:serverside|serverSide|ServerSide|SSR|Ssr|ssr|useSSR|useSsr)\b/i', '', $bladeCode) ?? $bladeCode;
         [$bladeCode, $setupBlocks] = $this->protectScriptSetup($bladeCode);
         $bladeCode = preg_replace('/@state\b(?=\s*\()/i', '@states', $bladeCode) ?? $bladeCode;
