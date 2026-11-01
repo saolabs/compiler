@@ -148,7 +148,7 @@ Vẫn phải chạy lại toàn bộ suite sau khi hoàn tất P5–P7.
 > "PHP → JS" gần như pass-through (`item.name` → `item.name`). Việc thật mà
 > `php_converter.py` (469) + `php_js_converter.py` (782) còn làm là **phân giải
 > hàm về helper runtime** (`count(items)` → `App.Helper.count(items)`,
-> `route("home")` → `App.View.route("home")`) và cảnh báo hàm không khớp
+> `route("home")` → `App.Router.getURL("home")`) và cảnh báo hàm không khớp
 > `<script setup>` — cả hai đều áp dụng cho cú pháp mới. Phần PHP thật sự chỉ là
 > lớp tương thích cho file chưa chuyển cú pháp.
 >

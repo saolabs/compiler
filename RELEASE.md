@@ -1,6 +1,8 @@
-# Saola Compiler v3.1.1
+# Saola Compiler v3.1.2
 
-Fixes inline `@useBlock` layout outlets so the compiler emits both the client-side block outlet and the server-side marker when the directive appears within an HTML line.
+Fixes client-side compilation of named `route()` calls. The compiler now emits
+`App.Router.getURL(...)` so views resolve named routes through the client router
+instead of calling the nonexistent `App.View.route(...)` method.
 
 ## Compatibility
 
@@ -8,4 +10,5 @@ PHP ^8.3; optional Laravel integration.
 
 ## Release scope
 
-Includes the inline layout outlet compiler fix and regression coverage.
+Includes the named-route client runtime mapping fix and updated expression
+parity expectations.

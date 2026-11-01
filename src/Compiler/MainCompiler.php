@@ -519,7 +519,7 @@ final class MainCompiler
 
     private function convertBladeToTemplateString(string$value):string
     {
-        return preg_replace_callback('/\{\{\s*([^}]+)\s*\}\}/',static function(array$m):string{$expr=trim($m[1]);foreach(['asset(','route(','config(','date(']as$prefix)if(str_starts_with($expr,$prefix))return'${App.Helper.escString(App.Helper.'.$expr.')}';return'${App.Helper.escString('.$expr.')}';},$value)??$value;
+        return preg_replace_callback('/\{\{\s*([^}]+)\s*\}\}/',function(array$m):string{$expr=trim($m[1]);if(str_starts_with($expr,'route('))return'${App.Helper.escString('.$this->expressions->compileStatement($expr).')}';foreach(['asset(','config(','date(']as$prefix)if(str_starts_with($expr,$prefix))return'${App.Helper.escString(App.Helper.'.$expr.')}';return'${App.Helper.escString('.$expr.')}';},$value)??$value;
     }
 
     /** @param array<string,mixed>|null $registerData @param list<array<string,mixed>> $dataDeclarations @param list<array<string,string>> $stateDeclarations @param list<string> $variableList @param list<mixed> $sections @param list<array<string,mixed>> $sectionsInfo @param array<string,mixed>|null $fetchConfig @param array<string,mixed>|null $viewTypeData @param array<string,string> $verbatimBlocks */

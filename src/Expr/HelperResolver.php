@@ -11,7 +11,7 @@ use Saola\Compiler\Support\Re;
  * Phân giải lời gọi hàm trần thành helper runtime.
  *
  *     count(items)   →  App.Helper.count(items)
- *     route('home')  →  App.View.route('home')
+ *     route('home')  →  App.Router.getURL('home')
  *     myMethod(x)    →  this.view.myMethod(x)      (nếu có trong <script setup>)
  *     Math.max(a, b) →  không đổi                  (builtin JS)
  *
@@ -161,6 +161,10 @@ final class HelperResolver
     /** Giả định string literal ĐÃ được che. */
     private function prefixBareCalls(string $expr): string
     {
+        // `route()` là hàm Laravel ở SSR và phải tra route table của Router ở
+        // CSR. Nó không thuộc App.View hay App.Helper.
+        $expr = Re::replace('/(?<![\w.])route\s*\(/', 'App.Router.getURL(', $expr);
+
         // Lượt 1 — các tên đã biết, gắn tiền tố theo đúng thứ tự bản Python.
         // Lookbehind (?<![\w.]) chặn việc gắn thêm tiền tố vào tên đã có
         // namespace (App.Helper.count) hoặc property của object (obj.count).

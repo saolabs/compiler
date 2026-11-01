@@ -25,7 +25,7 @@ final class KnownFunctions
         'startWrapper', 'endWrapper', 'registerSubscribe',
         'section', 'yield', 'yieldContent', 'renderSections', 'hasSection',
         'getChangedSections', 'resetChangedSections', 'isChangedSection', 'emitChangedSections',
-        'push', 'stack', 'once', 'route', 'on', 'off', 'emit',
+        'push', 'stack', 'once', 'on', 'off', 'emit',
         'init', 'setApp', 'setContainer', 'clearOldRendering',
         'isAuth', 'can', 'cannot', 'hasError', 'firstError', 'csrfToken',
         'foreach', 'foreachTemplate',
