@@ -108,6 +108,19 @@ final class HtmlSplitInlineDirectivesTest extends TestCase
             '@wrapper' => ['@wrapper<b>a</b>@endwrapper', "@wrapper\n<b>a</b>\n@endwrapper"],
             '@section' => ["@section('s')<h3>a</h3>@endsection", "@section('s')\n<h3>a</h3>\n@endsection"],
             '@block' => ["@block('b')<h4>a</h4>@endblock", "@block('b')\n<h4>a</h4>\n@endblock"],
+            '@useBlock' => ["<main>@useBlock('content')</main>", "<main>\n@useBlock('content')\n</main>"],
         ];
+    }
+
+    public function test_inline_layout_outlet_compiles_to_a_client_outlet_and_server_marker(): void
+    {
+        $result = (new \Saola\Compiler\SaolaCompiler())->compile(
+            "<template><main>@useBlock('content')</main></template>",
+            new \Saola\Compiler\CompileOptions(viewPath: 'test.inline-outlet', idMode: 'terse'),
+        );
+        self::assertStringContainsString('this.blockOutlet(', $result->js);
+        self::assertStringNotContainsString("this.text('@useBlock", $result->js);
+        self::assertStringContainsString("@startMarker('blockoutlet'", $result->blade);
+        self::assertStringContainsString("@useBlock('content')", $result->blade);
     }
 }

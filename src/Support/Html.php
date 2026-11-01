@@ -250,6 +250,8 @@ final class Html
         ['@wrapper', false], ['@wrap', false],
         // @section inline cũng mất nội dung ở sao2js y như @if.
         ['@section', true], ['@block', true],
+        // Layout outlets must reach both traversals even when placed inside an HTML line.
+        ['@useBlock', true],
         // @include: Blade xử lý được inline, sao2js thì không — `tryDirective`
         // đòi directive đứng ĐẦU dòng, nên `<div>@include('x')</div>` ra chữ
         // "@include('x')" nguyên văn ở client trong khi server render đúng.
