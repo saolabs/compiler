@@ -237,6 +237,7 @@ final class HelperResolver
     {
         // `route()` là hàm Laravel ở SSR và phải tra route table của Router ở
         // CSR. Nó không thuộc App.View hay App.Helper.
+        $expr = $this->normalizeRouteArguments($expr);
         $expr = Re::replace('/(?<![\w.])route\s*\(/', 'App.Router.getURL(', $expr);
 
         // Lượt 1 — các tên đã biết, gắn tiền tố theo đúng thứ tự bản Python.
@@ -256,6 +257,28 @@ final class HelperResolver
             fn (array $m): string => $this->resolveBareCall($m[0], $m[1]),
             $expr,
         );
+    }
+
+    /** Laravel's absolute flag is server-only; Router URLs always use the current origin. */
+    private function normalizeRouteArguments(string $expr): string
+    {
+        preg_match_all('/(?<![\w.])route\s*\(/', $expr, $calls, PREG_OFFSET_CAPTURE);
+        foreach (array_reverse($calls[0]) as [$call, $offset]) {
+            $start = $offset + strlen($call);
+            $depth = 0;
+            $commas = [];
+            for ($i = $start, $length = strlen($expr); $i < $length; $i++) {
+                $char = $expr[$i];
+                if ($char === ')' && $depth === 0) {
+                    if (count($commas) >= 2) $expr = substr($expr, 0, $commas[1]).substr($expr, $i);
+                    break;
+                }
+                if (str_contains('([{', $char)) $depth++;
+                elseif (str_contains(')]}', $char)) $depth--;
+                elseif ($char === ',' && $depth === 0) $commas[] = $i;
+            }
+        }
+        return $expr;
     }
 
     private function resolveBareCall(string $whole, string $name): string

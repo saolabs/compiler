@@ -11,6 +11,15 @@ use Saola\Compiler\SaolaCompiler;
 
 final class TypedEventCallbackTest extends TestCase
 {
+    public function test_nested_named_routes_accept_the_laravel_absolute_flag(): void
+    {
+        $source = "<template><a href=\"{{ route('login', {next: route('agents', {}, false)}, false) }}\">Login</a></template>";
+        $output = (new SaolaCompiler())->compile($source, new CompileOptions(lang: Lang::Ts));
+        self::assertStringContainsString("App.Router.getURL('agents', [])", $output->js);
+        self::assertStringNotContainsString(', false)', $output->js);
+        self::assertStringContainsString('false', $output->blade);
+    }
+
     public function test_nested_event_objects_preserve_script_scope_and_do_not_leak_to_render(): void
     {
         $source = <<<'SAO'
