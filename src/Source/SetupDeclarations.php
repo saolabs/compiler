@@ -10,7 +10,7 @@ use Saola\Compiler\Support\BladeComment;
 /** Extract shared declarations without treating JavaScript text as template syntax. */
 final class SetupDeclarations
 {
-    private const NAMES = ['vars', 'props', 'state', 'states', 'let', 'const', 'computed', 'asset', 'assets', 'useState', 'importView', 'import'];
+    private const NAMES = ['vars', 'props', 'state', 'states', 'let', 'const', 'computed', 'asset', 'assets', 'useState', 'importView', 'import', 'middleware'];
 
     /** @return array{string, list<array{index:int,text:string}>} */
     public function extract(string $source): array

@@ -19,11 +19,18 @@ final class TypedDeclarations
     /** @var array<string, true> Empty JS objects otherwise lose their shape in PHP arrays. */
     public array $emptyObjectDefaults = [];
     public bool $useAuth = false;
+    /** @var list<string> */
+    public array $middleware = [];
 
     public function normalize(SourceParts $parts): SourceParts
     {
         $declarations = [];
         foreach ($parts->declarations as $declaration) {
+            if (preg_match('/^@middleware\s*\(/', $declaration)) {
+                $canonical = preg_replace('/^@middleware\s*\(/', '@middleware(', $declaration);
+                array_push($this->middleware, ...MiddlewareDeclaration::parse($canonical));
+                continue;
+            }
             if (preg_match('/^@useauth(?:[\t ]*\(\s*\))?$/i', $declaration)) {
                 if ($this->useAuth) throw new \InvalidArgumentException('Duplicate @useAuth declaration.');
                 $this->useAuth = true;

@@ -64,7 +64,7 @@ final class DirectiveRegistry
         'const'=>true, 'computed'=>true, 'include'=>true, 'importInclude'=>true,
         'children'=>true, 'extends'=>true, 'yield'=>true, 'section'=>true,
         'block'=>true, 'wrapper'=>true, 'await'=>true, 'fetch'=>true, 'cache'=>true,
-        'subscribe'=>true,
+        'subscribe'=>true, 'middleware'=>true,
     ];
 
     /** @var array<string, BuiltinDirective> */

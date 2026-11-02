@@ -100,6 +100,11 @@ final class SaolaCompiler
                     $options->factoryName,
                     $lang === Lang::Ts,
                 );
+            if ($typedJs->middleware !== []) {
+                $metadata = json_encode($typedJs->middleware, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $compiledJs .= "\nexport const __SAOLA_MIDDLEWARE__ = {$metadata};\n"
+                    ."Object.assign({$options->factoryName}, {middleware: __SAOLA_MIDDLEWARE__});\n";
+            }
             // Sau JS: `<style>` đăng ký cho SSR phải là CHÍNH bản đã ghi vào JS.
             $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath, $mainCompiler->inlineStyles());
 
@@ -142,6 +147,7 @@ final class SaolaCompiler
                 ),
             );
         } catch (CompileException $e) {
+            if ($e->viewPath === null) throw new CompileException($e->getMessage(), $options->viewPath, $e->sourceLine, $e);
             throw $e;
         } catch (\Throwable $e) {
             throw new CompileException($e->getMessage(), $options->viewPath, null, $e);

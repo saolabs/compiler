@@ -144,6 +144,21 @@ final class SourceSplitter
         $scan = self::blankScriptsAndStyles(BladeComment::blank($content));
         $scan = preg_replace_callback('/@verbatim\b[\s\S]*?@endverbatim\b/', static fn ($m) => preg_replace('/[^\r\n]/', ' ', $m[0]), $scan) ?? $scan;
 
+        preg_match_all('/(?<!@)@middleware\b/', $scan, $middlewareFlags, PREG_OFFSET_CAPTURE);
+        foreach ($middlewareFlags[0] as [$text, $start]) {
+            $line = substr_count(substr($content, 0, $start), "\n") + 1;
+            if ($this->isInsideAnyWrapper($wrappers, $start, $start + strlen($text))) {
+                throw new CompileException('@middleware must be declared outside the template or at top level in <script setup>.', sourceLine: $line);
+            }
+            if (!preg_match('/\G\s*\(/', $scan, $open, 0, $start + strlen($text))) {
+                throw new CompileException('@middleware requires arguments.', sourceLine: $line);
+            }
+            $paren = $start + strlen($text) + strlen($open[0]) - 1;
+            [$inner, $end] = Balanced::extractParensAt($content, $paren);
+            if ($inner === null) throw new CompileException('Unclosed @middleware declaration.', sourceLine: $line);
+            $found[] = ['index' => $start, 'text' => substr($content, $start, $end - $start)];
+        }
+
         preg_match_all('/(?<!@)@useauth\b(?:[\t ]*\([^)]*\))?/i', $scan, $authFlags, PREG_OFFSET_CAPTURE);
         foreach ($authFlags[0] as [$text, $start]) {
             if ($this->isInsideAnyWrapper($wrappers, $start, $start + strlen($text))) continue;
