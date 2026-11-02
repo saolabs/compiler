@@ -144,6 +144,13 @@ final class SourceSplitter
         $scan = self::blankScriptsAndStyles(BladeComment::blank($content));
         $scan = preg_replace_callback('/@verbatim\b[\s\S]*?@endverbatim\b/', static fn ($m) => preg_replace('/[^\r\n]/', ' ', $m[0]), $scan) ?? $scan;
 
+        preg_match_all('/(?<!@)@useauth\b(?:[\t ]*\([^)]*\))?/i', $scan, $authFlags, PREG_OFFSET_CAPTURE);
+        foreach ($authFlags[0] as [$text, $start]) {
+            if ($this->isInsideAnyWrapper($wrappers, $start, $start + strlen($text))) continue;
+            if (!preg_match('/^@useauth(?:[\t ]*\(\s*\))?$/i', $text)) throw new CompileException('@useAuth does not accept arguments.');
+            $found[] = ['index' => $start, 'text' => $text];
+        }
+
         foreach (self::DECLARATION_TYPES as $type) {
             $offset = 0;
 

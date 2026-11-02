@@ -317,8 +317,8 @@ final class MainCompiler
     private function extractUseStateVariables(string $source, array $tracked): array
     {
         $out=[];preg_match_all('/const\s+\[([^,]+),\s*([^\]]+)\]/',$source,$matches,PREG_SET_ORDER);
-        foreach($matches as$m)foreach([trim($m[1]),trim($m[2])]as$name)if(preg_match('/^[A-Za-z0-9]+$/',$name)===1)$out[$name]=true;
-        foreach($tracked as$decl)if(in_array($decl['type'],['useState','states','const','let'],true))foreach($decl['variables']as$var)if(!empty($var['isUseState']))foreach($var['names']??[]as$name)if(preg_match('/^[A-Za-z0-9]+$/',(string)$name)===1)$out[(string)$name]=true;
+        foreach($matches as$m)foreach([trim($m[1]),trim($m[2])]as$name)if(preg_match('/^[A-Za-z_$][\w$]*$/',$name)===1)$out[$name]=true;
+        foreach($tracked as$decl)if(in_array($decl['type'],['useState','states','const','let'],true))foreach($decl['variables']as$var)if(!empty($var['isUseState']))foreach($var['names']??[]as$name)if(preg_match('/^[A-Za-z_$][\w$]*$/',(string)$name)===1)$out[(string)$name]=true;
         return$out;
     }
 

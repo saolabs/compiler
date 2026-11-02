@@ -74,10 +74,23 @@ final class SaolaCompiler
 
             $bladeInput = $this->buildBladeInput($bladeParts, $bladeSource);
             $jsInput = $this->buildJsInput($jsParts);
+            if ($typedJs->useAuth) {
+                // Existing state subscriptions share one AuthService listener per view,
+                // support paused views, and are disposed by StateManager.destroy().
+                $jsInput = "<script setup>\n__STATE__.__.subscribe('@auth', () => set__auth__(App.Helper.auth().user()));\n</script>\n".$jsInput;
+            }
 
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
+            if ($typedBlade->useAuth) {
+                // State values enter the SSR hydration payload. Use Core's public
+                // projection, never the full Laravel user model (email, tokens, etc.).
+                $user = "\$__saola_auth_snapshot__['guards']->{\$__saola_auth_snapshot__['defaultGuard']}['user']";
+                $compiledBlade = str_replace('@useState($__auth__, auth()->user())',
+                    '@php($__saola_auth_snapshot__ = app(\\Saola\\Core\\Services\\ClientAuth::class)->export(request()))'."\n"
+                    .'@useState($__auth__, ('.$user.' === null ? null : (object) '.$user.'))', $compiledBlade);
+            }
             $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults, $this->directiveRegistry->helpers(), $options->clientHelpers);
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(

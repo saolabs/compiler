@@ -36,6 +36,18 @@ final class SetupDeclarations
                 if (ctype_space($c)) { if ($c === "\n") $statementStart = true; $i++; continue; }
                 $comment = in_array(substr($body, $i, 2), ['//', '/*'], true);
                 if ($this->skipLiteral($body, $i, $canRegex)) { if (!$comment) $statementStart = false; continue; }
+                if ($c === '@' && preg_match('/\G@useauth\b(?:[\t ]*\([^)]*\))?/i', $body, $auth, 0, $i)) {
+                    $line = substr_count(substr($source, 0, $offset + $i), "\n") + 1;
+                    if ($depth !== 0 || !$statementStart) throw new CompileException('@useAuth must be a top-level setup declaration.', sourceLine: $line);
+                    if (!preg_match('/^@useauth(?:[\t ]*\(\s*\))?$/i', $auth[0])) throw new CompileException('@useAuth does not accept arguments.', sourceLine: $line);
+                    $end = $i + strlen($auth[0]);
+                    $found[] = ['index' => $offset + $i, 'text' => '@useAuth()'];
+                    if (($body[$end] ?? '') === ';') $end++;
+                    $source = substr_replace($source, self::blank(substr($body, $i, $end - $i)), $offset + $i, $end - $i);
+                    $i = $end;
+                    $canRegex = $statementStart = true;
+                    continue;
+                }
                 if ($c === '@' && preg_match('/\G@([A-Za-z]+)\s*\(/', $body, $m, 0, $i) && in_array($m[1], self::NAMES, true)) {
                     $line = substr_count(substr($source, 0, $offset + $i), "\n") + 1;
                     if ($depth !== 0 || !$statementStart) throw new CompileException('@'.$m[1].' must be a top-level setup declaration.', sourceLine: $line);
