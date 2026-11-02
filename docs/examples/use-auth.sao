@@ -1,0 +1,9 @@
+@useAuth
+<template>
+    @if(__auth__)
+        <span>{{ __auth__.name }}</span>
+    @else
+        <span>Khách</span>
+    @endif
+    <button @click(set__auth__(null))>Ẩn thông tin trong view</button>
+</template>

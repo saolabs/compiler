@@ -75,9 +75,9 @@ final class SaolaCompiler
             $bladeInput = $this->buildBladeInput($bladeParts, $bladeSource);
             $jsInput = $this->buildJsInput($jsParts);
             if ($typedJs->useAuth) {
-                // Existing state subscriptions share one AuthService listener per view,
-                // support paused views, and are disposed by StateManager.destroy().
-                $jsInput = "<script setup>\n__STATE__.__.subscribe('@auth', () => set__auth__(App.Helper.auth().user()));\n</script>\n".$jsInput;
+                // Auth emits directly to the view's ordinary setter. The view scope
+                // owns unsubscribe; StateManager only handles the resulting state update.
+                $jsInput = "<script setup>\n\$controller.scope.defer(App.Auth.subscribe(() => set__auth__(App.Auth.user())));\n</script>\n".$jsInput;
             }
 
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target

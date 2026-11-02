@@ -22,8 +22,9 @@ final class UseAuthTest extends TestCase
                 self::assertStringContainsString('\\Saola\\Core\\Services\\ClientAuth::class', $r->blade);
                 self::assertStringContainsString('@if($__auth__)', $r->blade);
                 self::assertStringContainsString('const set__auth__ =', $r->js);
-                self::assertSame(1, substr_count($r->js, "subscribe('@auth'"));
-                self::assertStringContainsString("() => set__auth__(App.Helper.auth().user())", $r->js);
+                self::assertSame(1, substr_count($r->js, 'App.Auth.subscribe('));
+                self::assertStringContainsString('$controller.scope.defer(App.Auth.subscribe(() => set__auth__(App.Auth.user())))', $r->js);
+                self::assertStringNotContainsString("subscribe('@auth'", $r->js);
                 self::assertStringNotContainsString('@useAuth', $r->blade);
                 self::assertStringNotContainsString('@useauth', $r->js);
                 self::assertSame(['blade' => [], 'js' => []], MarkerParity::diff($r->blade, $r->js));
@@ -42,7 +43,7 @@ const pattern = /@useAuth/;
 </script>
 <template><p>Example</p>@verbatim @useAuth @endverbatim</template>
 SAO, new CompileOptions(viewPath: 'test.auth-examples'));
-        self::assertStringNotContainsString("subscribe('@auth'", $r->js);
+        self::assertStringNotContainsString('App.Auth.subscribe(', $r->js);
         self::assertStringNotContainsString('const set__auth__', $r->js);
     }
 

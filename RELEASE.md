@@ -1,3 +1,11 @@
+# Saola Compiler v3.4.1
+
+useAuth now subscribes directly to App.Auth and calls set__auth__(App.Auth.user()). The view owns unsubscribe through its existing ResourceScope.defer lifecycle. No synthetic state subscription is generated for useAuth. Setters still batch rendering and retain pause/resume behavior, while local auth state updates immediately on service changes.
+
+Compatible with existing @saolabs/client >=1.6.0 and saola/core >=2.8.0; rebuild application views. Includes complete .sao and generated JavaScript examples in docs/examples.
+
+Validation: 308 compiler tests, 785 assertions; actual Blade hydration, immediate state propagation, local setter, paused rendering, and destroy cleanup integration tests.
+
 # Saola Compiler v3.4.0
 
 Adds @useAuth / @useAuth() and lowercase aliases. Opted-in views receive writable __auth__ state, the ordinary set__auth__(...) setter and an automatic auth subscription disposed with the view. SSR stores only Core public user fields. Also fixes reactive dependency extraction for state identifiers containing underscores.

@@ -25,9 +25,10 @@ The server initializes the same state from Core's public user projection. This
 keeps the serialized hydration state limited to configured public fields instead
 of exposing a Laravel user model. A guest is `null` on both sides.
 
-The compiler registers a state subscription to the existing `@auth` dependency.
-The runtime shares one AuthService listener per view, batches updates, preserves
-paused-view behavior and removes subscriptions when the view is destroyed. No
+Compiler 3.4.1+ subscribes directly to `App.Auth`. The callback calls
+`set__auth__(App.Auth.user())`; `$controller.scope.defer(unsubscribe)` owns the
+subscription until view destruction. StateManager only batches the resulting
+state/DOM updates and preserves paused-view behavior. No
 polling, extra HTTP request or manual mounted/unmounted hook is necessary.
 Login, logout and profile changes refresh `__auth__`; a view's local setter does
 not change App.Auth or the server session. The next AuthService change replaces
@@ -38,3 +39,6 @@ that local value with the current user again.
 is a compile error. Literal examples in setup strings/comments and `@verbatim`
 do not activate the directive. This directive subscribes a view to auth state;
 protected routes still need server middleware/policies.
+
+See [the complete source example](examples/use-auth.sao) and
+[its actual generated JavaScript](examples/use-auth.compiled.js).
