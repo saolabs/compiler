@@ -178,6 +178,12 @@ final class BladeHydrateProcessor
                 continue;
             }
 
+            $lowered = \Saola\Compiler\Support\AuthExpressions::lowerDirective($stripped);
+            if ($lowered !== $stripped) {
+                $stripped = $lowered;
+                $rawLine = $indent.$lowered;
+            }
+
             if (Re::match('/^\s*@block\s*\(\s*[\'\"](\w+)[\'\"]\s*\)/u', $rawLine, $blockMatch)) {
                 $blockName = $blockMatch[1];
                 $this->idGenerator->pushBlock($blockName);
@@ -980,6 +986,7 @@ final class BladeHydrateProcessor
         }
 
         $found = [];
+        if (\Saola\Compiler\Support\AuthExpressions::readsAuth($expr)) $found[\Saola\Compiler\Support\AuthExpressions::STATE_KEY] = true;
         foreach (Re::matchAll('/\$?([a-zA-Z_]\w*)/u', $expr) as $match) {
             if (isset($this->stateVariables[$match[1]])) {
                 $found[$match[1]] = true;

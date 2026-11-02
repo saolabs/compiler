@@ -196,6 +196,7 @@ final class Parser
     /** @param list<array{Node, string, mixed}> $stack */
     private function tryDirective(string $line, array &$stack): bool
     {
+        $line = \Saola\Compiler\Support\AuthExpressions::lowerDirective($line);
         if (Re::match('/^@section\s*\(/', $line)) {
             $expr = $this->extractDirectiveParens($line, '@section');
             if ($expr !== null) {
@@ -917,6 +918,7 @@ final class Parser
         if ($expr === null || $expr === '') return [];
         $out = [];
         foreach (Re::matchAll('/\$?([a-zA-Z_][\p{L}\p{N}_]*)/u', $expr) as $m) if (isset($this->stateVariables[$m[1]])) $out[$m[1]] = true;
+        if (\Saola\Compiler\Support\AuthExpressions::readsAuth($expr)) $out[\Saola\Compiler\Support\AuthExpressions::STATE_KEY] = true;
         return $out;
     }
 

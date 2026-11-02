@@ -258,6 +258,8 @@ final class Html
         // Đặt CUỐI: `@includeIf` không được khớp nhầm (chặn bởi kiểm alnum ở
         // matchControlDirective), còn `@importInclude` khác tiền tố nên vô can.
         ['@include', true],
+        ['@auth', true], ['@guest', true], ['@elseauth', true], ['@elseguest', true],
+        ['@endauth', false], ['@endguest', false],
     ];
 
     /**
