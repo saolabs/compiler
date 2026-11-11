@@ -6,6 +6,7 @@ namespace Saola\Compiler\Laravel;
 
 use Illuminate\Support\ServiceProvider;
 use Saola\Compiler\Directive\Builtin\BuiltinDirective;
+use Saola\Compiler\Directive\DirectiveFiles;
 use Saola\Compiler\Directive\DirectiveRegistry;
 use Saola\Compiler\Laravel\Commands\SaoCompileCommand;
 use Saola\Compiler\SaolaCompiler;
@@ -22,12 +23,9 @@ use Saola\Compiler\SaolaCompiler;
  *   DirectiveRegistry — chỗ ứng dụng thêm directive riêng
  *   SaolaCompiler     — dùng chính registry đó
  *
- * Thêm directive trong `AppServiceProvider::boot()`:
- *
- *     $this->app->make(DirectiveRegistry::class)->directive('money', fn (string $e) => [
- *         'blade' => "{{ number_format({$e}, 0, ',', '.') }}",
- *         'js'    => "fmtMoney({$e})",
- *     ]);
+ * Directive khai báo ở `sao.directives.php` của app và của các package
+ * (`extra.saola.directives`) được nạp sẵn — cùng nguồn với `saoc --directives`
+ * mà builder dùng lúc build. Xem DirectiveFiles.
  */
 final class SaolaCompilerServiceProvider extends ServiceProvider
 {
@@ -35,8 +33,14 @@ final class SaolaCompilerServiceProvider extends ServiceProvider
     {
         // Registry là singleton để directive đăng ký ở AppServiceProvider còn
         // hiệu lực với mọi lần compile sau đó.
-        $this->app->singleton(DirectiveRegistry::class, static fn (): DirectiveRegistry
-            => DirectiveRegistry::builtins());
+        $this->app->singleton(DirectiveRegistry::class, function ($app): DirectiveRegistry {
+            $registry = DirectiveRegistry::builtins();
+            foreach (DirectiveFiles::discover($app->basePath()) as $file) {
+                DirectiveFiles::load($registry, $file);
+            }
+
+            return $registry;
+        });
 
         // Compiler thì KHÔNG giữ trạng thái giữa các lần compile (xem
         // docs/02-public-api.md §5 quy tắc 4), nhưng bản thân nó rẻ để dựng và

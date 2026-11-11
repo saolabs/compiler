@@ -84,7 +84,7 @@ final class Parser
     ];
 
     private const SKIP_DIRECTIVES = [
-        'extends', 'vars', 'useState', 'props', 'states', 'fetch', 'await',
+        'extends', 'vars', 'useState', 'props', 'states', 'fetch', 'await', 'cache',
         'oninit', 'endoninit', 'register', 'endregister', 'setup', 'endsetup',
         'script', 'endscript', 'import', 'pageStart', 'pageEnd', 'pageOpen',
         'pageClose', 'docStart', 'docEnd', 'wrapper', 'endWrapper', 'startMarker',
@@ -196,6 +196,7 @@ final class Parser
     /** @param list<array{Node, string, mixed}> $stack */
     private function tryDirective(string $line, array &$stack): bool
     {
+        $line = \Saola\Compiler\Support\AuthExpressions::lowerDirective($line);
         if (Re::match('/^@section\s*\(/', $line)) {
             $expr = $this->extractDirectiveParens($line, '@section');
             if ($expr !== null) {
@@ -222,6 +223,11 @@ final class Parser
         if (Re::match('/^@endsection\b/', $line)) {
             $this->popTo($stack, 'section');
             return true;
+        }
+        // Tên block đi vào id hydrate (`s{tên}-…`, dấu `-` đóng tên) nên chỉ gồm chữ, số, gạch dưới.
+        // Tên khác trước đây lặng lẽ thành chữ thường in ra màn hình ở CSR.
+        if (Re::match('/^@block\s*\(\s*[\'"]([^\'"]*)[\'"]/', $line, $bad) && preg_match('/^\w+$/', $bad[1]) !== 1) {
+            throw new \RuntimeException("@block('{$bad[1]}'): tên block chỉ gồm chữ, số và dấu gạch dưới (ví dụ @block('side_bar')).");
         }
         if (Re::match('/^@block\s*\(\s*[\'"](\w+)[\'"]/', $line, $m)) {
             $node = new BlockSection($m[1]);
@@ -917,6 +923,7 @@ final class Parser
         if ($expr === null || $expr === '') return [];
         $out = [];
         foreach (Re::matchAll('/\$?([a-zA-Z_][\p{L}\p{N}_]*)/u', $expr) as $m) if (isset($this->stateVariables[$m[1]])) $out[$m[1]] = true;
+        if (\Saola\Compiler\Support\AuthExpressions::readsAuth($expr)) $out[\Saola\Compiler\Support\AuthExpressions::STATE_KEY] = true;
         return $out;
     }
 

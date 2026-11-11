@@ -25,6 +25,14 @@ final class CompileOptions
         public int $compileTimeout = 120,
         public int $maxIncludeDepth = 32,
         public string $publicBaseUrl = '',
+        /** @var list<string> */
+        public array $clientHelpers = [],
+        /**
+         * Phát "dòng gộp" cho thân `@foreach` đơn giản (`this.__fused(...)`).
+         * Output đó CẦN `@saolabs/client` ≥ 1.10 (FusedRow) nên mặc định tắt;
+         * `@saolabs/builder` ≥ 1.7 tự bật khi client của dự án đủ mới.
+         */
+        public bool $fuseRows = false,
     ) {
     }
 
@@ -61,6 +69,19 @@ final class CompileOptions
             compileTimeout: (int) ($data['compileTimeout'] ?? 120),
             maxIncludeDepth: (int) ($data['maxIncludeDepth'] ?? 32),
             publicBaseUrl: (string) ($data['publicBaseUrl'] ?? ''),
+            clientHelpers: self::helperNames($data['clientHelpers'] ?? $data['client-helpers'] ?? []),
+            fuseRows: filter_var($data['fuseRows'] ?? $data['fuse-rows'] ?? false, FILTER_VALIDATE_BOOL),
         );
+    }
+
+    /** @return list<string> */
+    private static function helperNames(mixed $names): array
+    {
+        if (is_string($names)) {
+            $decoded = json_decode($names, true);
+            $names = is_array($decoded) ? $decoded : [];
+        }
+
+        return array_values(array_filter((array) $names, 'is_string'));
     }
 }

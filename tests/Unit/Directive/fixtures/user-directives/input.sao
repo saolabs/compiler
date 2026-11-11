@@ -1,0 +1,14 @@
+@states({ n: 2, on: true, items: ['a', 'b'] })
+<template>
+<section>
+    <p>@twice(n)</p>
+    @guard(on)<em>{{ n }}</em>@endguard
+    <div #when="on" #tip="n" class="box" #busy>
+        <span>@twice(n)</span>
+    </div>
+    <ul>
+        <li #foreach="items as item" #tip="item">{{ item }}</li>
+    </ul>
+    <p style="color: #fff" title="xem #when">#when ở văn bản giữ nguyên</p>
+</section>
+</template>

@@ -15,6 +15,7 @@ use Saola\Compiler\Emit\BladeInterpolationCheck;
 use Saola\Compiler\Emit\BladeTableNestingCheck;
 use Saola\Compiler\Emit\BladeEmitter;
 use Saola\Compiler\Hydration\IdMode;
+use Saola\Compiler\Hydration\MarkerParity;
 use Saola\Compiler\Preprocessor\Preprocessor;
 use Saola\Compiler\Source\SourceParts;
 use Saola\Compiler\Source\SourceSplitter;
@@ -73,11 +74,25 @@ final class SaolaCompiler
 
             $bladeInput = $this->buildBladeInput($bladeParts, $bladeSource);
             $jsInput = $this->buildJsInput($jsParts);
+            if ($typedJs->useAuth) {
+                // Auth emits directly to the view's ordinary setter. The view scope
+                // owns unsubscribe; StateManager only handles the resulting state update.
+                $jsInput = "<script setup>\n\$controller.scope.defer(App.Auth.subscribe(() => set__auth__(App.Auth.user())));\n</script>\n".$jsInput;
+            }
 
             // Cả hai luôn được sinh để cùng đi qua một cấu hình marker. Target
             // chỉ quyết định field nào được trả về cho caller.
             $compiledBlade = (new BladeEmitter(idMode: $mode))->compile($bladeInput);
-            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults);
+            if ($typedBlade->useAuth) {
+                // State values enter the SSR hydration payload. Use Core's public
+                // projection, never the full Laravel user model (email, tokens, etc.).
+                $user = "\$__saola_auth_snapshot__['guards']->{\$__saola_auth_snapshot__['defaultGuard']}['user']";
+                $compiledBlade = str_replace('@useState($__auth__, auth()->user())',
+                    '@php($__saola_auth_snapshot__ = app(\\Saola\\Core\\Services\\ClientAuth::class)->export(request()))'."\n"
+                    .'@useState($__auth__, ('.$user.' === null ? null : (object) '.$user.'))', $compiledBlade);
+            }
+            $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults, $this->directiveRegistry->helpers(), $options->clientHelpers);
+            $mainCompiler->fuseRows = $options->fuseRows;
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
                     $jsInput,
@@ -86,8 +101,27 @@ final class SaolaCompiler
                     $options->factoryName,
                     $lang === Lang::Ts,
                 );
+            if ($typedJs->middleware !== []) {
+                $metadata = json_encode($typedJs->middleware, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $compiledJs .= "\nexport const __SAOLA_MIDDLEWARE__ = {$metadata};\n"
+                    ."Object.assign({$options->factoryName}, {middleware: __SAOLA_MIDDLEWARE__});\n";
+            }
             // Sau JS: `<style>` đăng ký cho SSR phải là CHÍNH bản đã ghi vào JS.
             $compiledBlade = $this->injectSsrHeadAssets($compiledBlade, $bladeSource, $options->viewPath, $mainCompiler->inlineStyles());
+
+            // Directive trả hai đoạn .sao khác nhau cho hai đích: hai bản phải ra
+            // cùng bộ id hydrate, không thì client claim lệch DOM của SSR.
+            if ($bladeSource !== $jsSource) {
+                $parity = MarkerParity::diff($compiledBlade, $compiledJs);
+                if ($parity['blade'] !== [] || $parity['js'] !== []) {
+                    throw new CompileException(
+                        'Directive người dùng phát hai bản blade/js lệch id hydrate (chỉ Blade: '
+                        . (implode(', ', $parity['blade']) ?: '-') . '; chỉ JS: ' . (implode(', ', $parity['js']) ?: '-')
+                        . '). Trả về một chuỗi .sao chung cho cả hai đích.',
+                        $options->viewPath,
+                    );
+                }
+            }
 
             $imports = (new ImportParser())->parseImports($jsInput);
             $css = $this->scopedStyles($source);
@@ -114,6 +148,7 @@ final class SaolaCompiler
                 ),
             );
         } catch (CompileException $e) {
+            if ($e->viewPath === null) throw new CompileException($e->getMessage(), $options->viewPath, $e->sourceLine, $e);
             throw $e;
         } catch (\Throwable $e) {
             throw new CompileException($e->getMessage(), $options->viewPath, null, $e);

@@ -170,15 +170,15 @@ final class SaolaCompilerTest extends TestCase
         $this->assertStringContainsString('[sao2blade]', $all);
     }
 
-    /** Method khai trong <script setup> KHÔNG phải hàm lạ — báo là báo sai. */
-    public function test_method_cua_script_setup_khong_bi_canh_bao(): void
+    /** Rendering calls must be synchronized helpers, even when script declares the same name. */
+    public function test_method_script_dung_trong_render_van_can_helper(): void
     {
         $source = "<template><p>{{ coThat(1) }}</p></template>\n"
             . "<script setup>\nexport default { coThat(v) { return v; } }\n</script>";
 
         $result = (new SaolaCompiler())->compile($source, $this->options());
 
-        $this->assertSame([], $result->warnings);
+        $this->assertStringContainsString('coThat(...)', implode(' ', $result->warnings));
     }
 
     public function test_top_level_function_dung_duoc_voi_declaration_ssr_csr_hien_tai(): void
@@ -236,7 +236,7 @@ SAO;
         $this->assertStringNotContainsString('export default {', $js);
     }
 
-    public function test_top_level_function_dung_trong_output_duoc_dang_ky_va_khong_canh_bao(): void
+    public function test_top_level_function_trong_output_goi_helper_va_canh_bao_neu_thieu(): void
     {
         $source = <<<'SAO'
 <script setup>
@@ -247,9 +247,9 @@ SAO;
 
         $result = (new SaolaCompiler())->compile($source, $this->options());
 
-        $this->assertStringContainsString('this.view.formatCount(2)', (string) $result->js);
-        $this->assertMatchesRegularExpression('/setUserDefinedConfig\(\{\s*formatCount\s*\}\)/s', (string) $result->js);
-        $this->assertSame([], $result->warnings);
+        $this->assertStringContainsString('App.Helper.formatCount(2)', (string) $result->js);
+        $this->assertStringContainsString('function formatCount(value)', (string) $result->js);
+        $this->assertStringContainsString('formatCount(...)', implode(' ', $result->warnings));
     }
 
     public function test_trung_ten_giua_top_level_va_export_default_bi_tu_choi(): void

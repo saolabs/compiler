@@ -56,7 +56,7 @@ final class TemplateProcessor
         $bladeCode = $this->removePageDirectives($bladeCode);
         $bladeCode = preg_replace('/@extends\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
         $bladeCode = preg_replace('/@vars\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
-        foreach (['props', 'useState', 'states', 'fetch'] as $directive) $bladeCode = $this->removeBalancedDirective($bladeCode, $directive);
+        foreach (['props', 'useState', 'states', 'fetch', 'cache'] as $directive) $bladeCode = $this->removeBalancedDirective($bladeCode, $directive);
         $bladeCode = preg_replace('/@await\s*\([^)]*\)/s', '', $bladeCode) ?? $bladeCode;
         $bladeCode = $this->resolveImportIncludes($bladeCode);
         $bladeCode = ChildrenSlot::replaceForLegacyJs($bladeCode);
@@ -148,6 +148,7 @@ final class TemplateProcessor
     /** @param list<array<int, mixed>> $stack @param list<string> $output @param list<mixed> $sections */
     private function processLineDirectives(string $line, array &$stack, array &$output, array &$sections): string|bool|null
     {
+        $line = \Saola\Compiler\Support\AuthExpressions::lowerDirective($line);
         if (str_contains($line, '@class')) $line = $this->classes->processClassDirective($line);
         $event = $this->processEventDirectives($line);
         if ($event !== null) return $this->templates->processTemplateLine($event);

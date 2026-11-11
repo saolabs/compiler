@@ -84,6 +84,16 @@ final class SourceSplitter
                 : substr($content, $fetchMatch[0][1], $parenAt - $fetchMatch[0][1] + strlen($inner) + 2);
         }
 
+        // @cache(...) — cấu hình PageCache của view; như @fetch, phải lấy TRỌN ngoặc.
+        if (Re::match('/@cache\s*\(/', $flagScan, $cacheMatch, PREG_OFFSET_CAPTURE)) {
+            $parenAt = $cacheMatch[0][1] + strlen($cacheMatch[0][0]) - 1;
+            $inner = Balanced::extractParens($content, $parenAt);
+            if ($inner !== null) {
+                $cache = substr($content, $cacheMatch[0][1], $parenAt - $cacheMatch[0][1] + strlen($inner) + 2);
+                $fetchPrefix = $fetchPrefix === null ? $cache : $fetchPrefix . "\n" . $cache;
+            }
+        }
+
         $wrapperType = null;
         $bladeFromWrapper = null;
 
@@ -133,6 +143,28 @@ final class SourceSplitter
         // nguyên độ dài nên offset vẫn trỏ đúng vào $content gốc.
         $scan = self::blankScriptsAndStyles(BladeComment::blank($content));
         $scan = preg_replace_callback('/@verbatim\b[\s\S]*?@endverbatim\b/', static fn ($m) => preg_replace('/[^\r\n]/', ' ', $m[0]), $scan) ?? $scan;
+
+        preg_match_all('/(?<!@)@middleware\b/', $scan, $middlewareFlags, PREG_OFFSET_CAPTURE);
+        foreach ($middlewareFlags[0] as [$text, $start]) {
+            $line = substr_count(substr($content, 0, $start), "\n") + 1;
+            if ($this->isInsideAnyWrapper($wrappers, $start, $start + strlen($text))) {
+                throw new CompileException('@middleware must be declared outside the template or at top level in <script setup>.', sourceLine: $line);
+            }
+            if (!preg_match('/\G\s*\(/', $scan, $open, 0, $start + strlen($text))) {
+                throw new CompileException('@middleware requires arguments.', sourceLine: $line);
+            }
+            $paren = $start + strlen($text) + strlen($open[0]) - 1;
+            [$inner, $end] = Balanced::extractParensAt($content, $paren);
+            if ($inner === null) throw new CompileException('Unclosed @middleware declaration.', sourceLine: $line);
+            $found[] = ['index' => $start, 'text' => substr($content, $start, $end - $start)];
+        }
+
+        preg_match_all('/(?<!@)@useauth\b(?:[\t ]*\([^)]*\))?/i', $scan, $authFlags, PREG_OFFSET_CAPTURE);
+        foreach ($authFlags[0] as [$text, $start]) {
+            if ($this->isInsideAnyWrapper($wrappers, $start, $start + strlen($text))) continue;
+            if (!preg_match('/^@useauth(?:[\t ]*\(\s*\))?$/i', $text)) throw new CompileException('@useAuth does not accept arguments.');
+            $found[] = ['index' => $start, 'text' => $text];
+        }
 
         foreach (self::DECLARATION_TYPES as $type) {
             $offset = 0;

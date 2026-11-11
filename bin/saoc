@@ -4,9 +4,8 @@
 declare(strict_types=1);
 
 use Saola\Compiler\CompileOptions;
-use Saola\Compiler\Directive\Builtin\BuiltinDirective;
+use Saola\Compiler\Directive\DirectiveFiles;
 use Saola\Compiler\Directive\DirectiveRegistry;
-use Saola\Compiler\Directive\UserDirective;
 use Saola\Compiler\SaolaCompiler;
 
 $autoloadCandidates = [dirname(__DIR__).'/vendor/autoload.php', dirname(__DIR__, 3).'/autoload.php'];
@@ -53,24 +52,13 @@ function saoc_options(array $raw): CompileOptions
     return CompileOptions::fromArray($raw);
 }
 
-function saoc_registry(?string $file, bool $sandbox): DirectiveRegistry
+function saoc_registry(?string $spec, bool $sandbox): DirectiveRegistry
 {
     $registry = DirectiveRegistry::builtins();
-    if ($file === null) return $registry;
+    if ($spec === null || $spec === '') return $registry;
     if ($sandbox) throw new RuntimeException('Sandbox không cho phép nạp sao.directives.php.');
-    if (!is_file($file)) throw new RuntimeException("Không tìm thấy directives file: {$file}");
-    $definitions = require $file;
-    if (!is_iterable($definitions)) throw new RuntimeException('Directives file phải trả về iterable.');
-    foreach ($definitions as $name => $definition) {
-        if ($definition instanceof BuiltinDirective) {
-            $registry->register($definition);
-        } elseif ($definition instanceof UserDirective) {
-            $registry->registerUser($definition);
-        } elseif (is_string($name) && is_callable($definition)) {
-            $registry->directive($name, $definition);
-        } else {
-            throw new RuntimeException('Directive definition không hợp lệ.');
-        }
+    foreach (DirectiveFiles::resolve($spec) as $file) {
+        DirectiveFiles::load($registry, $file);
     }
     return $registry;
 }
@@ -89,6 +77,7 @@ Saola Compiler
   php bin/saoc compile <file|-> --view-path=x --fn=View --factory=View --json
   php bin/saoc compile-dir <dir> --namespace=theme.dark. --json
   php bin/saoc serve
+  --directives=<file|project-dir>[:...]   nạp sao.directives.php (thư mục: app + vendor extra.saola.directives)
 
 TXT);
 }

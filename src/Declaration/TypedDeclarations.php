@@ -18,11 +18,25 @@ final class TypedDeclarations
 
     /** @var array<string, true> Empty JS objects otherwise lose their shape in PHP arrays. */
     public array $emptyObjectDefaults = [];
+    public bool $useAuth = false;
+    /** @var list<string> */
+    public array $middleware = [];
 
     public function normalize(SourceParts $parts): SourceParts
     {
         $declarations = [];
         foreach ($parts->declarations as $declaration) {
+            if (preg_match('/^@middleware\s*\(/', $declaration)) {
+                $canonical = preg_replace('/^@middleware\s*\(/', '@middleware(', $declaration);
+                array_push($this->middleware, ...MiddlewareDeclaration::parse($canonical));
+                continue;
+            }
+            if (preg_match('/^@useauth(?:[\t ]*\(\s*\))?$/i', $declaration)) {
+                if ($this->useAuth) throw new \InvalidArgumentException('Duplicate @useAuth declaration.');
+                $this->useAuth = true;
+                $declarations[] = '@state(__auth__ = auth().user())';
+                continue;
+            }
             if (!Re::match('/^@(vars|props|let|const|states?|computed)\s*\(([\s\S]*)\)$/', $declaration, $m)) {
                 $declarations[] = $declaration;
                 continue;
@@ -81,6 +95,18 @@ final class TypedDeclarations
                 $declarations[] = '@'.$m[1].'('.implode(', ', $normalized).')';
             } else {
                 foreach ($normalized as $part) $declarations[] = '@'.$m[1].'('.$part.')';
+            }
+        }
+        if ($this->useAuth) {
+            if (count(array_filter($declarations, static fn ($d) => $d === '@state(__auth__ = auth().user())')) > 1) {
+                throw new \InvalidArgumentException('@useAuth reserves the __auth__ state.');
+            }
+            foreach ($declarations as $declaration) {
+                if ($declaration !== '@state(__auth__ = auth().user())'
+                    && preg_match('/^@(vars|props|let|const|states?|computed)\(/', $declaration)
+                    && preg_match('/(?:\(|,)\s*\$?__auth__\s*(?:=|,|\))/', $declaration)) {
+                    throw new \InvalidArgumentException('@useAuth reserves the __auth__ state.');
+                }
             }
         }
         return new SourceParts($this->orderComputed($declarations), $parts->blade, $parts->bladeWithSSR,

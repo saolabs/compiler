@@ -11,6 +11,34 @@ use Saola\Compiler\SaolaCompiler;
 
 final class TypedEventCallbackTest extends TestCase
 {
+    public function test_nested_named_routes_accept_the_laravel_absolute_flag(): void
+    {
+        $source = "<template><a href=\"{{ route('login', {next: route('agents', {}, false)}, false) }}\">Login</a></template>";
+        $output = (new SaolaCompiler())->compile($source, new CompileOptions(lang: Lang::Ts));
+        self::assertStringContainsString("App.Router.getURL('agents', [])", $output->js);
+        self::assertStringNotContainsString(', false)', $output->js);
+        self::assertStringContainsString('false', $output->blade);
+    }
+
+    public function test_nested_event_objects_preserve_script_scope_and_do_not_leak_to_render(): void
+    {
+        $source = <<<'SAO'
+<script setup>
+function localValue(event) { return event.target.value; }
+function label() { return 'Label'; }
+</script>
+<template>
+<input @change(App.Web.patch({value:localValue(event),nested:[window.clean(label()),App.Web.read()]}))>
+<span>{{ label() }}</span>
+</template>
+SAO;
+        $output = (new SaolaCompiler())->compile($source, new CompileOptions(lang: Lang::Ts))->js;
+        self::assertStringNotContainsString('App.Helper.localValue', $output);
+        self::assertStringContainsString('window.clean(', $output);
+        self::assertStringContainsString('App.Web.read()', $output);
+        self::assertStringContainsString('App.Helper.label()', $output);
+    }
+
     public function test_nested_event_parameters_are_typed_only_in_typescript_output(): void
     {
         $source = <<<'SAO'

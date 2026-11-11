@@ -11,7 +11,7 @@ const synthetic=[
  ['plain','<template>\n<div>Hello</div>\n</template>'],
  ['props',"@props({ title: 'Hello', count: 2 })\n<template>\n<h1>{{ title }}</h1>\n</template>"],
  ['states',"@states({ count: 0 })\n@computed(double = $count * 2)\n<template>\n<button @click($count++)>{{ $double }}</button>\n</template>"],
- ['extends',"@extends('layouts.app', ['x' => 1])\n<template>\n@block('body')\n<p>Body</p>\n@endblock\n</template>"],
+ ['extends',"<template>\n@extends('layouts.app', ['x' => 1])\n@block('body')\n<p>Body</p>\n@endblock\n</template>"],
  ['typescript','<script setup lang="ts">\ninterface Item { id: number }\nconst local: Item = { id: 1 };\nexport default { mounted() {}, save: (x: number) => x }\n</script>\n<template>\n<div>{{ local.id }}</div>\n</template>'],
  ['assets','<script src="{{ asset(\'app.js\') }}" defer></script>\n<style scoped>.x { color:red }</style>\n<link rel="stylesheet" href="/app.css">\n<template><div class="x">x</div></template>'],
  ['loops',"@props({ items: [] })\n<template>\n@foreach(items as item)\n<button @click.prevent(select(item.id))>{{ item.name }}</button>\n@endforeach\n</template>"],

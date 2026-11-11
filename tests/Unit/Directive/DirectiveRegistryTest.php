@@ -141,20 +141,24 @@ final class DirectiveRegistryTest extends TestCase
         $this->assertStringNotContainsString('TIEN(3)', $out, 'comment Blade phải giữ nguyên');
     }
 
+    /**
+     * Handler trả .sao, nên output thành biểu thức động ở CẢ hai phía.
+     *
+     * Bản cũ trả JS thô cho đích 'js' (`String(msg).toUpperCase()`): nó bị dán
+     * vào template như chữ, ra `this.text('String(msg)…')` tĩnh, còn Blade có
+     * marker output — hydration lệch. Test cũ chỉ soát chuỗi có mặt nên lọt.
+     */
     public function test_directive_nguoi_dung_chay_qua_ca_pipeline(): void
     {
         $compiler = new SaolaCompiler();
-        $compiler->directives()->directive('shout', static fn (string $e): array => [
-            'blade' => "{{ strtoupper({$e}) }}",
-            'js' => "String({$e}).toUpperCase()",
-        ]);
+        $compiler->directives()->directive('twice', static fn (string $e): string => "{{ ({$e}) * 2 }}");
 
         $result = $compiler->compile(
-            "@states({ msg: 'a' })\n<template><div>@shout(msg)</div></template>\n",
+            "@states({ n: 1 })\n<template><div>@twice(n)</div></template>\n",
             new CompileOptions(viewPath: 't.v', functionName: 'V', factoryName: 'VF'),
         );
 
-        $this->assertStringContainsString('strtoupper', (string) $result->blade);
-        $this->assertStringContainsString('toUpperCase', (string) $result->js);
+        $this->assertStringContainsString("@startMarker('output', 'e1o1'){{ (\$n) * 2 }}", (string) $result->blade);
+        $this->assertStringContainsString('this.output(`e1o1`, parentElement, true, ["n"], (parentElement) => (n) * 2)', (string) $result->js);
     }
 }
