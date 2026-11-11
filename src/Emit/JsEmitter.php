@@ -233,7 +233,7 @@ final class JsEmitter
 
     private function genHtml(HtmlElement $node,string $indent): string
     {
-        $id=$node->isVoid?$this->ids->nextElement($node->tag):$this->ids->pushElement($node->tag);$idString=$this->formatId($id);$options=$this->hoistStaticConfig($this->genOptions($node));
+        $id=$node->isVoid?$this->ids->nextElement($node->tag):$this->ids->pushElement($node->tag);$idString=$this->formatId($id);$options=$this->genOptions($node);
         if (in_array($node->tag, ['textarea', 'title'], true)) {
             $content = $this->genTextContent($node);
             $options = $options === '{}' ? '{ content: ' . $content . ' }'
@@ -241,6 +241,7 @@ final class JsEmitter
             $this->ids->popScope();
             return $indent . 'this.html(' . $idString . ', "' . $node->tag . '", parentElement, ' . $options . ')';
         }
+        $options=$this->hoistStaticConfig($options);
         if($node->isVoid||$node->children===[]){if(!$node->isVoid)$this->ids->popScope();return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement, '.$options.')';}
         $arrow=$this->arrowParent();
         if($this->hasExecNodes($node->children)){$this->pushDeclaredScope(['parentElement']);$code=$this->genChildrenImperative($node->children,$indent.'        ');$this->popDeclaredScope();$this->ids->popScope();if($options==='{}')return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement, {},'."\n".$indent.'    '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    })';return $indent.'this.html('.$idString.', "'.$node->tag.'", parentElement,'."\n".$indent.'    '.$options.','."\n".$indent.'    '.$arrow.' {'."\n".$indent.'        const __execArr = [];'."\n".$code."\n".$indent.'        return __execArr;'."\n".$indent.'    })';}

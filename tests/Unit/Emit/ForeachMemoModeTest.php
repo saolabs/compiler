@@ -57,4 +57,15 @@ final class ForeachMemoModeTest extends TestCase
     {
         $this->assertSame(0, $this->mode("<li>{{ rows.length }} {{ row['label'] }}</li>"));
     }
+
+    public function test_textarea_va_title_co_attr_tinh_khong_bi_hoist_truoc_khi_noi_content(): void
+    {
+        $source = "<template>\n<textarea class=\"field\" rows=\"4\">{{ note }}</textarea>\n</template>\n"
+            ."<script setup>\n@state(note = '')\n</script>\n";
+        $js = (string) (new SaolaCompiler())->compile($source, new CompileOptions(
+            viewPath: 'test.textarea', functionName: 'V', factoryName: 'VFactory',
+        ))->js;
+        $this->assertStringContainsString('content: { factory: () => String(note ?? \'\'), stateKeys: ["note"] } }', $js);
+        $this->assertStringNotContainsString('__sc', $js);
+    }
 }

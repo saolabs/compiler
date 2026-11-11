@@ -1,3 +1,9 @@
+# Saola Compiler v3.6.1
+
+Fixes `<textarea>` and `<title>` elements with static attributes / classes being hoisted into a `__scN` constant before `content` is appended in `JsEmitter::genHtml()`.
+
+Validation: 324 compiler tests, 877 assertions.
+
 # Saola Compiler v3.6.0
 
 Adds `@foreach` memo mode (`0` / `1` / `2` trailing argument on `__foreach`), closed block hydration IDs (`s{name}-…`), hoisted static element configs (`__scN`), and compile-time validation for misplaced `@block` directives (names outside `\w+`, nested inside a tag or loop, or used in a view without `@extends` inside `<template>`). `<output>` and tags resembling hydration ID kinds now receive ordinary element IDs.
