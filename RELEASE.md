@@ -1,3 +1,17 @@
+# Saola Compiler v3.6.0
+
+Adds `@foreach` memo mode (`0` / `1` / `2` trailing argument on `__foreach`), closed block hydration IDs (`s{name}-…`), hoisted static element configs (`__scN`), and compile-time validation for misplaced `@block` directives (names outside `\w+`, nested inside a tag or loop, or used in a view without `@extends` inside `<template>`). `<output>` and tags resembling hydration ID kinds now receive ordinary element IDs.
+
+Pairs with `@saolabs/client 1.8.0`. Every application must rebuild Blade and JavaScript views with the same compiler because hydration IDs inside blocks changed.
+
+Validation: 323 compiler tests, 875 assertions.
+
+# Saola Compiler v3.5.0
+
+Adds static `@middleware(...)` declarations for routed views outside `<template>` or at top level in `<script setup>`.
+
+Validation: 312 compiler tests, 848 assertions.
+
 # Saola Compiler v3.4.1
 
 useAuth now subscribes directly to App.Auth and calls set__auth__(App.Auth.user()). The view owns unsubscribe through its existing ResourceScope.defer lifecycle. No synthetic state subscription is generated for useAuth. Setters still batch rendering and retain pause/resume behavior, while local auth state updates immediately on service changes.
