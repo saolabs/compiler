@@ -92,6 +92,7 @@ final class SaolaCompiler
                     .'@useState($__auth__, ('.$user.' === null ? null : (object) '.$user.'))', $compiledBlade);
             }
             $mainCompiler = new MainCompiler($this->viewTemplate, $mode, $this->wrapperTemplate, $typedJs->types, $typedJs->nativeComputed, $typedJs->emptyObjectDefaults, $this->directiveRegistry->helpers(), $options->clientHelpers);
+            $mainCompiler->fuseRows = $options->fuseRows;
             $compiledJs = $mainCompiler
                 ->compileBladeToJs(
                     $jsInput,

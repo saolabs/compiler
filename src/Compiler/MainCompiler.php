@@ -40,6 +40,7 @@ final class MainCompiler
     private readonly TemplateAnalyzer $analyzer;
     private readonly BindingDirectiveService $bindings;
     private string $viewTemplate;
+    /** Xem CompileOptions::$fuseRows. */ public bool $fuseRows = false;
     private bool $isTypescript = false;
     private string $scopeClass = '';
     /** @var array<string,true> */ private array $dataVarNames = [];
@@ -352,7 +353,7 @@ final class MainCompiler
         $pre=[];if($hasPrerender&&($hasAwait||$hasFetch))foreach($sectionsInfo as$section)if(empty($section['useVars']))$pre[]=$section['name'];
         $hasExtends=$extendedView!==null||$extendsExpression!==null;
         $expression=$extendedView!==null?"__layout__ + '{$extendedView}'":$extendsExpression;
-        $emitter=fn():JsEmitter=>new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode);
+        $emitter=fn():JsEmitter=>new JsEmitter($this->stringKeys($stateVariables),$this->stringKeys($declared),$this->isTypescript,$this->scopeClass,$this->idMode,$this->fuseRows);
         $body=$emitter()->generate($root,$hasExtends,$expression,$extendsData,null,$pre);
         $lines=array_map(static fn(string$line):string=>trim($line)===''?'':'    '.$line,explode("\n",$body));
         // Phần tĩnh bị `$pre` loại khỏi render() phải được sinh lại ở đây bằng

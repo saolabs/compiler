@@ -1,3 +1,13 @@
+# Saola Compiler v3.8.0
+
+New compile option `fuseRows` (`CompileOptions::$fuseRows`, CLI `--fuse-rows`, **off by default**): a simple `@foreach` body is emitted as one `this.__fused(template, idSuffix, parentElement, get)` call per root element of the row instead of a nested `this.html(...)` tree. The template is a static descriptor hoisted like `__scN`; `get(i)` returns the row's i-th dynamic value (text, class / attr / style binding, event handler list). Ids equal those of the regular output and Blade does not change, so hydration and `s:o:` markers are unaffected.
+
+A body is fused only when the existing memo analysis gives mode 1 or 2 and every node is an element, static text, escaped `{{ }}`, event, or class / attr / style binding. `@if`, `@include`, nested loops, `@bind`, form controls, raw echoes, interpolated class names, transitions, prop bindings and exec nodes keep the previous output byte for byte. A loop nested inside another loop is never fused (its memo mode is 0). With the option off, output is identical to 3.7.0.
+
+Fused output requires `@saolabs/client` ≥ 1.10.0. Do not set the option by hand for older clients; `@saolabs/builder` 1.7.0 enables it from the installed client version. `SAOC_FUSE_ROWS=1` forces it on for running the parity gates over fused output.
+
+Validation: 348 compiler tests, 950 assertions; golden gates regenerated for corpus drift in the starter's views (default output is unchanged by this release; Examples gate still stale as before); marker-sync gate 218/218 with fusing forced on; starter browser gate 70/70 with client 1.10.0 and builder 1.7.0.
+
 # Saola Compiler v3.7.0
 
 `@foreach` memo now carries the list of states its body captures: the trailing arguments of `__foreach` become `mode, ["stateA", "stateB"]`. The client re-runs kept rows only when one of those states changes instead of when any state of the view changes. States read only inside self-updating bindings (`factory: () => …, stateKeys: [...]` of class / attr / style / prop) are not listed, because those bindings subscribe on their own. Memo is no longer switched off by an `@if` / `@switch` inside the loop body or by the view's system constants (`__base__`, `__module__`, …).

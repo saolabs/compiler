@@ -17,13 +17,15 @@ use Saola\Compiler\SaolaCompiler;
  */
 final class ForeachFusedRowTest extends TestCase
 {
+    private bool $fuse = true;
+
     private function js(string $body, string $script = '', string $loop = "@foreach(rows as row)\n@key(row['id'])"): string
     {
         $source = "<template>\n<ul>\n{$loop}\n{$body}\n@endforeach\n</ul>\n</template>\n"
             ."<script setup>\n@state(rows = [], selected = 0)\n{$script}\n</script>\n";
 
         return (string) (new SaolaCompiler())->compile($source, new CompileOptions(
-            viewPath: 'test.fused', functionName: 'V', factoryName: 'VFactory',
+            viewPath: 'test.fused', functionName: 'V', factoryName: 'VFactory', fuseRows: $this->fuse,
         ))->js;
     }
 
@@ -49,8 +51,8 @@ final class ForeachFusedRowTest extends TestCase
     {
         $body = "<li><span>{{ row['a'] }}</span><br><i>{{ row['b'] }}</i></li>";
         $fused = $this->js($body);
-        putenv('SAOC_NO_FUSE=1');
-        try { $plain = $this->js($body); } finally { putenv('SAOC_NO_FUSE'); }
+        $this->fuse = false;
+        try { $plain = $this->js($body); } finally { $this->fuse = true; }
         $this->assertFused($fused);
         $this->assertNotFused($plain);
         preg_match_all('/this\.(?:html|output)\(`([^-`]+)-\$\{row/', $plain, $regular);
@@ -59,6 +61,14 @@ final class ForeachFusedRowTest extends TestCase
         $this->assertSame($regular[1], $inKhuon[1]);
         // Blade không đổi theo công tắc — hydrate dùng chung một DOM server.
         $this->assertSame(1, preg_match('/const __fr/', $fused));
+    }
+
+    public function test_mac_dinh_tat_va_doc_duoc_tu_mang_tuy_chon(): void
+    {
+        $source = "<template>\n<ul>\n@foreach(rows as row)\n@key(row['id'])\n<li>{{ row['a'] }}</li>\n@endforeach\n</ul>\n</template>\n<script setup>\n@state(rows = [])\n</script>\n";
+        $this->assertNotFused((string) (new SaolaCompiler())->compile($source, new CompileOptions(viewPath: 'test.fused'))->js);
+        $this->assertFused((string) (new SaolaCompiler())->compile($source, CompileOptions::fromArray(['viewPath' => 'test.fused', 'fuse-rows' => 'true']))->js);
+        $this->assertNotFused((string) (new SaolaCompiler())->compile($source, CompileOptions::fromArray(['viewPath' => 'test.fused', 'fuseRows' => false]))->js);
     }
 
     public function test_state_bi_chup_trong_event_van_la_phu_thuoc_memo(): void
@@ -96,8 +106,8 @@ final class ForeachFusedRowTest extends TestCase
     {
         $js = $this->js($body, $script, $loop);
         $this->assertNotFused($js);
-        putenv('SAOC_NO_FUSE=1');
-        try { $plain = $this->js($body, $script, $loop); } finally { putenv('SAOC_NO_FUSE'); }
+        $this->fuse = false;
+        try { $plain = $this->js($body, $script, $loop); } finally { $this->fuse = true; }
         $this->assertSame($plain, $js);
     }
 
@@ -107,8 +117,8 @@ final class ForeachFusedRowTest extends TestCase
         // nên KHÔNG được thành phụ thuộc của vòng ngoài.
         $body = "<li>@foreach(rows as inner)\n@key(inner['id'])\n<i @class({'on': selected === inner['id']})>{{ inner['label'] }}</i>\n@endforeach</li>";
         $js = $this->js($body, '', "@foreach(groups as row)\n@key(row['id'])");
-        putenv('SAOC_NO_FUSE=1');
-        try { $plain = $this->js($body, '', "@foreach(groups as row)\n@key(row['id'])"); } finally { putenv('SAOC_NO_FUSE'); }
+        $this->fuse = false;
+        try { $plain = $this->js($body, '', "@foreach(groups as row)\n@key(row['id'])"); } finally { $this->fuse = true; }
         preg_match_all('/true, "[^"]+", (\d(?:, \[[^\]]*\])?)\)/', $js, $a);
         preg_match_all('/true, "[^"]+", (\d(?:, \[[^\]]*\])?)\)/', $plain, $b);
         $this->assertSame($b[1], $a[1]);

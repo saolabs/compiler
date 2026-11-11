@@ -49,6 +49,7 @@ final class JsEmitter
         private readonly bool $isTypescript = false,
         private readonly string $scopeClass = '',
         private readonly IdMode $idMode = IdMode::Terse,
+        private readonly bool $fuseRows = false,
     )
     {
         foreach ($stateVariables as $name) $this->stateVariables[(string) $name] = true;
@@ -391,14 +392,15 @@ final class JsEmitter
     //
     // CHỈ gộp khi chắc chắn: thân đã qua danh sách trắng của memo (mức ≠ 0) và
     // mọi node đều thuộc tập dưới đây. Không chắc thì giữ nguyên output cũ.
-    // `SAOC_NO_FUSE=1` tắt hẳn (để so hai đường trong test).
+    // Bật bằng `CompileOptions::$fuseRows` (mặc định TẮT: output cần client ≥ 1.10).
 
     /** Tag tự quản giá trị/nội dung, hoặc parser xử lý riêng — không gộp. */
     private const FUSE_SKIP_TAGS = ['input'=>1,'textarea'=>1,'select'=>1,'option'=>1,'title'=>1,'script'=>1,'style'=>1,'template'=>1,'slot'=>1,'iframe'=>1,'object'=>1,'embed'=>1,'video'=>1,'audio'=>1,'canvas'=>1,'dialog'=>1,'details'=>1];
 
     private function canFuseLoop(ForeachBlock $node): bool
     {
-        if ($this->inWhileOrFor || getenv('SAOC_NO_FUSE')) return false;
+        // SAOC_FUSE_ROWS=1 ép bật — chỉ để chạy các cổng parity trên output gộp.
+        if ($this->inWhileOrFor || !($this->fuseRows || getenv('SAOC_FUSE_ROWS'))) return false;
         $elements = 0;
         foreach ($node->children as $child) {
             if ($child instanceof TextNode) continue;

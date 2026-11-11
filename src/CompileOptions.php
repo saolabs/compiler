@@ -27,6 +27,12 @@ final class CompileOptions
         public string $publicBaseUrl = '',
         /** @var list<string> */
         public array $clientHelpers = [],
+        /**
+         * Phát "dòng gộp" cho thân `@foreach` đơn giản (`this.__fused(...)`).
+         * Output đó CẦN `@saolabs/client` ≥ 1.10 (FusedRow) nên mặc định tắt;
+         * `@saolabs/builder` ≥ 1.7 tự bật khi client của dự án đủ mới.
+         */
+        public bool $fuseRows = false,
     ) {
     }
 
@@ -64,6 +70,7 @@ final class CompileOptions
             maxIncludeDepth: (int) ($data['maxIncludeDepth'] ?? 32),
             publicBaseUrl: (string) ($data['publicBaseUrl'] ?? ''),
             clientHelpers: self::helperNames($data['clientHelpers'] ?? $data['client-helpers'] ?? []),
+            fuseRows: filter_var($data['fuseRows'] ?? $data['fuse-rows'] ?? false, FILTER_VALIDATE_BOOL),
         );
     }
 
