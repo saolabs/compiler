@@ -36,6 +36,14 @@ final class HydrateIdGenerator
         $this->scopeStack = [new HydrateIdScope()];
     }
 
+    /** Bản sao phải có bộ đếm RIÊNG (JsEmitter phát lại một thân với cùng dãy id). */
+    public function __clone()
+    {
+        foreach ($this->scopeStack as $index => $scope) {
+            $this->scopeStack[$index] = clone $scope;
+        }
+    }
+
     public function currentScope(): HydrateIdScope
     {
         return $this->scopeStack[count($this->scopeStack) - 1];

@@ -38,6 +38,7 @@ final class JsEmitter
     /** @var list<array<string,true>> */ private array $declaredScopeStack = [];
     /** @var array<string, true> */ private array $prerenderedSections = [];
     /** @var array<string, string> config tĩnh → tên hằng, xem hoistStaticConfig() */ private array $hoistedConfigs = [];
+    /** @var array<string, string> mã dòng gộp → mã thường tương đương, xem genForeach() */ private array $fusedSources = [];
     private bool $inWhileOrFor = false;
     private HydrateIdGenerator $ids;
 
@@ -67,6 +68,7 @@ final class JsEmitter
     {
         $this->ids->reset(); $this->loopScopes = []; $this->inWhileOrFor = false; $this->whileForVariables = [];
         $this->hoistedConfigs = [];
+        $this->fusedSources = [];
         $this->prerenderedSections = [];
         foreach ($prerenderedSections ?? [] as $name) $this->prerenderedSections[(string) $name] = true;
         $this->declaredScopeStack = [$this->declaredVariables + $this->stateVariables + ['parentElement' => true, 'parentReactive' => true]];
@@ -133,7 +135,7 @@ final class JsEmitter
         '__base__'=>1,'__layout__'=>1,'__page__'=>1,'__component__'=>1,'__template__'=>1,'__module__'=>1,'__context__'=>1,'__partial__'=>1,'__system__'=>1,'__env'=>1,'__helper'=>1];
 
     /** Hàm dựng cây của runtime mà thân vòng lặp được gọi qua `this.` mà vẫn coi là thuần. */
-    private const MEMO_RUNTIME = ['html'=>1,'text'=>1,'output'=>1,'reactive'=>1,'include'=>1,'wrapattr'=>1,'decodeTextContent'=>1,'__reactive'=>1,'__foreach'=>1,'__for'=>1,'__while'=>1,'__include'=>1,'__attr'=>1,'__subscribe'=>1,'__text'=>1,'__output'=>1,'__children'=>1,'__classBinding'=>1,'__styleBinding'=>1,'__addEventConfig'=>1];
+    private const MEMO_RUNTIME = ['html'=>1,'text'=>1,'output'=>1,'reactive'=>1,'include'=>1,'wrapattr'=>1,'decodeTextContent'=>1,'__reactive'=>1,'__foreach'=>1,'__for'=>1,'__while'=>1,'__include'=>1,'__attr'=>1,'__subscribe'=>1,'__text'=>1,'__output'=>1,'__children'=>1,'__fused'=>1,'__classBinding'=>1,'__styleBinding'=>1,'__addEventConfig'=>1];
 
     /**
      * Mức "bỏ qua dòng không đổi" cho một `@foreach` — tham số cuối của
@@ -197,6 +199,9 @@ final class JsEmitter
     {
         $deps = [];
         if ($exec || $ownKeys === []) return 0;
+        // Vòng lặp con đã gộp: xét bằng mã THƯỜNG tương đương của nó, để state trong
+        // binding tự cập nhật vẫn được nhận ra (`factory: …, stateKeys: […]`).
+        if ($this->fusedSources !== []) $children = strtr($children, $this->fusedSources);
         $code = preg_replace('/"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'/s', '""', $children);
         if ($code === null) return 0;
         // Template literal: chữ tĩnh không phải mã, chỉ giữ các biểu thức `${…}`.
@@ -230,7 +235,7 @@ final class JsEmitter
             }
             $after = ltrim(substr($code, $offset + strlen($name), 8));
             if (($after[0] ?? '') === ':' && ($prev === '{' || $prev === ',')) continue;   // khoá object
-            if (preg_match('/^__sc\d+$/', $name) === 1) continue;        // config tĩnh đã hoist
+            if (preg_match('/^__(?:sc|fr)\d+$/', $name) === 1) continue;        // config tĩnh đã hoist
             if ($name === '__loop' || $name === '__loopKey' || $name === '__loopIndex') { $mode = 2; continue; }
             if (in_array($name, $ownKeys, true)) { if (getenv('SAOC_MEMO_DEBUG')) fwrite(STDERR, "memo=0 vì state của danh sách `{$name}`\n"); return 0; }
             if (isset(self::MEMO_SAFE[$name])) continue;   // từ khoá/hằng — kể cả khi trùng tên trong bảng state
@@ -347,9 +352,151 @@ final class JsEmitter
     {
         $id=$this->ids->pushReactive('foreach');$keys=array_keys($node->stateVars);sort($keys);$this->loopScopes[]=[$id,$node->customKeyJs??'__loopIdentity'];
         if($node->keyVar!==null)$params=$this->isTypescript?'('.$node->valueVar.': any, '.$node->keyVar.': any, __loopIndex: any, __loop: any, __loopIdentity: any)':'('.$node->valueVar.', '.$node->keyVar.', __loopIndex, __loop, __loopIdentity)';else$params=$this->isTypescript?'('.$node->valueVar.': any, __loopKey: any, __loopIndex: any, __loop: any, __loopIdentity: any)':'('.$node->valueVar.', __loopKey, __loopIndex, __loop, __loopIdentity)';
-        $exec=$this->hasExecNodes($node->children);if($exec){$vars=[$node->valueVar,'__loopKey','__loopIndex','__loop','__loopIdentity'];if($node->keyVar)$vars[]=$node->keyVar;$this->pushDeclaredScope($vars);$children=$this->genChildrenImperative($node->children,$indent.'    ');$this->popDeclaredScope();}else$children=$this->genChildrenList($node->children,$indent.'        ');array_pop($this->loopScopes);$this->ids->popScope();$keyFn=$node->customKeyJs!==null?($this->isTypescript?', ('.$node->valueVar.': any) => '.$node->customKeyJs:', ('.$node->valueVar.') => '.$node->customKeyJs):', undefined';$keyFn .= ', true, '.json_encode($id).', '.$this->foreachMemoMode($node, $children, $exec, $keys);
+        $idsBefore=clone $this->ids;$hoistedBefore=$this->hoistedConfigs;
+        $exec=$this->hasExecNodes($node->children);if($exec){$vars=[$node->valueVar,'__loopKey','__loopIndex','__loop','__loopIdentity'];if($node->keyVar)$vars[]=$node->keyVar;$this->pushDeclaredScope($vars);$children=$this->genChildrenImperative($node->children,$indent.'    ');$this->popDeclaredScope();}else$children=$this->genChildrenList($node->children,$indent.'        ');
+        $memo=$this->foreachMemoMode($node, $children, $exec, $keys);
+        if($memo!=='0'&&$this->canFuseLoop($node)){
+            // Phát lại thân dưới dạng dòng gộp với ĐÚNG dãy id của lượt thường:
+            // lùi bộ sinh id về trước thân, phát xong thì nhận lại trạng thái cuối
+            // của lượt thường. Hằng `__scN` chỉ thân thường dùng cũng bỏ theo.
+            $idsAfter=$this->ids;$this->ids=$idsBefore;$this->hoistedConfigs=$hoistedBefore;
+            $regular=$children;$children=$this->genFusedChildren($node,$indent.'        ');
+            $this->ids=$idsAfter;$this->fusedSources[$children]=$regular;
+        }
+        array_pop($this->loopScopes);$this->ids->popScope();$keyFn=$node->customKeyJs!==null?($this->isTypescript?', ('.$node->valueVar.': any) => '.$node->customKeyJs:', ('.$node->valueVar.') => '.$node->customKeyJs):', undefined';$keyFn .= ', true, '.json_encode($id).', '.$memo;
         if($exec){if($keys!==[])return $indent.'this.reactive('.$this->formatId($id).', "foreach", parentReactive, parentElement, '.$this->jsonList($keys).', '.$this->arrowReactive().' {'."\n".$indent.'    return this.__foreach('.$node->arrayJs.', '.$params.' => {'."\n".$indent.'        const __execArr = [];'."\n".$children."\n".$indent.'        return __execArr;'."\n".$indent.'    }'.$keyFn.')'."\n".$indent.'})';return $indent.'...this.__foreach('.$node->arrayJs.', '.$params.' => {'."\n".$indent.'    const __execArr = [];'."\n".$children."\n".$indent.'    return __execArr;'."\n".$indent.'}'.$keyFn.')';}
         if($keys!==[])return $indent.'this.reactive('.$this->formatId($id).', "foreach", parentReactive, parentElement, '.$this->jsonList($keys).', '.$this->arrowReactive().' {'."\n".$indent.'    return this.__foreach('.$node->arrayJs.', '.$params.' => ['."\n".$children."\n".$indent.'    ]'.$keyFn.')'."\n".$indent.'})';return $indent.'...this.__foreach('.$node->arrayJs.', '.$params.' => ['."\n".$children."\n".$indent.']'.$keyFn.')';
+    }
+
+    // ── Dòng gộp (fused row) ────────────────────────────────────────────
+    //
+    // Thân `@foreach` ĐƠN GIẢN không phát cây `this.html(...)` lồng nhau mà phát,
+    // cho mỗi phần tử gốc của dòng, MỘT lời gọi:
+    //
+    //     this.__fused(__fr1, `${row['id']}`, parentElement, (__i) => { switch (__i) {
+    //         case 0: return selected === row['id'];
+    //         case 1: return row['label'];
+    //     } return undefined; })
+    //
+    // `__fr1` là khuôn tĩnh của cả cây (hoist như `__scN`), mỗi `case` là một giá
+    // trị động theo item. Hợp đồng với `FusedRow` phía client (client ≥ 1.10):
+    //
+    //   { t: tag, i: hash id, a: {attr tĩnh}, k: "class tĩnh",
+    //     b: [[attr, case, stateKeys]], kb: [[class, case, stateKeys]],
+    //     y: [[style, "tĩnh"] | [style, case, stateKeys]], e: [[event, case, modifiers?]],
+    //     c: ['chữ tĩnh' | { o: hash id của {{ }}, v: case, s: stateKeys } | {…element con}] }
+    //
+    // Id đầy đủ = hash + '-' + tham số thứ hai, đúng bằng id mà đường thường phát
+    // — Blade không đổi, hydrate và marker `s:o:…` giữ nguyên.
+    //
+    // CHỈ gộp khi chắc chắn: thân đã qua danh sách trắng của memo (mức ≠ 0) và
+    // mọi node đều thuộc tập dưới đây. Không chắc thì giữ nguyên output cũ.
+    // `SAOC_NO_FUSE=1` tắt hẳn (để so hai đường trong test).
+
+    /** Tag tự quản giá trị/nội dung, hoặc parser xử lý riêng — không gộp. */
+    private const FUSE_SKIP_TAGS = ['input'=>1,'textarea'=>1,'select'=>1,'option'=>1,'title'=>1,'script'=>1,'style'=>1,'template'=>1,'slot'=>1,'iframe'=>1,'object'=>1,'embed'=>1,'video'=>1,'audio'=>1,'canvas'=>1,'dialog'=>1,'details'=>1];
+
+    private function canFuseLoop(ForeachBlock $node): bool
+    {
+        if ($this->inWhileOrFor || getenv('SAOC_NO_FUSE')) return false;
+        $elements = 0;
+        foreach ($node->children as $child) {
+            if ($child instanceof TextNode) continue;
+            if (!$child instanceof HtmlElement || !$this->canFuseElement($child)) return false;
+            $elements++;
+        }
+        return $elements > 0;
+    }
+
+    private function canFuseElement(HtmlElement $node): bool
+    {
+        if (isset(self::FUSE_SKIP_TAGS[strtolower($node->tag)]) || preg_match('/^[a-zA-Z][a-zA-Z0-9]*$/', $node->tag) !== 1) return false;
+        if ($node->bindKey !== null || $node->transitionName !== null || $node->bindingProps !== [] || $node->dynamicClasses !== []) return false;
+        if (trim($node->rawAttrsRemaining) !== '' || isset($node->staticAttrs['data-sao-preserve-children']) || isset($node->staticAttrs['class'])) return false;
+        foreach ($node->bindingAttrs as $name => $info) if (($info['is_yield'] ?? false) || $name === 'class' || $name === 'style') return false;
+        foreach ($node->children as $child) {
+            if ($child instanceof TextNode) continue;
+            if ($child instanceof EchoNode) { if (!$child->escaped) return false; continue; }
+            if (!$child instanceof HtmlElement || !$this->canFuseElement($child)) return false;
+        }
+        return true;
+    }
+
+    private function genFusedChildren(ForeachBlock $node, string $indent): string
+    {
+        $suffix = [];
+        foreach ($this->loopScopes as [, $expr]) $suffix[] = '${' . $expr . '}';
+        $items = [];
+        foreach ($node->children as $child) {
+            if ($child instanceof TextNode) { $items[] = $this->genText($child, $indent); continue; }
+            $cases = [];
+            $desc = $this->fusedNode($child, $cases);
+            $name = $this->hoistedConfigs[$desc] ??= '__fr' . (count($this->hoistedConfigs) + 1);
+            $lines = [$indent . 'this.__fused(' . $name . ', `' . implode('-', $suffix) . '`, parentElement, (' . $this->param('__i') . ') => { switch (__i) {'];
+            foreach ($cases as $index => $expr) $lines[] = $indent . '    case ' . $index . ': return ' . $expr . ';';
+            $lines[] = $indent . '} return undefined; })';
+            $items[] = implode("\n", $lines);
+        }
+        return implode(",\n", $items);
+    }
+
+    /** @param list<string> $cases biểu thức của từng giá trị động, theo chỉ số */
+    private function fusedNode(HtmlElement $node, array &$cases): string
+    {
+        $id = $node->isVoid ? $this->ids->nextElement($node->tag) : $this->ids->pushElement($node->tag);
+        $case = static function (string $expr) use (&$cases): int { $cases[] = $expr; return count($cases) - 1; };
+        $keysOf = function (array $info): string { $keys = array_keys($info['state_vars'] ?? []); return $this->jsonList($keys); };
+        $q = static fn (string $value): string => '"' . str_replace('"', '\\"', $value) . '"';
+        $parts = ['t: "' . $node->tag . '"', 'i: "' . HydrateId::hash($id, $this->idMode) . '"'];
+
+        $items = [];
+        foreach ($node->staticAttrs as $name => $value) $items[] = '"' . $name . '": ' . ($value === true ? 'true' : $q((string) $value));
+        if ($items !== []) $parts[] = 'a: { ' . implode(', ', $items) . ' }';
+        $items = [];
+        foreach ($node->bindingAttrs as $name => $info) {
+            $js = $info['js'];
+            $items[] = '["' . $name . '", ' . $case(self::wholeInterpolation($js) ?? (str_contains($js, '${') ? '`' . $js . '`' : $js)) . ', ' . $keysOf($info) . ']';
+        }
+        if ($items !== []) $parts[] = 'b: [' . implode(', ', $items) . ']';
+
+        $classes = $node->staticClasses;
+        if ($this->scopeClass !== '') array_unshift($classes, $this->scopeClass);
+        if ($classes !== []) $parts[] = 'k: "' . implode(' ', $classes) . '"';
+        $items = [];
+        foreach ($node->bindingClasses as $class => $info) $items[] = '["' . $class . '", ' . $case($info['js']) . ', ' . $keysOf($info) . ']';
+        if ($items !== []) $parts[] = 'kb: [' . implode(', ', $items) . ']';
+
+        $items = [];
+        foreach ($node->styles as $name => $info) {
+            $keys = array_keys($info['state_vars'] ?? []); $php = trim($info['php'] ?? '');
+            // Cùng phép nhận diện hằng với genStyles().
+            if ($keys === [] && strlen($php) >= 2 && $php[0] === $php[strlen($php) - 1] && ($php[0] === "'" || $php[0] === '"') && !str_contains(substr($php, 1, -1), $php[0])) {
+                $items[] = '["' . $name . '", ' . $q(substr($php, 1, -1)) . ']';
+                continue;
+            }
+            $js = $info['js'];
+            $items[] = '["' . $name . '", ' . $case(str_contains($js, '${') ? '`' . $js . '`' : $js) . ', ' . $keysOf($info) . ']';
+        }
+        if ($items !== []) $parts[] = 'y: [' . implode(', ', $items) . ']';
+
+        $items = [];
+        foreach ($this->eventHandlerLists($node) as $name => $handlers) {
+            $mods = $node->eventModifiers[$name] ?? [];
+            $items[] = '["' . $name . '", ' . $case($handlers) . ($mods !== [] ? ', ' . $this->jsonList($mods) : '') . ']';
+        }
+        if ($items !== []) $parts[] = 'e: [' . implode(', ', $items) . ']';
+
+        $items = [];
+        foreach ($node->children as $child) {
+            if ($child instanceof TextNode) $items[] = "'" . $this->jsTextLiteral($child->text) . "'";
+            elseif ($child instanceof EchoNode) {
+                $out = HydrateId::hash($this->ids->nextOutput(), $this->idMode);
+                $items[] = '{ o: "' . $out . '", v: ' . $case($child->jsExpr) . ', s: ' . $this->jsonList(array_keys($child->stateVars)) . ' }';
+            } elseif ($child instanceof HtmlElement) $items[] = $this->fusedNode($child, $cases);
+        }
+        if ($items !== []) $parts[] = 'c: [' . implode(', ', $items) . ']';
+        if (!$node->isVoid) $this->ids->popScope();
+        return '{ ' . implode(', ', $parts) . ' }';
     }
 
     private function genWhile(WhileBlock $node,string $indent): string
@@ -443,6 +590,14 @@ final class JsEmitter
     private function genEvents(HtmlElement $node): ?string
     {
         $items = [];
+        foreach ($this->eventHandlerLists($node) as $name => $handlers) $items[] = $name . ': ' . $handlers;
+        return $items === [] ? null : '{ ' . implode(', ', $items) . ' }';
+    }
+
+    /** @return array<string, string> tên event → `[handler, …]` */
+    private function eventHandlerLists(HtmlElement $node): array
+    {
+        $items = [];
         foreach ($node->events as $name => $handlers) {
             $processed = [];
             foreach ($handlers as $handler) {
@@ -456,9 +611,9 @@ final class JsEmitter
                 $handler = preg_replace('/@event\b/i', 'event', $handler) ?? $handler;
                 $processed[] = ($this->isTypescript ? '(event: any) =>' : '(event) =>') . ' ' . $handler;
             }
-            $items[] = $name . ': [' . implode(', ', $processed) . ']';
+            $items[$name] = '[' . implode(', ', $processed) . ']';
         }
-        return $items === [] ? null : '{ ' . implode(', ', $items) . ' }';
+        return $items;
     }
 
     /**

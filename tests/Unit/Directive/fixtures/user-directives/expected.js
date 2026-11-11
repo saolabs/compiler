@@ -154,7 +154,8 @@ class VView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
-            const __sc1 = { attrs: { "style": { type: 'static', value: "color: #fff" }, "title": { type: 'static', value: "xem #when" } } };
+            const __fr1 = { t: "li", i: "e12l11", b: [["data-tip", 0, []]], c: [{ o: "e12l11o1", v: 1, s: [] }] };
+            const __sc2 = { attrs: { "style": { type: 'static', value: "color: #fff" }, "title": { type: 'static', value: "xem #when" } } };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "section", parentElement, {}, (parentElement) => [
                 this.text('\n'),
@@ -203,11 +204,10 @@ class VView extends View {
                     this.text('        '),
                     this.reactive(`e12l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
                         return this.__foreach(items, (item, __loopKey, __loopIndex, __loop, __loopIdentity) => [
-                            this.html(`e12l11-${__loopIdentity}`, "li", parentElement,
-                                { attrs: { "data-tip": { type: 'binding', value: item, factory: () => item, stateKeys: [] } } },
-                                (parentElement) => [
-                                this.output(`e12l11o1-${__loopIdentity}`, parentElement, true, [], (parentElement) => item)
-                                ]),
+                            this.__fused(__fr1, `${__loopIdentity}`, parentElement, (__i) => { switch (__i) {
+                                case 0: return item;
+                                case 1: return item;
+                            } return undefined; }),
                             this.text('\n')
                         ], undefined, true, "section-1-ul-2-foreach-1", 1, [])
                     }),
@@ -216,7 +216,7 @@ class VView extends View {
                 this.text('\n'),
                 this.text('    '),
                 this.html(`e13`, "p", parentElement,
-                    __sc1,
+                    __sc2,
                     (parentElement) => [
                     this.text('#when ở văn bản giữ nguyên')
                     ]),
