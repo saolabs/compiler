@@ -44,6 +44,15 @@ final class HydrateIdScope
     {
         $this->elementCounter++;
 
+        // Tên tag KHÔNG mang thông tin trong id rút gọn (mỗi scope một bộ đếm
+        // element), nhưng tên trùng từ khoá của bộ mã hoá thì bị đọc nhầm loại:
+        // `<output>` thứ 2 ra 'o2' — trùng id với `{{ }}` thứ 2 cùng scope — còn
+        // `<my-b2-card>` ra 'b2…' như một block outlet. Tag không phải dạng chữ
+        // thường/số trơn hoặc trùng từ khoá thì đổi về tên trung tính.
+        if (preg_match('/^(?!(?:output|component|yield|block|foreach|for|while|rc)$)[a-zA-Z][a-zA-Z0-9]*$/', $tagName) !== 1) {
+            $tagName = 'el';
+        }
+
         return $this->withPrefix($tagName . '-' . $this->elementCounter);
     }
 

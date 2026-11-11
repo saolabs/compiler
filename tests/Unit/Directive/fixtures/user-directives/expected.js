@@ -154,6 +154,7 @@ class VView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { attrs: { "style": { type: 'static', value: "color: #fff" }, "title": { type: 'static', value: "xem #when" } } };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "section", parentElement, {}, (parentElement) => [
                 this.text('\n'),
@@ -208,14 +209,14 @@ class VView extends View {
                                 this.output(`e12l11o1-${__loopIdentity}`, parentElement, true, [], (parentElement) => item)
                                 ]),
                             this.text('\n')
-                        ], undefined, true, "section-1-ul-2-foreach-1")
+                        ], undefined, true, "section-1-ul-2-foreach-1", 1)
                     }),
                     this.text('    ')
                 ]),
                 this.text('\n'),
                 this.text('    '),
                 this.html(`e13`, "p", parentElement,
-                    { attrs: { "style": { type: 'static', value: "color: #fff" }, "title": { type: 'static', value: "xem #when" } } },
+                    __sc1,
                     (parentElement) => [
                     this.text('#when ở văn bản giữ nguyên')
                     ]),

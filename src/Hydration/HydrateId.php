@@ -48,7 +48,8 @@ final class HydrateId
 
     private const TERSE = '/([erlkocyb])(\d+)/';
 
-    private const TERSE_HEAD = '/^B[a-z0-9_]+?(?=[erlkocyb]\d)/';
+    /** Đầu id của scope block: 's<tên>-'. Chỉ block mới mở đầu bằng 's'. */
+    private const TERSE_HEAD = '/^s\w+-/u';
 
     private function __construct()
     {
@@ -109,10 +110,19 @@ final class HydrateId
                 continue;
             }
 
-            // block-<name>
-            if ($parts[$i] === 'block' && $i + 1 < $count) {
-                $out[] = 'B' . $parts[$i + 1];
-                $i += 2;
+            // block-<name> → s<name>-
+            //
+            // Scope block luôn là GỐC của id (pushBlock bỏ tiền tố cha) nên chỉ
+            // nhận ở $i === 0. Tên block là \w+ — không bao giờ chứa '-' — nên
+            // dấu '-' đóng tên là ranh giới KHÔNG nhập nhằng, kể cả khi tên có
+            // chữ hoa, chữ số hay trùng mẫu "<loại><số>" ('page2', 'mainContent').
+            //
+            // Trước 2026-11-11 là 'B<name>' không dấu đóng: 'mainContent' mất
+            // hẳn tiền tố ở terse (id trùng với element ngoài block), còn
+            // 'page2' > e1 và 'pag' > e2 > e1 cùng ra 'Bpag21'.
+            if ($i === 0 && $parts[0] === 'block' && $count > 1) {
+                $out[] = 's' . $parts[1] . '-';
+                $i = 2;
                 continue;
             }
 
@@ -133,7 +143,7 @@ final class HydrateId
     /**
      * compact + bỏ chữ 'e' ở element một chữ số.
      *
-     *   'Bworkspacee2e3r1k2l1' → 'Bworkspace23r1k2l1'
+     *   'sworkspace-e2e3r1k2l1' → 'sworkspace-23r1k2l1'
      *
      * Vẫn là đơn ánh: chữ số trần LUÔN là một bậc element; chỉ số >= 10 đóng
      * bằng '_' nên không nhập nhằng với chuỗi chữ số đứng sau ('r1'+'e2'+'e3'

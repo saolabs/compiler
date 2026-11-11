@@ -224,6 +224,11 @@ final class Parser
             $this->popTo($stack, 'section');
             return true;
         }
+        // Tên block đi vào id hydrate (`s{tên}-…`, dấu `-` đóng tên) nên chỉ gồm chữ, số, gạch dưới.
+        // Tên khác trước đây lặng lẽ thành chữ thường in ra màn hình ở CSR.
+        if (Re::match('/^@block\s*\(\s*[\'"]([^\'"]*)[\'"]/', $line, $bad) && preg_match('/^\w+$/', $bad[1]) !== 1) {
+            throw new \RuntimeException("@block('{$bad[1]}'): tên block chỉ gồm chữ, số và dấu gạch dưới (ví dụ @block('side_bar')).");
+        }
         if (Re::match('/^@block\s*\(\s*[\'"](\w+)[\'"]/', $line, $m)) {
             $node = new BlockSection($m[1]);
             $this->addChild($stack, $node);
