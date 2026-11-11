@@ -126,7 +126,11 @@ final class JsEmitter
     }
 
     /** Tên runtime mà thân vòng lặp được dùng mà vẫn coi là "thuần theo item + state". */
-    private const MEMO_SAFE = ['this'=>1,'true'=>1,'false'=>1,'null'=>1,'undefined'=>1,'typeof'=>1,'new'=>1,'return'=>1,'void'=>1,'in'=>1,'of'=>1,'instanceof'=>1,'parentElement'=>1,'parentReactive'=>1,'App'=>1,'__VIEW_ID__'=>1,'__loopIdentity'=>1,'String'=>1,'Number'=>1,'Boolean'=>1,'Math'=>1,'JSON'=>1,'Array'=>1,'Object'=>1,'parseInt'=>1,'parseFloat'=>1,'isNaN'=>1,'event'=>1,'any'=>1];
+    private const MEMO_SAFE = ['this'=>1,'true'=>1,'false'=>1,'null'=>1,'undefined'=>1,'typeof'=>1,'new'=>1,'return'=>1,'void'=>1,'in'=>1,'of'=>1,'instanceof'=>1,'parentElement'=>1,'parentReactive'=>1,'App'=>1,'__VIEW_ID__'=>1,'__loopIdentity'=>1,'String'=>1,'Number'=>1,'Boolean'=>1,'Math'=>1,'JSON'=>1,'Array'=>1,'Object'=>1,'parseInt'=>1,'parseFloat'=>1,'isNaN'=>1,'event'=>1,'any'=>1,
+        // Khung mà chính compiler sinh cho @if/@switch lồng trong vòng lặp.
+        'const'=>1,'if'=>1,'else'=>1,'switch'=>1,'case'=>1,'break'=>1,'default'=>1,'reactiveContents'=>1,
+        // Hằng hệ thống destructure một lần trong constructor của view — không đổi suốt đời instance.
+        '__base__'=>1,'__layout__'=>1,'__page__'=>1,'__component__'=>1,'__template__'=>1,'__module__'=>1,'__context__'=>1,'__partial__'=>1,'__system__'=>1,'__env'=>1,'__helper'=>1];
 
     /** Hàm dựng cây của runtime mà thân vòng lặp được gọi qua `this.` mà vẫn coi là thuần. */
     private const MEMO_RUNTIME = ['html'=>1,'text'=>1,'output'=>1,'reactive'=>1,'include'=>1,'wrapattr'=>1,'decodeTextContent'=>1,'__reactive'=>1,'__foreach'=>1,'__for'=>1,'__while'=>1,'__include'=>1,'__attr'=>1,'__subscribe'=>1,'__text'=>1,'__output'=>1,'__children'=>1,'__classBinding'=>1,'__styleBinding'=>1,'__addEventConfig'=>1];
@@ -147,10 +151,51 @@ final class JsEmitter
      * là về 0, vì runtime không biết khi nào chúng đổi. Thân dùng chính state
      * của biểu thức danh sách cũng về 0: client loại state đó khỏi phép so.
      *
+     * Kèm mức 1/2 là DANH SÁCH STATE mà thân đọc ở vị trí "chụp một lần" (tham
+     * số event, data của @include, điều kiện @if…): client chỉ chạy lại dòng
+     * khi một trong số đó đổi, thay vì khi bất kỳ state nào của view đổi.
+     * State chỉ xuất hiện trong binding tự cập nhật (`factory: () => …,
+     * stateKeys: [...]` của class/attr/style/prop) không cần liệt kê — binding
+     * đó tự đăng ký và tự chạy lại trên dòng được giữ nguyên.
+     *
      * @param list<string> $ownKeys state của biểu thức danh sách
+     * @return string tham số phát ra: `0`, hoặc `1, ["a","b"]`
      */
-    private function foreachMemoMode(ForeachBlock $node, string $children, bool $exec, array $ownKeys): int
+    private function foreachMemoMode(ForeachBlock $node, string $children, bool $exec, array $ownKeys): string
     {
+        $mode = $this->foreachMemoScan($node, $children, $exec, $ownKeys, $deps);
+        if ($mode === 0) return '0';
+        sort($deps);
+        return $mode . ', ' . $this->jsonList($deps);
+    }
+
+    /**
+     * Khoảng [đầu, cuối) của biểu thức trong mỗi `factory: () => EXPR, stateKeys: [khác rỗng]`.
+     * @return list<array{int,int}>
+     */
+    private function selfUpdatingSpans(string $code): array
+    {
+        $spans = []; $needle = 'factory: () => '; $pos = 0; $n = strlen($code);
+        while (($at = strpos($code, $needle, $pos)) !== false) {
+            $start = $pos = $at + strlen($needle);
+            for ($i = $start, $depth = 0; $i < $n; $i++) {
+                $c = $code[$i];
+                if ($c === '(' || $c === '[' || $c === '{') $depth++;
+                elseif ($c === ')' || $c === ']' || $c === '}') { if ($depth === 0) break; $depth--; }
+                elseif ($c === ',' && $depth === 0) {
+                    // Chuỗi đã bị thay bằng "" ở bước trước: `[""` = có ít nhất một khoá.
+                    if (substr_compare($code, ', stateKeys: [""', $i, 16) === 0) $spans[] = [$start, $i];
+                    break;
+                }
+            }
+        }
+        return $spans;
+    }
+
+    /** @param list<string> $ownKeys @param-out list<string> $deps */
+    private function foreachMemoScan(ForeachBlock $node, string $children, bool $exec, array $ownKeys, ?array &$deps): int
+    {
+        $deps = [];
         if ($exec || $ownKeys === []) return 0;
         $code = preg_replace('/"(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'/s', '""', $children);
         if ($code === null) return 0;
@@ -168,6 +213,7 @@ final class JsEmitter
         preg_match_all('/\(([^()]*)\)\s*=>/', $code, $arrows);
         foreach ($arrows[1] as $params) foreach (explode(',', $params) as $param) $safe[trim(explode(':', $param, 2)[0])] = 1;
         $mode = $node->keyVar !== null ? 2 : 1;
+        $spans = $this->selfUpdatingSpans($code); $span = 0; $seen = [];
         preg_match_all('/[A-Za-z_$][\w$]*/', $code, $ids, PREG_OFFSET_CAPTURE);
         foreach ($ids[0] as [$name, $offset]) {
             $before = rtrim(substr($code, max(0, $offset - 8), min(8, $offset)));
@@ -187,7 +233,14 @@ final class JsEmitter
             if (preg_match('/^__sc\d+$/', $name) === 1) continue;        // config tĩnh đã hoist
             if ($name === '__loop' || $name === '__loopKey' || $name === '__loopIndex') { $mode = 2; continue; }
             if (in_array($name, $ownKeys, true)) { if (getenv('SAOC_MEMO_DEBUG')) fwrite(STDERR, "memo=0 vì state của danh sách `{$name}`\n"); return 0; }
-            if (isset($safe[$name]) || isset($this->stateVariables[$name])) continue;
+            if (isset(self::MEMO_SAFE[$name])) continue;   // từ khoá/hằng — kể cả khi trùng tên trong bảng state
+            if (isset($this->stateVariables[$name])) {
+                while (isset($spans[$span]) && $spans[$span][1] <= $offset) $span++;
+                $selfUpdating = isset($spans[$span]) && $spans[$span][0] <= $offset;
+                if (!$selfUpdating && !isset($seen[$name])) { $seen[$name] = true; $deps[] = $name; }
+                continue;
+            }
+            if (isset($safe[$name])) continue;
             if (getenv('SAOC_MEMO_DEBUG')) fwrite(STDERR, "memo=0 vì `{$name}` (trước: '{$prev}')\n");
             return 0;
         }

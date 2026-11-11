@@ -209,7 +209,7 @@ class VView extends View {
                                 this.output(`e12l11o1-${__loopIdentity}`, parentElement, true, [], (parentElement) => item)
                                 ]),
                             this.text('\n')
-                        ], undefined, true, "section-1-ul-2-foreach-1", 1)
+                        ], undefined, true, "section-1-ul-2-foreach-1", 1, [])
                     }),
                     this.text('    ')
                 ]),

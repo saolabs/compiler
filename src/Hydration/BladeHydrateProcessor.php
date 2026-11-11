@@ -572,7 +572,14 @@ final class BladeHydrateProcessor
      */
     private function markOutput(string $full, string $expr, array $loopScopes): string
     {
-        if ($this->getStateKeys($expr) === [] && $loopScopes === []) {
+        // `{!! !!}` LUÔN có marker: phía JS dựng nó bằng this.output() (HTML thô
+        // cần hai mốc để biết thay đoạn nào), kể cả khi biểu thức không đọc
+        // state. Thiếu marker ở đây thì hydrate không claim được và chèn thêm
+        // một bản nữa — chữ hiện hai lần (gặp thật với `{!! trans('…') !!}`).
+        // Trừ slot `{!! $__ONE_CHILDREN_CONTENT__ !!}`: JS dựng nó bằng
+        // __children(), không phải this.output(), nên không có marker.
+        $raw = str_starts_with($full, '{!!') && !str_contains($expr, '__ONE_CHILDREN_CONTENT__');
+        if (!$raw && $this->getStateKeys($expr) === [] && $loopScopes === []) {
             return $full;
         }
 

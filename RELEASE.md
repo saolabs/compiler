@@ -1,3 +1,13 @@
+# Saola Compiler v3.7.0
+
+`@foreach` memo now carries the list of states its body captures: the trailing arguments of `__foreach` become `mode, ["stateA", "stateB"]`. The client re-runs kept rows only when one of those states changes instead of when any state of the view changes. States read only inside self-updating bindings (`factory: () => …, stateKeys: [...]` of class / attr / style / prop) are not listed, because those bindings subscribe on their own. Memo is no longer switched off by an `@if` / `@switch` inside the loop body or by the view's system constants (`__base__`, `__module__`, …).
+
+Fixes raw echo hydration: `{!! expr !!}` without state had an output marker in JavaScript but none in Blade, so hydration could not claim it and rendered the content twice (seen with `{!! trans('…') !!}`). Blade now always wraps raw echoes in `@startMarker('output', …)`; the `@children` slot is unchanged.
+
+Pairs with `@saolabs/client 1.9.0` (older clients ignore the extra argument). Every application must rebuild Blade and JavaScript views with the same compiler because Blade markers around raw echoes changed.
+
+Validation: 332 compiler tests, 897 assertions; golden gates regenerated (Examples gate still stale as before); SSR↔CSR browser parity gate on the starter 35/37 (two known normaliser misses on `/docs/directives`).
+
 # Saola Compiler v3.6.1
 
 Fixes `<textarea>` and `<title>` elements with static attributes / classes being hoisted into a `__scN` constant before `content` is appended in `JsEmitter::genHtml()`.

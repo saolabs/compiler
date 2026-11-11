@@ -24,9 +24,42 @@ final class ForeachMemoModeTest extends TestCase
         $js = (string) (new SaolaCompiler())->compile($source, new CompileOptions(
             viewPath: 'test.memo', functionName: 'V', factoryName: 'VFactory',
         ))->js;
-        $this->assertSame(1, preg_match('/true, "[^"]+", (\d)\)/', $js, $m), 'không thấy tham số memo');
+        $this->assertSame(1, preg_match('/true, "[^"]+", (\d)(?:, \[([^\]]*)\])?\)/', $js, $m), 'không thấy tham số memo');
+        $this->deps = $m[2] ?? null;
 
         return (int) $m[1];
+    }
+
+    /** Danh sách state phụ thuộc phát kèm mức memo của lần `mode()` gần nhất. */
+    private ?string $deps = null;
+
+    /**
+     * Client chỉ chạy lại dòng khi state trong danh sách này đổi. Thiếu một
+     * state bị "chụp một lần" (tham số event, data của include, {{ }} không
+     * stateKeys…) là UI hiện dữ liệu cũ; thừa thì chỉ chậm.
+     */
+    public function test_state_chi_nam_trong_binding_tu_cap_nhat_thi_khong_la_phu_thuoc(): void
+    {
+        $this->assertSame(1, $this->mode("<li @class({'on': selected === row['id']})>{{ row['label'] }}</li>"));
+        $this->assertSame('', $this->deps);
+    }
+
+    public function test_state_bi_chup_trong_tham_so_event_la_phu_thuoc(): void
+    {
+        $this->assertSame(1, $this->mode("<li @click(pick(row['id'], selected))>{{ row['label'] }}</li>"));
+        $this->assertSame('"selected"', $this->deps);
+    }
+
+    public function test_state_trong_if_long_la_phu_thuoc(): void
+    {
+        $this->assertSame(1, $this->mode("<li>@if(selected === row['id'])<b>x</b>@endif</li>"));
+        $this->assertSame('"selected"', $this->deps);
+    }
+
+    public function test_muc_0_khong_kem_danh_sach(): void
+    {
+        $this->assertSame(0, $this->mode("<li>{{ rows.length }}</li>"));
+        $this->assertNull($this->deps);
     }
 
     public function test_than_chi_dung_item_va_state_thi_bat(): void
