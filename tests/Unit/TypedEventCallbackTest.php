@@ -39,6 +39,22 @@ SAO;
         self::assertStringContainsString('App.Helper.label()', $output);
     }
 
+    public function test_arrow_listeners_calling_state_setters_do_not_warn(): void
+    {
+        $source = <<<'SAO'
+@import('fixtures.emit-child' as emitchild)
+@states({ picked: 0 })
+<template><div>
+<emitchild @pair((a, b) => setPicked(a + b)) />
+@include('fixtures.emit-child', { on$close: (v) => setPicked(v + 1), on$open: (v) => unknownFn(v) })
+</div></template>
+<script setup>function takeOne(v) { setPicked(v); }</script>
+SAO;
+        $warnings = implode("\n", (new SaolaCompiler())->compile($source, new CompileOptions(lang: Lang::Js))->warnings);
+        self::assertStringNotContainsString('setPicked', $warnings);
+        self::assertStringContainsString('unknownFn', $warnings);
+    }
+
     public function test_nested_event_parameters_are_typed_only_in_typescript_output(): void
     {
         $source = <<<'SAO'

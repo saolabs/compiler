@@ -1,3 +1,9 @@
+# Saola Compiler v3.8.1
+
+Fix: an arrow listener that calls a state setter (`<child @pair((a, b) => setPicked(a + b)) />`, `@include('x', { on$close: (v) => setPicked(v + 1) })`) in a view with `<script setup>` no longer warns "`setPicked(...)` không tồn tại ở PHP lẫn App.Helper". Generated code was already correct; only the warning was wrong. Unknown functions in the same position still warn.
+
+Validation: 349 compiler tests, 952 assertions; `@saolabs/client` 706/706 against this compiler.
+
 # Saola Compiler v3.8.0
 
 New compile option `fuseRows` (`CompileOptions::$fuseRows`, CLI `--fuse-rows`, **off by default**): a simple `@foreach` body is emitted as one `this.__fused(template, idSuffix, parentElement, get)` call per root element of the row instead of a nested `this.html(...)` tree. The template is a static descriptor hoisted like `__scN`; `get(i)` returns the row's i-th dynamic value (text, class / attr / style binding, event handler list). Ids equal those of the regular output and Blade does not change, so hydration and `s:o:` markers are unaffected.

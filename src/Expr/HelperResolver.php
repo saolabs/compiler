@@ -107,6 +107,19 @@ final class HelperResolver
         $this->viewPath = $viewPath;
     }
 
+    /** State/setter của view: handler JS thô gọi chúng trần, không phải helper. */
+    private array $stateNames = [];
+
+    /** @param list<string> $names Tên state; setter `setX` được suy ra. Gọi lại cho mỗi view. */
+    public function setStateNames(array $names): void
+    {
+        $this->stateNames = [];
+        foreach ($names as $name) {
+            $this->stateNames[$name] = true;
+            $this->stateNames['set' . ucfirst($name)] = true;
+        }
+    }
+
     /** @return list<string> */
     public function warnings(): array
     {
@@ -314,7 +327,7 @@ final class HelperResolver
                 if ($name === 'route'
                     || KnownFunctions::isJsBuiltin($name)
                     || KnownFunctions::isViewFunction($name)
-                    || ($allowViewMethods && isset($this->userMethods[$name]))) {
+                    || ($allowViewMethods && (isset($this->userMethods[$name]) || isset($this->stateNames[$name])))) {
                     return $m[0];
                 }
 
