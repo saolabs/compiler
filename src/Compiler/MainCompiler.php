@@ -214,6 +214,7 @@ final class MainCompiler
         $stateVariables = $this->extractUseStateVariables($useStateDeclarations, $tracked);
         foreach ($variableList as $name) $stateVariables[$name] = true;
         foreach ($tracked as $declaration) if ($declaration['type'] === 'computed') foreach ($declaration['variables'] as $var) $stateVariables[$var['name']] = true;
+        $this->expressions->helpers()->setStateNames($this->stringKeys($stateVariables));
 
         $bladeCode = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $bladeCode) ?? $bladeCode;
         $bladeCode = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $bladeCode) ?? $bladeCode;
