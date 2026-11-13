@@ -40,7 +40,7 @@ class SyntaxView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -117,9 +117,12 @@ class SyntaxView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { classes: [{ type: 'static', value: "my-4" }] };
+            const __sc2 = { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } };
+            const __sc3 = { classes: [{ type: 'static', value: "mt-4" }] };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "div", parentElement,
-                { classes: [{ type: 'static', value: "my-4" }] },
+                __sc1,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
@@ -128,14 +131,14 @@ class SyntaxView extends View {
                 ]),
                 this.text('\n'),
                 this.text('        '),
-                this.html(`e12`, "input", parentElement, { attrs: { "type": { type: 'static', value: "text" }, "v-model": { type: 'static', value: "value" } } }),
+                this.html(`e12`, "input", parentElement, __sc2),
                 this.text('\n'),
                 this.text('    ')
                 ]),
             this.text('\n'),
             this.text('    '),
             this.html(`e2`, "div", parentElement,
-                { classes: [{ type: 'static', value: "mt-4" }] },
+                __sc3,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
@@ -143,16 +146,16 @@ class SyntaxView extends View {
                     this.text('\n'),
                     this.text('            '),
                     this.reactive(`e21l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
-                        return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                        return this.__foreach(items, (item, __loopKey, __loopIndex, __loop, __loopIdentity) => [
                             this.text('                '),
-                            this.html(`e21l11-${__loopIndex}`, "li", parentElement,
+                            this.html(`e21l11-${__loopIdentity}`, "li", parentElement,
                                 { attrs: { "key": { type: 'binding', value: item, factory: () => item, stateKeys: [] } } },
                                 (parentElement) => [
-                                this.output(`e21l11o1-${__loopIndex}`, parentElement, true, [], (parentElement) => item)
+                                this.output(`e21l11o1-${__loopIdentity}`, parentElement, true, [], (parentElement) => item)
                                 ]),
                             this.text('\n'),
                             this.text('            ')
-                        ])
+                        ], undefined, true, "div-2-ul-1-foreach-1", 1, [])
                     }),
                     this.text('        ')
                 ]),

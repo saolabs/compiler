@@ -40,7 +40,7 @@ class ForeachView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -93,7 +93,7 @@ class ForeachView extends View {
             resources: [],
             commitConstructorData: function() {
                 // Then update states from data
-                update$items([]);
+                update$items(items);
                 // Finally lock state updates
                 lockUpdateRealState();
             },
@@ -129,14 +129,14 @@ class ForeachView extends View {
                 this.text('\n'),
                 this.text('    '),
                 this.reactive(`e1l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
-                    return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                    return this.__foreach(items, (item, __loopKey, __loopIndex, __loop, __loopIdentity) => [
                         this.text('        '),
                         this.html(`e1l11-${item.id}`, "li", parentElement, {}, (parentElement) => [
                             this.output(`e1l11o1-${item.id}`, parentElement, true, [], (parentElement) => item.name)
                         ]),
                         this.text('\n'),
                         this.text('    ')
-                    ], (item) => item.id)
+                    ], (item) => item.id, true, "ul-1-foreach-1", 1, [])
                 }),
                 this.text('    ')
             ]),

@@ -40,7 +40,7 @@ class PropsChildrenView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -117,6 +117,7 @@ class PropsChildrenView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { classes: [{ type: 'static', value: "card-body" }] };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "article", parentElement,
                 { classes: [{ type: 'static', value: "card" }, { type: 'binding', value: "card-accent", factory: () => tone === 'accent', stateKeys: ["tone"] }] },
@@ -129,7 +130,7 @@ class PropsChildrenView extends View {
                 this.text('\n'),
                 this.text('        '),
                 this.html(`e12`, "div", parentElement,
-                    { classes: [{ type: 'static', value: "card-body" }] },
+                    __sc1,
                     (parentElement) => [
                     ...this.__children(__ONE_CHILDREN_CONTENT__, parentElement)
                     ]),

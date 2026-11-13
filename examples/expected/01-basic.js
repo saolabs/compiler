@@ -40,7 +40,7 @@ class BasicView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -110,9 +110,10 @@ class BasicView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { classes: [{ type: 'static', value: "hero" }] };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "section", parentElement,
-                { classes: [{ type: 'static', value: "hero" }] },
+                __sc1,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),

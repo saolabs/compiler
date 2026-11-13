@@ -52,6 +52,7 @@ final class SaolaCompiler
             if (strlen($source) > $options->maxFileBytes) {
                 throw new CompileException('Source vượt giới hạn maxFileBytes.', $options->viewPath);
             }
+            self::rejectSystemNameDeclarations($source, $options->viewPath);
             if ($options->sandbox) {
                 $this->assertSandboxSafe($source, $options);
             }
@@ -235,6 +236,43 @@ final class SaolaCompiler
         ksort($views, SORT_STRING);
         $revision = substr(hash('sha256', json_encode($views, JSON_UNESCAPED_SLASHES) ?: ''), 0, 8);
         return new BatchResult($results, $errors, ['revision' => $revision, 'views' => $views]);
+    }
+
+    /**
+     * Biến hệ thống (`systemData`, hợp đồng với core `ViewContextManager::RESERVED`)
+     * là hằng của view: không khai báo lại, không gán. Thiếu chặn này thì phía JS
+     * vỡ muộn (trùng `const` trong constructor) còn phía Blade lặng lẽ ghi đè —
+     * SSR và CSR ra hai giá trị khác nhau.
+     *
+     * Quy ước tên: `__x__` = hằng chuỗi (tiền tố view/định danh), `__x` = đối tượng.
+     */
+    public const SYSTEM_NAMES = ['__system__', '__base__', '__component__', '__template__', '__partial__', '__layout__', '__module__', '__page__', '__context__', '__site', '__env', '__helper'];
+
+    private static function rejectSystemNameDeclarations(string $source, ?string $viewPath): void
+    {
+        if (!str_contains($source, '__')) {
+            return;
+        }
+        // Văn bản nguyên văn, comment và chuỗi không phải code.
+        $code = Re::replace(<<<'RE'
+            /@verbatim\b.*?@endverbatim|\{\{--.*?--\}\}|<pre\b.*?<\/pre>|<code\b.*?<\/code>|\/\*.*?\*\/|(?<![:\w])\/\/[^\n]*|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/s
+            RE, '""', $source);
+        $names = implode('|', array_map(fn ($n) => preg_quote($n, '/'), self::SYSTEM_NAMES));
+        $patterns = [
+            // let/const/var/function __site
+            '/\b(?:let|const|var|function)\s+(' . $names . ')(?![\w$])/',
+            // @vars(…, __site: any = {}), @state/@let/@const/@props
+            '/@(?:vars|states?|let|const|props)\s*\((?:[^()]|\([^()]*\))*?(?<![\w$.])(' . $names . ')\s*[:=,)]/i',
+            // __site = …, __site += … (không bắt ==, =>)
+            '/(?<![\w$.\]])(' . $names . ')\s*(?:[-+*\/%]|\?\?|\|\||&&)?=(?![=>])/',
+            // @foreach(list as __site), @foreach(map as k => __site)
+            '/\bas\s+(?:[\w$]+\s*=>\s*)?(' . $names . ')(?![\w$])/',
+        ];
+        foreach ($patterns as $pattern) {
+            if (Re::match($pattern, $code, $m)) {
+                throw new CompileException("`{$m[1]}` là biến hệ thống, chỉ đọc: không khai báo lại, không gán, không dùng làm biến vòng lặp.", $viewPath);
+            }
+        }
     }
 
     private function validateOptions(CompileOptions $options): void
