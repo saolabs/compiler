@@ -40,7 +40,7 @@ class ConditionalView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -124,6 +124,9 @@ class ConditionalView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { classes: [{ type: 'static', value: "ok" }] };
+            const __sc2 = { classes: [{ type: 'static', value: "idle" }] };
+            const __sc3 = { classes: [{ type: 'static', value: "err" }] };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "div", parentElement, {}, (parentElement) => [
                 this.text('\n'),
@@ -134,7 +137,7 @@ class ConditionalView extends View {
                         reactiveContents.push(
                         this.text('        '),
                         this.html(`e1r1k11`, "p", parentElement,
-                            { classes: [{ type: 'static', value: "ok" }] },
+                            __sc1,
                             (parentElement) => [
                             this.text('Sẵn sàng')
                             ]),
@@ -146,7 +149,7 @@ class ConditionalView extends View {
                         reactiveContents.push(
                         this.text('        '),
                         this.html(`e1r1k21`, "p", parentElement,
-                            { classes: [{ type: 'static', value: "idle" }] },
+                            __sc2,
                             (parentElement) => [
                             this.text('Đang chờ')
                             ]),
@@ -158,7 +161,7 @@ class ConditionalView extends View {
                         reactiveContents.push(
                         this.text('        '),
                         this.html(`e1r1k31`, "p", parentElement,
-                            { classes: [{ type: 'static', value: "err" }] },
+                            __sc3,
                             (parentElement) => [
                             this.text('Lỗi')
                             ]),

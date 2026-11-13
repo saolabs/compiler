@@ -133,7 +133,7 @@ final class JsEmitter
         // Khung mà chính compiler sinh cho @if/@switch lồng trong vòng lặp.
         'const'=>1,'if'=>1,'else'=>1,'switch'=>1,'case'=>1,'break'=>1,'default'=>1,'reactiveContents'=>1,
         // Hằng hệ thống destructure một lần trong constructor của view — không đổi suốt đời instance.
-        '__base__'=>1,'__layout__'=>1,'__page__'=>1,'__component__'=>1,'__template__'=>1,'__module__'=>1,'__context__'=>1,'__partial__'=>1,'__system__'=>1,'__env'=>1,'__helper'=>1];
+        '__base__'=>1,'__layout__'=>1,'__page__'=>1,'__component__'=>1,'__template__'=>1,'__module__'=>1,'__context__'=>1,'__partial__'=>1,'__system__'=>1,'__env'=>1,'__helper'=>1,'__site'=>1];
 
     /** Hàm dựng cây của runtime mà thân vòng lặp được gọi qua `this.` mà vẫn coi là thuần. */
     private const MEMO_RUNTIME = ['html'=>1,'text'=>1,'output'=>1,'reactive'=>1,'include'=>1,'wrapattr'=>1,'decodeTextContent'=>1,'__reactive'=>1,'__foreach'=>1,'__for'=>1,'__while'=>1,'__include'=>1,'__attr'=>1,'__subscribe'=>1,'__text'=>1,'__output'=>1,'__children'=>1,'__fused'=>1,'__classBinding'=>1,'__styleBinding'=>1,'__addEventConfig'=>1];

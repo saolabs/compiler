@@ -40,7 +40,7 @@ class DemoFullView extends View {
         const $app = App;
         const $controller = this.__ctrl__;
         const __STATE__ = this.__ctrl__.states;
-        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}} = systemData;
+        const {__base__, __layout__, __page__, __component__, __template__, __module__, __context__, __partial__, __system__, __env = {}, __helper = {}, __site = {}} = systemData;
         const __VIEW_ID__ = __data__.__SSR_VIEW_ID__ || App.View.generateViewId();
 
         const useState = (value) => {
@@ -171,9 +171,17 @@ class DemoFullView extends View {
             render: function () {
             let parentElement = this.parentElement;
             let parentReactive = null;
+            const __sc1 = { classes: [{ type: 'static', value: "click-section" }] };
+            const __sc2 = { classes: [{ type: 'static', value: "editor-section" }] };
+            const __sc3 = { classes: [{ type: 'static', value: "viewer-section" }] };
+            const __sc4 = { classes: [{ type: 'static', value: "users" }] };
+            const __sc5 = { classes: [{ type: 'static', value: "status-section" }] };
+            const __sc6 = { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-draft" }] };
+            const __sc7 = { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-published" }] };
+            const __sc8 = { classes: [{ type: 'static', value: "status-badge" }] };
             return this.wrapper((parentElement) => [
             this.html(`e1`, "div", parentElement,
-                { classes: [{ type: 'static', value: "click-section" }] },
+                __sc1,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
@@ -201,7 +209,7 @@ class DemoFullView extends View {
                         reactiveContents.push(
                         this.text('            '),
                         this.html(`e2r1k11`, "div", parentElement,
-                            { classes: [{ type: 'static', value: "editor-section" }] },
+                            __sc2,
                             (parentElement) => [
                             this.text('\n'),
                             this.text('                '),
@@ -223,7 +231,7 @@ class DemoFullView extends View {
                         reactiveContents.push(
                         this.text('            '),
                         this.html(`e2r1k21`, "div", parentElement,
-                            { classes: [{ type: 'static', value: "viewer-section" }] },
+                            __sc3,
                             (parentElement) => [
                             this.text('\n'),
                             this.text('                '),
@@ -238,14 +246,14 @@ class DemoFullView extends View {
                                 this.text('\n'),
                                 this.text('                    '),
                                 this.reactive(`e2r1k212l1`, "foreach", parentReactive, parentElement, ["items"], (parentReactive, parentElement) => {
-                                    return this.__foreach(items, (item, __loopKey, __loopIndex, __loop) => [
+                                    return this.__foreach(items, (item, __loopKey, __loopIndex, __loop, __loopIdentity) => [
                                         this.text('                        '),
-                                        this.html(`e2r1k212l11-${__loopIndex}`, "li", parentElement, {}, (parentElement) => [
-                                            this.output(`e2r1k212l11o1-${__loopIndex}`, parentElement, true, [], (parentElement) => item)
+                                        this.html(`e2r1k212l11-${__loopIdentity}`, "li", parentElement, {}, (parentElement) => [
+                                            this.output(`e2r1k212l11o1-${__loopIdentity}`, parentElement, true, [], (parentElement) => item)
                                         ]),
                                         this.text('\n'),
                                         this.text('                    ')
-                                    ])
+                                    ], undefined, true, "div-2-rc-if-1-case_2-div-1-ul-2-foreach-1", 1, [])
                                 }),
                                 this.text('                ')
                             ]),
@@ -264,16 +272,16 @@ class DemoFullView extends View {
             this.text('\n'),
             this.text('    '),
             this.html(`e3`, "div", parentElement,
-                { classes: [{ type: 'static', value: "users" }] },
+                __sc4,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
                 this.reactive(`e3l1`, "foreach", parentReactive, parentElement, ["users"], (parentReactive, parentElement) => {
-                    return this.__foreach(users, (user, __loopKey, __loopIndex, __loop) => [
+                    return this.__foreach(users, (user, __loopKey, __loopIndex, __loop, __loopIdentity) => [
                         this.text('            '),
                         this.include(`e3l1c1-${user.id}`, __template__+'users.item', parentElement, ["editingMode"], (parentElement) => ({"user": user, "config": [editingMode]})),
                         this.text('        ')
-                    ], (user) => user.id)
+                    ], (user) => user.id, true, "div-3-foreach-1", 1, ["editingMode"])
                 }),
                 this.text('    ')
                 ]),
@@ -286,11 +294,11 @@ class DemoFullView extends View {
                     "title": "Nhóm người dùng",
                     __ONE_CHILDREN_CONTENT__: (parentElement) => [
                     this.reactive(`c2l1`, "foreach", parentReactive, parentElement, ["users"], (parentReactive, parentElement) => {
-                        return this.__foreach(users, (user, __loopKey, __loopIndex, __loop) => [
+                        return this.__foreach(users, (user, __loopKey, __loopIndex, __loop, __loopIdentity) => [
                             this.text('            '),
                             this.include(`c2l1c1-${user.id}`, __template__+'users.item', parentElement, [], (parentElement) => ({"user": user})),
                             this.text('        ')
-                        ], (user) => user.id)
+                        ], (user) => user.id, true, "component-2-foreach-1", 1, [])
                     })
                 ]
                 })),
@@ -298,7 +306,7 @@ class DemoFullView extends View {
             this.text('    \n'),
             this.text('    '),
             this.html(`e4`, "div", parentElement,
-                { classes: [{ type: 'static', value: "status-section" }] },
+                __sc5,
                 (parentElement) => [
                 this.text('\n'),
                 this.text('        '),
@@ -309,7 +317,7 @@ class DemoFullView extends View {
                             reactiveContents.push(
                             this.text('                '),
                             this.html(`e4r1k11`, "span", parentElement,
-                                { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-draft" }] },
+                                __sc6,
                                 (parentElement) => [
                                 this.text('Bản nháp')
                                 ]),
@@ -322,7 +330,7 @@ class DemoFullView extends View {
                             reactiveContents.push(
                             this.text('                '),
                             this.html(`e4r1k21`, "span", parentElement,
-                                { classes: [{ type: 'static', value: "status-badge" }, { type: 'static', value: "status-published" }] },
+                                __sc7,
                                 (parentElement) => [
                                 this.text('Đã xuất bản')
                                 ]),
@@ -335,7 +343,7 @@ class DemoFullView extends View {
                             reactiveContents.push(
                             this.text('                '),
                             this.html(`e4r1k31`, "span", parentElement,
-                                { classes: [{ type: 'static', value: "status-badge" }] },
+                                __sc8,
                                 (parentElement) => [
                                 this.text('Không rõ trạng thái')
                                 ]),
