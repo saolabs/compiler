@@ -1,3 +1,13 @@
+# Saola Compiler v3.9.0
+
+Compiled views read the system variable `__site` (public site settings from `saola/core` 2.12 `SiteProvider`): the view constructor destructures `__site = {}` from `systemData` next to `__env`/`__helper`, Blade reads `$__site`, and `@foreach` memo treats it as a constant. Naming rule: `__x__` system names are string prefixes or identifiers, `__x` names are runtime objects.
+
+Declaring, assigning or looping over a system name (`__site`, `__layout__`, `__context__`, `__env`, …) is now a compile error. Before, the JavaScript side failed late on a duplicate `const` while Blade silently overrode the value, so SSR and CSR disagreed. Verbatim blocks, comments and strings are not checked.
+
+Golden snapshots were regenerated; the only output change is the destructure line. The rest of the snapshot diff is pre-existing drift of the `saola/resources` corpus and the examples.
+
+Validation: 358 compiler tests; parity gates green; `@saolabs/client` 712 tests against this compiler.
+
 # Saola Compiler v3.8.1
 
 Fix: an arrow listener that calls a state setter (`<child @pair((a, b) => setPicked(a + b)) />`, `@include('x', { on$close: (v) => setPicked(v + 1) })`) in a view with `<script setup>` no longer warns "`setPicked(...)` không tồn tại ở PHP lẫn App.Helper". Generated code was already correct; only the warning was wrong. Unknown functions in the same position still warn.
