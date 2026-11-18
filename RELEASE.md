@@ -1,3 +1,9 @@
+# Saola Compiler v3.10.0
+
+`href(...)` compiles to `App.Router.href(...)` in expressions, `:attr` shorthands and `{{ }}` attributes, and stays a PHP call in Blade (the `href()` helper of `saola/core` 2.13). It is treated as a PHP builtin by the preprocessor and is not reported as a helper missing on one side. `route()` is unchanged.
+
+Validation: 359 compiler tests; `@saolabs/client` 738 tests.
+
 # Saola Compiler v3.9.0
 
 Compiled views read the system variable `__site` (public site settings from `saola/core` 2.12 `SiteProvider`): the view constructor destructures `__site = {}` from `systemData` next to `__env`/`__helper`, Blade reads `$__site`, and `@foreach` memo treats it as a constant. Naming rule: `__x__` system names are string prefixes or identifiers, `__x` names are runtime objects.
