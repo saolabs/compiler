@@ -60,7 +60,7 @@ final class PhpBuiltins
         'date', 'time', 'mktime', 'strtotime', 'now', 'today',
 
         // Helper của Laravel
-        'view', 'route', 'url', 'asset', 'mix', 'config', 'env',
+        'view', 'route', 'href', 'url', 'asset', 'mix', 'config', 'env',
         'auth', 'request', 'response', 'session', 'cache', 'cookie',
         'redirect', 'back', 'abort', 'app', 'resolve',
         'collect', 'dd', 'dump', 'logger', 'old', 'csrf_token',

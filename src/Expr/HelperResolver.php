@@ -12,6 +12,7 @@ use Saola\Compiler\Support\Re;
  *
  *     count(items)   →  App.Helper.count(items)
  *     route('home')  →  App.Router.getURL('home')
+ *     href('home')   →  App.Router.href('home')
  *     myMethod(x)    →  this.view.myMethod(x)      (nếu có trong <script setup>)
  *     Math.max(a, b) →  không đổi                  (builtin JS)
  *
@@ -252,6 +253,8 @@ final class HelperResolver
         // CSR. Nó không thuộc App.View hay App.Helper.
         $expr = $this->normalizeRouteArguments($expr);
         $expr = Re::replace('/(?<![\w.])route\s*\(/', 'App.Router.getURL(', $expr);
+        // `href()`: core helper ở SSR, Router.href ở CSR — cùng thuật toán, tra được mọi context (kế hoạch href, H5).
+        $expr = Re::replace('/(?<![\w.])href\s*\(/', 'App.Router.href(', $expr);
 
         // Lượt 1 — các tên đã biết, gắn tiền tố theo đúng thứ tự bản Python.
         // Lookbehind (?<![\w.]) chặn việc gắn thêm tiền tố vào tên đã có
@@ -324,7 +327,7 @@ final class HelperResolver
             function (array $m) use ($allowViewMethods): string {
                 $name = $m[1];
 
-                if ($name === 'route'
+                if ($name === 'route' || $name === 'href'
                     || KnownFunctions::isJsBuiltin($name)
                     || KnownFunctions::isViewFunction($name)
                     || ($allowViewMethods && (isset($this->userMethods[$name]) || isset($this->stateNames[$name])))) {
